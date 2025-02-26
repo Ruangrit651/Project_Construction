@@ -107,25 +107,28 @@ model role {
 
 // Task Model
 model task {
-  task_id         String     @id @default(uuid()) @db.Uuid
-  project_id    String?      @db.Uuid
-  task_name       String     @db.VarChar(255)
-  description     String?
-  budget          Decimal    @db.Decimal(15, 2)
-  start_date      String
-  end_date        String?
-  status          Boolean     
-  created_at      DateTime   @default(now())
-  created_by      String?    @db.Uuid
-  updated_at      DateTime?  @updatedAt
-  updated_by      String?    @db.Uuid
+  task_id       String     @id @default(uuid()) @db.Uuid
+  project_id    String?    @db.Uuid
+  task_name     String     @db.VarChar(255)
+  description   String?
+  budget        Decimal    @db.Decimal(15, 2)
+  start_date    String
+  end_date      String?
+  status        String     
+  created_at    DateTime   @default(now())
+  created_by    String?    @db.Uuid
+  updated_at    DateTime?  @updatedAt
+  updated_by    String?    @db.Uuid
+
+  // dependencies  String[]   @db.VarChar(255)  // เก็บเป็น array ของ task_id
 
   // Relations
-  created         user?      @relation("TaskCreatedBy", fields: [created_by], references: [user_id])
-  updated         user?      @relation("TaskUpdatedBy", fields: [updated_by], references: [user_id])
+  created       user?      @relation("TaskCreatedBy", fields: [created_by], references: [user_id])
+  updated       user?      @relation("TaskUpdatedBy", fields: [updated_by], references: [user_id])
   projects      project?   @relation(fields: [project_id], references: [project_id])
-  resources     resource []
+  resources     resource[]
 }
+
 
 // Plan Model
 model plan {
