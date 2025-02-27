@@ -44,7 +44,7 @@ export const taskRouter = (() => {
         authenticateJWT,
         rolegrop5,
         validateRequest(DeleteTaskSchema), async (req: Request, res: Response) => {
-        const { task_id } = req.body; // Extract task_id from the body
+        const { task_id } = req.params; // Extract task_id from the body
         const ServiceResponse = await taskService.delete(task_id);
         handleServiceResponse(ServiceResponse, res);
     });

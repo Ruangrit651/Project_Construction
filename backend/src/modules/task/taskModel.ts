@@ -8,7 +8,7 @@ export type TypePayloadTask = {
   budget?: number;
   start_date?: string;
   end_date?: string;
-  status: boolean;
+  status: string;
   // created_at?: string;
   // created_by?: string;
   // updated_at?: string;
@@ -24,7 +24,7 @@ export const CreateTaskSchema = z.object({
     budget: z.number(),
     start_date: z.string().optional(),
     end_date: z.string().optional(),
-    status: z.boolean().optional(),
+    status: z.string().optional(),
     // created_at: z.string().optional(),
     // created_by: z.string().optional(),
     // updated_at: z.string().optional(),
@@ -42,7 +42,7 @@ export const UpdateTaskSchema = z.object({
     budget: z.number().optional(),
     start_date: z.string().optional(),
     end_date: z.string().optional(),
-    status: z.boolean().optional(),
+    status: z.string().optional(),
     //updated_at: z.string().optional(),
     //updated_by: z.string().optional(), // ต้องมี updated_by เพื่อบันทึกว่าใครแก้ไข
   }),
@@ -50,7 +50,7 @@ export const UpdateTaskSchema = z.object({
 
 // Schema สำหรับการลบ Task
 export const DeleteTaskSchema = z.object({
-  body: z.object({
+  params: z.object({
     task_id: z.string().uuid(),  // รับ UUID ของ task ผ่าน body
   }),
 });

@@ -4,7 +4,7 @@ export type PayloadCreateTask = {
     budget?: number;
     start_date?: string;
     end_date?: string;
-    status: boolean;
+    status: string;
 };
 
 export type PayloadUpdateTask = {
@@ -13,7 +13,7 @@ export type PayloadUpdateTask = {
     budget?: number;
     start_date?: string;
     end_date?: string;
-    status: boolean;
+    status: string;
 }
 
 export type PayloadDeleteTask = {

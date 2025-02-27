@@ -1,273 +1,128 @@
-// import { useState } from "react";
-// import * as Dialog from "@radix-ui/react-dialog";
-// import { Button } from "@radix-ui/themes";
-// import { PayloadCreateTask } from "@/types/requests/request.task";
+import { useState, useEffect } from "react";
+import { Dialog, Button, Flex, TextField, Text, Select } from "@radix-ui/themes";
+import { postTask, getTask } from "@/services/task.service";
 
-// export default function DialogAddTask({ addTask }: { addTask: (task: PayloadCreateTask) => void }) {
-//     const [task, setTask] = useState<PayloadCreateTask>({
-//         task_name: "",
-//         description: "",
-//         budget: undefined,
-//         start_date: "",
-//         end_date: "",
-//         status: false,
-//     });
-
-//     const handleSave = () => {
-//         if (task.task_name && task.start_date && task.end_date) {
-//             addTask(task);
-//             setTask({
-//                 task_name: "",
-//                 description: "",
-//                 budget: undefined,
-//                 start_date: "",
-//                 end_date: "",
-//                 status: false,
-//             });
-//         } else {
-//             alert("กรุณากรอกข้อมูลที่จำเป็น");
-//         }
-//     };
-
-//     return (
-//         <Dialog.Root>
-//             <Dialog.Trigger asChild>
-//                 <Button>เพิ่ม Task ใหม่</Button>
-//             </Dialog.Trigger>
-//             <Dialog.Portal>
-//                 <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-30" />
-//                 <Dialog.Content className="fixed bg-white p-6 rounded-lg shadow-lg top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-//                     <Dialog.Title className="text-lg font-semibold mb-4">เพิ่ม Task ใหม่</Dialog.Title>
-//                     <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
-//                         <div>
-//                             <label className="block text-sm font-medium">ชื่อ Task</label>
-//                             <input
-//                                 type="text"
-//                                 value={task.task_name}
-//                                 onChange={(e) => setTask({ ...task, task_name: e.target.value })}
-//                                 className="border p-2 w-full rounded"
-//                                 required
-//                             />
-//                         </div>
-//                         <div>
-//                             <label className="block text-sm font-medium">รายละเอียด</label>
-//                             <textarea
-//                                 value={task.description}
-//                                 onChange={(e) => setTask({ ...task, description: e.target.value })}
-//                                 className="border p-2 w-full rounded"
-//                             />
-//                         </div>
-//                         <div>
-//                             <label className="block text-sm font-medium">งบประมาณ</label>
-//                             <input
-//                                 type="number"
-//                                 value={task.budget || ""}
-//                                 onChange={(e) => setTask({ ...task, budget: parseFloat(e.target.value) })}
-//                                 className="border p-2 w-full rounded"
-//                             />
-//                         </div>
-//                         <div className="grid grid-cols-2 gap-4">
-//                             <div>
-//                                 <label className="block text-sm font-medium">วันที่เริ่ม</label>
-//                                 <input
-//                                     type="date"
-//                                     value={task.start_date}
-//                                     onChange={(e) => setTask({ ...task, start_date: e.target.value })}
-//                                     className="border p-2 w-full rounded"
-//                                     required
-//                                 />
-//                             </div>
-//                             <div>
-//                                 <label className="block text-sm font-medium">วันที่สิ้นสุด</label>
-//                                 <input
-//                                     type="date"
-//                                     value={task.end_date}
-//                                     onChange={(e) => setTask({ ...task, end_date: e.target.value })}
-//                                     className="border p-2 w-full rounded"
-//                                     required
-//                                 />
-//                             </div>
-//                         </div>
-//                         <Button onClick={handleSave} className="bg-green-500 text-white px-4 py-2 rounded">
-//                             บันทึก
-//                         </Button>
-//                     </form>
-//                 </Dialog.Content>
-//             </Dialog.Portal>
-//         </Dialog.Root>
-//     );
-// }
-// --------------------------------------------------------------
-
-// import { useState } from "react";
-// import * as Dialog from "@radix-ui/react-dialog";
-// import { Button ,Flex } from "@radix-ui/themes";
-// import { PayloadCreateTask } from "@/types/requests/request.task";
-
-// export default function DialogAddTask({ addTask }: { addTask: (task: PayloadCreateTask) => void }) {
-//     const [task, setTask] = useState({
-//         task_name: "",
-//         description: "",
-//         budget: 0,
-//         start_date: "",
-//         end_date: "",
-//         status: false,
-//     });
-
-//     const handleSave = () => {
-//         if (task.task_name && task.start_date && task.end_date) {
-//             addTask(task);
-//             setTask({
-//                 task_name: "",
-//                 description: "",
-//                 budget: 0,
-//                 start_date: "",
-//                 end_date: "",
-//                 status: false,
-//             });
-//         } else {
-//             alert("Please fill in all required fields!");
-//         }
-//     };
-
-//     return (
-//         <Dialog.Root>
-//             <Dialog.Trigger asChild>
-//                 <Button>เพิ่ม Task ใหม่</Button>
-//             </Dialog.Trigger>
-//             <Dialog.Portal>
-//                 <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-30" />
-//                 <Dialog.Content className="fixed bg-white p-6 rounded-lg shadow-lg top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-//                     <Dialog.Title>เพิ่ม Task ใหม่</Dialog.Title>
-//                     <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
-//                         <div>
-//                             <label className="block text-sm font-medium">ชื่อ Task</label>
-//                             <input
-//                                 type="text"
-//                                 value={task.task_name}
-//                                 onChange={(e) => setTask({ ...task, task_name: e.target.value })}
-//                                 className="border p-2 w-full"
-//                                 required
-//                             />
-//                         </div>
-//                         <div>
-//                             <label className="block text-sm font-medium">วันที่เริ่ม</label>
-//                             <input
-//                                 type="date"
-//                                 value={task.start_date}
-//                                 onChange={(e) => setTask({ ...task, start_date: e.target.value })}
-//                                 className="border p-2 w-full"
-//                                 required
-//                             />
-//                         </div>
-//                         <div>
-//                             <label className="block text-sm font-medium">วันที่สิ้นสุด</label>
-//                             <input
-//                                 type="date"
-//                                 value={task.end_date}
-//                                 onChange={(e) => setTask({ ...task, end_date: e.target.value })}
-//                                 className="border p-2 w-full"
-//                                 required
-//                             />
-//                         </div>
-//                         <div>
-//                             <label className="block text-sm font-medium">งบประมาณ</label>
-//                             <input
-//                                 type="number"
-//                                 value={task.budget}
-//                                 onChange={(e) => setTask({ ...task, budget: parseFloat(e.target.value) })}
-//                                 className="border p-2 w-full"
-//                                 required
-//                             />
-//                         </div>
-//                         <Flex gap="3" mt="4" justify="end">
-//                             <Dialog.Close>
-//                                 <Button  variant="soft" color="green" type="submit" onClick={handleSave}>
-//                                     Save
-//                                 </Button>
-//                             </Dialog.Close>
-//                         </Flex>
-//                     </form>
-//                 </Dialog.Content>
-//             </Dialog.Portal>
-//         </Dialog.Root>
-//     );
-// }
-
-import {
-  GanttComponent,
-  TaskFieldsModel,
-  ColumnsDirective,
-  ColumnDirective,
-  Edit,
-  Inject,
-  Toolbar,
-  Selection,
-} from "@syncfusion/ej2-react-gantt";
-import './Gantt.css';
-import { PayloadCreateTask, PayloadUpdateTask } from "@/types/requests/request.task";
-
-interface GanttProps {
-  tasks: PayloadCreateTask[];
-  onTasksChange: (updatedTasks: PayloadCreateTask[]) => void;
+interface DialogAddTaskProps {
+    getTaskData: () => void;
 }
 
-export default function DialogAddTask({ tasks, onTasksChange }: GanttProps) {
-  const editOptions = {
-    allowEditing: true,
-    allowAdding: true,
-    allowDeleting: true,
-    allowTaskbarEditing: true,
-    mode: "Auto",
-  };
+const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData }) => {
+    const [taskName, setTaskName] = useState("");
+    const [description, setDescription] = useState("");
+    const [budget, setBudget] = useState(0);
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [status, setStatus] = useState("pending");
+    const [tasks, setTasks] = useState<{ task_id: string; task_name: string }[]>([]);
 
-  const taskValues: TaskFieldsModel = {
-    id: "task_name",
-    name: "task_name",
-    startDate: "start_date",
-    endDate: "end_date",
-  };
+    useEffect(() => {
+        const fetchTasks = async () => {
+            const response = await getTask();
+            setTasks(response.responseObject);
+        };
+        fetchTasks();
+    }, []);
 
-  const handleActionComplete = (args: any) => {
-    if (args.requestType === "save") {
-      const updatedTask: PayloadUpdateTask = args.data;
-      const updatedTasks = tasks.map((task) =>
-        task.task_name === updatedTask.task_name ? updatedTask : task
-      );
-      onTasksChange(updatedTasks);
-    } else if (args.requestType === "delete") {
-      const updatedTasks = tasks.filter((task) => task.task_name !== args.data[0].task_name);
-      onTasksChange(updatedTasks);
-    }
-  };
+    const handleAddTask = async () => {
+        if (!taskName || !description || !budget ||!startDate || !endDate) {
+            alert("Please fill out all required fields.");
+            return;
+        }
+    
+        try {
+            const response = await postTask({
+                task_name: taskName,
+                description,
+                budget,
+                start_date: startDate,
+                end_date: endDate,
+                status: status,
+            });
+    
+            if (response.success) {
+                getTaskData();
+            } else {
+                alert(`Error: ${response.message}`);
+            }
+        } catch (error) {
+            console.error("Failed to add task:", error);
+            alert("An error occurred while adding the task.");
+        }
+    };
 
-  return (
-    <div>
-      <GanttComponent
-        dataSource={tasks}
-        taskFields={taskValues}
-        editSettings={editOptions}
-        toolbar={["Add", "Edit", "Delete", "Update", "Cancel"]}
-        allowSelection={true}
-        actionComplete={handleActionComplete}
-      >
-        <Inject services={[Edit, Toolbar, Selection]} />
-        <ColumnsDirective>
-          <ColumnDirective field="task_name" headerText="Task Name" />
-          <ColumnDirective field="description" headerText="Description" />
-          <ColumnDirective field="start_date" headerText="Start Date" format="dd-MMM-yy" />
-          <ColumnDirective field="end_date" headerText="End Date" format="dd-MMM-yy" />
-          <ColumnDirective
-            field="status"
-            headerText="Status"
-            textAlign="Center"
-            template={(props) => (props.status ? "✅ Completed" : "⏳ In Progress")}
-          />
-        </ColumnsDirective>
-      </GanttComponent>
-    </div>
-  );
-}
+    return (
+        <Dialog.Root>
+            <Dialog.Trigger asChild>
+                <Button variant="soft" className="cursor-pointer">+ Add Task</Button>
+            </Dialog.Trigger>
+            <Dialog.Content>
+                <Dialog.Title>Add Task</Dialog.Title>
+                <Flex direction="column">
+                    <label>
+                        <Text as="div" size="2" mb="3" weight="bold">Task Name</Text>
+                        <TextField.Root 
+                            value={taskName} 
+                            type="text"
+                            onChange={(e) => setTaskName(e.target.value)} 
+                            placeholder="Enter Task Name" 
+                        />
+                    </label>
+                    <label>
+                        <Text as="div" size="2" mb="3" mt="3" weight="bold">Description</Text>
+                        <TextField.Root 
+                            value={description} 
+                            type="text"
+                            onChange={(e) => setDescription(e.target.value)} 
+                            placeholder="Enter Task Description" 
+                        />
+                    </label>
+                    <label>
+                        <Text as="div" size="2" mb="3" mt="3" weight="bold">Budget</Text>
+                        <TextField.Root 
+                            value={budget} 
+                            type="text"
+                            onChange={(e) => setBudget(Number(e.target.value))} 
+                            placeholder="Enter Task Description" 
+                        />
+                    </label>
+                    <label>
+                        <Text as="div" size="2" mb="3" mt="3" weight="bold">Start Date</Text>
+                        <TextField.Root 
+                            value={startDate} 
+                            type="date"
+                            onChange={(e) => setStartDate(e.target.value)} 
+                        />
+                    </label>
+                    <label>
+                        <Text as="div" size="2" mb="3" mt="3" weight="bold">End Date</Text>
+                        <TextField.Root 
+                            value={endDate} 
+                            type="date"
+                            onChange={(e) => setEndDate(e.target.value)} 
+                        />
+                    </label>
+                    <label>
+                        <Text as="div" size="2" mb="3" mt="3" weight="bold">Status</Text>
+                        <Select.Root value={status} onValueChange={setStatus}>
+                            <Select.Trigger>{status}</Select.Trigger>
+                            <Select.Content>
+                                <Select.Item value="pending">Pending</Select.Item>
+                                <Select.Item value="completed">Completed</Select.Item>
+                            </Select.Content>
+                        </Select.Root>
+                    </label>
+                </Flex>
+                <Flex gap="3" mt="4" justify="end">
+                    <Dialog.Close>
+                        <Button className="cursor-pointer" variant="soft" color="gray" mb="3" mt="3">Cancel</Button>
+                    </Dialog.Close>
+                    <Dialog.Close>
+                        <Button className="cursor-pointer" variant="soft" mb="3" mt="3" onClick={handleAddTask}>Save</Button>
+                    </Dialog.Close>
+                </Flex>
+            </Dialog.Content>
+        </Dialog.Root>
+    );
+};
 
-// TESTING  // Test2  //Test3 
-
+export default DialogAddTask;
