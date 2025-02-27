@@ -120,13 +120,34 @@ model task {
   updated_at    DateTime?  @updatedAt
   updated_by    String?    @db.Uuid
 
-  // dependencies  String[]   @db.VarChar(255)  // เก็บเป็น array ของ task_id
-
   // Relations
   created       user?      @relation("TaskCreatedBy", fields: [created_by], references: [user_id])
   updated       user?      @relation("TaskUpdatedBy", fields: [updated_by], references: [user_id])
   projects      project?   @relation(fields: [project_id], references: [project_id])
   resources     resource[]
+  dependencies task_dependency[]
+  subtasks       subtask[]
+}
+model subtask {
+  subtask_id   String     @id @default(uuid()) @db.Uuid
+  task_id    String?    @db.Uuid
+  parent_task_id String?  @db.Uuid
+  created_at    DateTime   @default(now())
+  created_by    String?    @db.Uuid
+
+  // Relations
+  task          task?      @relation(fields: [task_id], references: [task_id])
+}
+
+model task_dependency {
+  dependency_id String     @id @default(uuid()) @db.Uuid
+  task_id    String?    @db.Uuid
+  dependency_task_id String?  @db.Uuid
+  created_at    DateTime   @default(now())
+  created_by    String?    @db.Uuid
+
+  // Relations
+  task          task?      @relation(fields: [task_id], references: [task_id])
 }
 
 

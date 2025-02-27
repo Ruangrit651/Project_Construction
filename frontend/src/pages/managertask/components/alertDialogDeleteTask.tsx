@@ -9,6 +9,7 @@ interface AlertDialogDeleteTaskProps {
 
 const AlertDialogDeleteTask: React.FC<AlertDialogDeleteTaskProps> = ({ getTaskData, task_id, task_name }) => {
     const handleDelete = async () => {
+        console.log("Deleting task:", task_id);
         try {
             const response = await deleteTask({ task_id });
             if (response.statusCode === 200) {

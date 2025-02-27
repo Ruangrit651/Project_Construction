@@ -17,7 +17,8 @@ export const authRouter = (() => {
     });
 
     // Logout a user
-router.post("/logout", async (req: Request, res: Response) => { // กำหนดเส้นทาง /logout
+router.post("/logout", 
+    async (req: Request, res: Response) => { // กำหนดเส้นทาง /logout
     const serviceResponse = await authService.logout(res); // เรียกใช้งานฟังก์ชัน logout จาก authService และส่ง res ไปด้วย 
     handleServiceResponse(serviceResponse, res); // ส่ง serviceResponse และ res ไปให้ handleServiceResponse จัดการ 
 });
