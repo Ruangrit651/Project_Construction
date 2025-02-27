@@ -16,7 +16,7 @@ export const LoginUserSchema = z.object({
     }),
 });
 
-// Schema สำหรับการLogin User ใหม่
+// Schema สำหรับการLogout User ใหม่
 export const LogoutUserSchema = z.object({
     body: z.object({
         username: z.string().max(255),

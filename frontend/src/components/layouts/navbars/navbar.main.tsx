@@ -2,8 +2,12 @@
 import * as NavigationMenu from '@radix-ui/react-navigation-menu';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { PersonIcon } from '@radix-ui/react-icons';
+import { logoutUser } from '@/services/logout.service';
+import { useNavigate } from 'react-router-dom';
 
 const NavbarMain = () => {
+  const navigate = useNavigate();
+
   return (
     <NavigationMenu.Root className="w-full bg-gray-800 text-white px-6 py-3 flex justify-between items-center">
       <h2 className="text-xl font-bold">CITE Construction</h2>
@@ -21,9 +25,14 @@ const NavbarMain = () => {
               >
                 <DropdownMenu.Item
                   className="cursor-pointer p-2 hover:bg-gray-600 rounded"
-                  onClick={() => {
-                    alert('Logged out!');
-                    // Add logout logic here
+                  onClick={async () => {
+                    try {
+                      await logoutUser();
+                      navigate('/'); // Redirect to /login after logout
+                    } catch (err) {
+                      console.error('Logout failed', err);
+                      navigate('/'); // Redirect to /login in case of error
+                    }
                   }}
                 >
                   Logout

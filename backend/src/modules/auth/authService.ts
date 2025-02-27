@@ -64,24 +64,25 @@ export const authService = {
     // logout a user
     logout: async (res: any) => {
         try {
-            res.clearCookie("token", { //ล้างค่า Cookie ที่ชื่อ token ออกไป 
+            res.clearCookie("token", { //ล้างค่า Cookie ที่ชื่อ token ออกไป , ลบค่า Cookie ที่ชื่อ token ออกไป
                 httpOnly: true, // ไม่สามารถเข้าถึงค่า Cookie จาก JavaScript ได้ หรือ เพื่อป้องกันการเข้าถึง Cookie จาก JavaScript โดยตรง
                 secure: process.env.NODE_ENV === "production", // ใช้ HTTPS ใน production เท่านั้น หรือ ใช้งานใน localhost ได้
                 sameSite: "strict", 
             });
     
             return new ServiceResponse(
-                ResponseStatus.Success,
-                "Logout successful", 
-                null,
-                StatusCodes.OK
+                ResponseStatus.Success,      // แจ้งว่าออกจากระบบสำเร็จ
+                "Logout successful",         // ข้อความบอกผู้ใช้
+                null,                        // ไม่มีข้อมูลพิเศษอื่นๆ ส่งกลับไป
+                StatusCodes.OK               // รหัส HTTP 200 (OK)
             );
+            
         } catch (ex) {
             return new ServiceResponse(
-                ResponseStatus.Failed,
-                "Error during logout: " + (ex as Error).message,
-                null,
-                StatusCodes.INTERNAL_SERVER_ERROR
+                ResponseStatus.Failed,      // แจ้งว่าสถานะล้มเหลว
+                "Error during logout: " + (ex as Error).message,  // ข้อความอธิบายข้อผิดพลาด
+                null, 
+                StatusCodes.INTERNAL_SERVER_ERROR  // รหัส HTTP 500 (เกิดปัญหาภายในเซิร์ฟเวอร์)
             );
         }
     },
