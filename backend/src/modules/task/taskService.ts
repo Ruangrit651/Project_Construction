@@ -101,6 +101,8 @@ export const taskService = {
         try {
             // ตรวจสอบว่า Task มีอยู่หรือไม่
             const existingTask = await TaskRepository.findById(task_id); // ต้องเพิ่ม findById ใน TaskRepository
+            console.log("Checking Task:", task_id, "Exists:", existingTask);
+            
             if (!existingTask) {
                 return new ServiceResponse(
                     ResponseStatus.Failed,

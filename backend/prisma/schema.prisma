@@ -9,180 +9,185 @@ generator client {
 
 // Category Model
 model categories {
-  id             String     @id @default(uuid()) @db.Uuid
-  category_name  String     @unique
-  created_at     DateTime   @default(now())
-  updated_at     DateTime?  @updatedAt
-  created_by     String?
-  updated_by     String?
+  id            String    @id @default(uuid()) @db.Uuid
+  category_name String    @unique
+  created_at    DateTime  @default(now())
+  updated_at    DateTime? @updatedAt
+  created_by    String?
+  updated_by    String?
 
-  products       product[]
+  products product[]
 }
 
 // Product Model
 model product {
-  id            String     @id @default(uuid()) @db.Uuid
-  product_name  String
-  price         Float
-  category_id   String     @db.Uuid
-  created_at    DateTime   @default(now())
-  updated_at    DateTime?  @updatedAt
-  created_by    String?    @db.Uuid
-  updated_by    String?    @db.Uuid
+  id           String    @id @default(uuid()) @db.Uuid
+  product_name String
+  price        Float
+  category_id  String    @db.Uuid
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  created_by   String?   @db.Uuid
+  updated_by   String?   @db.Uuid
 
   // Relations
-  category      categories @relation(fields: [category_id], references: [id])
-  created       user?      @relation("ProductCreatedBy", fields: [created_by], references: [user_id])
-  updated       user?      @relation("ProductUpdatedBy", fields: [updated_by], references: [user_id])
+  category categories @relation(fields: [category_id], references: [id])
+  created  user?      @relation("ProductCreatedBy", fields: [created_by], references: [user_id])
+  updated  user?      @relation("ProductUpdatedBy", fields: [updated_by], references: [user_id])
 }
 
 // Project Model
 model project {
-  project_id     String     @id @default(uuid()) @db.Uuid
-  project_name   String     @unique               
-  budget         Decimal?   @db.Decimal(15, 2)           
-  actual         Decimal?    @db.Decimal(15, 2)   
-  start_date     String                    
-  end_date       String?                   
-  status         String                
-  project_image  String?    @db.VarChar(255)
-  created_at     DateTime   @default(now())               
-  created_by     String?    @db.Uuid                                  
-  updated_at     DateTime?  @updatedAt                    
-  updated_by     String?    @db.Uuid              
+  project_id    String    @id @default(uuid()) @db.Uuid
+  project_name  String    @unique
+  budget        Decimal?  @db.Decimal(15, 2)
+  actual        Decimal?  @db.Decimal(15, 2)
+  start_date    String
+  end_date      String?
+  status        String
+  project_image String?   @db.VarChar(255)
+  created_at    DateTime  @default(now())
+  created_by    String?   @db.Uuid
+  updated_at    DateTime? @updatedAt
+  updated_by    String?   @db.Uuid
 
   // Relations
-  created        user?      @relation("ProjectCreatedBy", fields: [created_by], references: [user_id])
-  updated        user?      @relation("ProjectUpdatedBy", fields: [updated_by], references: [user_id])
-  users          user[]     
-  tasks          task[]
+  created user?  @relation("ProjectCreatedBy", fields: [created_by], references: [user_id])
+  updated user?  @relation("ProjectUpdatedBy", fields: [updated_by], references: [user_id])
+  users   user[]
+  tasks   task[]
 }
 
 // User Model
 model user {
-  user_id       String   @id @default(uuid()) @db.Uuid
-  project_id    String?  @db.Uuid
-  role          String   @db.VarChar(255)
-  username      String   @db.VarChar(255) @unique
-  password      String   @db.VarChar(255)
-  created_at    DateTime @default(now())
-  created_by    String?  @db.Uuid
-  updated_at    DateTime @updatedAt
-  updated_by    String?  @db.Uuid
+  user_id    String   @id @default(uuid()) @db.Uuid
+  project_id String?  @db.Uuid
+  role       String   @db.VarChar(255)
+  username   String   @unique @db.VarChar(255)
+  password   String   @db.VarChar(255)
+  created_at DateTime @default(now())
+  created_by String?  @db.Uuid
+  updated_at DateTime @updatedAt
+  updated_by String?  @db.Uuid
 
-  
   // Relations
-  created       user?      @relation("CreatedBy", fields: [created_by], references: [user_id])
-  updated       user?      @relation("UpdatedBy", fields: [updated_by], references: [user_id])
-  roles         role?      @relation(fields: [role], references: [name])
-  projects      project?   @relation(fields: [project_id], references: [project_id])
+  created  user?    @relation("CreatedBy", fields: [created_by], references: [user_id])
+  updated  user?    @relation("UpdatedBy", fields: [updated_by], references: [user_id])
+  roles    role?    @relation(fields: [role], references: [name])
+  projects project? @relation(fields: [project_id], references: [project_id])
 
-  createdUsers  user[]     @relation("CreatedBy")
-  updatedUsers  user[]     @relation("UpdatedBy")
+  createdUsers user[] @relation("CreatedBy")
+  updatedUsers user[] @relation("UpdatedBy")
 
-  
-  createdProducts  product[]     @relation("ProductCreatedBy")
-  updatedProducts  product[]     @relation("ProductUpdatedBy")
+  createdProducts product[] @relation("ProductCreatedBy")
+  updatedProducts product[] @relation("ProductUpdatedBy")
 
-  createdProjects  project[]     @relation("ProjectCreatedBy")
-  updatedProjects  project[]     @relation("ProjectUpdatedBy")
+  createdProjects project[] @relation("ProjectCreatedBy")
+  updatedProjects project[] @relation("ProjectUpdatedBy")
 
-  createdTasks     task[]        @relation("TaskCreatedBy")
-  updatedTasks     task[]        @relation("TaskUpdatedBy")
+  createdTasks task[] @relation("TaskCreatedBy")
+  updatedTasks task[] @relation("TaskUpdatedBy")
 
-  createdPlans     plan[]        @relation("PlanCreatedBy")
-  updatedPlans     plan[]        @relation("PlanUpdatedBy")
+  createdPlans plan[] @relation("PlanCreatedBy")
+  updatedPlans plan[] @relation("PlanUpdatedBy")
 
-  createdResources resource[]    @relation("ResourceCreatedBy")
-  updatedResources resource[]    @relation("ResourceUpdatedBy")
+  createdResources resource[] @relation("ResourceCreatedBy")
+  updatedResources resource[] @relation("ResourceUpdatedBy")
 }
 
 // Permissions Model
 model role {
-  role_id   String   @id @default(uuid()) @db.Uuid
-  name      String   @db.VarChar(255) @unique
+  role_id String @id @default(uuid()) @db.Uuid
+  name    String @unique @db.VarChar(255)
 
-  users     user[]
+  users user[]
 }
 
 // Task Model
 model task {
-  task_id       String     @id @default(uuid()) @db.Uuid
-  project_id    String?    @db.Uuid
-  task_name     String     @db.VarChar(255)
-  description   String?
-  budget        Decimal    @db.Decimal(15, 2)
-  start_date    String
-  end_date      String?
-  status        String     
-  created_at    DateTime   @default(now())
-  created_by    String?    @db.Uuid
-  updated_at    DateTime?  @updatedAt
-  updated_by    String?    @db.Uuid
+  task_id     String    @id @default(uuid()) @db.Uuid
+  project_id  String?   @db.Uuid
+  task_name   String    @db.VarChar(255)
+  description String?
+  budget      Decimal   @db.Decimal(15, 2)
+  start_date  String
+  end_date    String?
+  status      String
+  created_at  DateTime  @default(now())
+  created_by  String?   @db.Uuid
+  updated_at  DateTime? @updatedAt
+  updated_by  String?   @db.Uuid
 
   // Relations
-  created       user?      @relation("TaskCreatedBy", fields: [created_by], references: [user_id])
-  updated       user?      @relation("TaskUpdatedBy", fields: [updated_by], references: [user_id])
-  projects      project?   @relation(fields: [project_id], references: [project_id])
-  resources     resource[]
+  created      user?             @relation("TaskCreatedBy", fields: [created_by], references: [user_id])
+  updated      user?             @relation("TaskUpdatedBy", fields: [updated_by], references: [user_id])
+  projects     project?          @relation(fields: [project_id], references: [project_id])
+  resources    resource[]
   dependencies task_dependency[]
-  subtasks       subtask[]
+  subtasks     subtask[]
 }
+
 model subtask {
-  subtask_id   String     @id @default(uuid()) @db.Uuid
-  task_id    String?    @db.Uuid
-  parent_task_id String?  @db.Uuid
-  created_at    DateTime   @default(now())
-  created_by    String?    @db.Uuid
+  subtask_id     String   @id @default(uuid()) @db.Uuid
+  task_id        String?  @db.Uuid
+  subtask_name   String   @db.VarChar(255)
+  description    String?
+  budget         Decimal  @db.Decimal(15, 2)
+  start_date     String
+  end_date       String?
+  status         String
+  created_at     DateTime @default(now())
+  created_by     String?  @db.Uuid
+  updated_at     DateTime? @updatedAt
+  updated_by     String?  @db.Uuid
 
   // Relations
-  task          task?      @relation(fields: [task_id], references: [task_id])
+  task task? @relation(fields: [task_id], references: [task_id])
 }
 
 model task_dependency {
-  dependency_id String     @id @default(uuid()) @db.Uuid
-  task_id    String?    @db.Uuid
+  dependency_id      String   @id @default(uuid()) @db.Uuid
+  task_id            String?  @db.Uuid
   dependency_task_id String?  @db.Uuid
-  created_at    DateTime   @default(now())
-  created_by    String?    @db.Uuid
+  created_at         DateTime @default(now())
+  created_by         String?  @db.Uuid
 
   // Relations
-  task          task?      @relation(fields: [task_id], references: [task_id])
+  task task? @relation(fields: [task_id], references: [task_id])
 }
-
 
 // Plan Model
 model plan {
-  plan_id       String     @id @default(uuid()) @db.Uuid
+  plan_id       String    @id @default(uuid()) @db.Uuid
   description   String?
   progress_task Int
-  created_at    DateTime   @default(now())
-  created_by    String?    @db.Uuid
-  updated_at    DateTime?  @updatedAt
-  updated_by    String?    @db.Uuid
+  created_at    DateTime  @default(now())
+  created_by    String?   @db.Uuid
+  updated_at    DateTime? @updatedAt
+  updated_by    String?   @db.Uuid
 
   // Relations
-  created       user?      @relation("PlanCreatedBy", fields: [created_by], references: [user_id])
-  updated       user?      @relation("PlanUpdatedBy", fields: [updated_by], references: [user_id])
+  created user? @relation("PlanCreatedBy", fields: [created_by], references: [user_id])
+  updated user? @relation("PlanUpdatedBy", fields: [updated_by], references: [user_id])
 }
 
 // Resource Model
 model resource {
-  resource_id   String     @id @default(uuid()) @db.Uuid
-  task_id    String?  @db.Uuid
-  cost          Decimal    @default(0.00) @db.Decimal(15, 2)
-  total         Decimal    @default(0.00) @db.Decimal(15, 2) // เอาเก็บค่าที่ * เสร็จแล้ว
-  resource_name String     @db.VarChar(255)
-  resource_type String     @db.VarChar(255)
-  quantity      Int        @default(0) //เอาไว้ * กับ cost
-  created_at    DateTime   @default(now())
-  created_by    String?    @db.Uuid
-  updated_at    DateTime?  @updatedAt
-  updated_by    String?    @db.Uuid
+  resource_id   String    @id @default(uuid()) @db.Uuid
+  task_id       String?   @db.Uuid
+  cost          Decimal   @default(0.00) @db.Decimal(15, 2)
+  total         Decimal   @default(0.00) @db.Decimal(15, 2) // เอาเก็บค่าที่ * เสร็จแล้ว
+  resource_name String    @db.VarChar(255)
+  resource_type String    @db.VarChar(255)
+  quantity      Int       @default(0) //เอาไว้ * กับ cost
+  created_at    DateTime  @default(now())
+  created_by    String?   @db.Uuid
+  updated_at    DateTime? @updatedAt
+  updated_by    String?   @db.Uuid
 
   // Relations
-  created       user?      @relation("ResourceCreatedBy", fields: [created_by], references: [user_id])
-  updated       user?      @relation("ResourceUpdatedBy", fields: [updated_by], references: [user_id])
+  created user? @relation("ResourceCreatedBy", fields: [created_by], references: [user_id])
+  updated user? @relation("ResourceUpdatedBy", fields: [updated_by], references: [user_id])
   // projects      project?   @relation(fields: [project_id], references: [project_id])
-  tasks      task?   @relation(fields: [task_id], references: [task_id])
+  tasks   task? @relation(fields: [task_id], references: [task_id])
 }
