@@ -28,9 +28,11 @@ const NavbarMain = () => {
                   onClick={async () => {
                     try {
                       await logoutUser();
+                      alert('Logout successful!'); // Alert notification
                       navigate('/'); // Redirect to /login after logout
                     } catch (err) {
                       console.error('Logout failed', err);
+                      alert('Logout failed!'); // Alert notification in case of error
                       navigate('/'); // Redirect to /login in case of error
                     }
                   }}
