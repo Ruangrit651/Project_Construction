@@ -36,7 +36,7 @@ export const subtaskRouter = (() => {
     });
 
   // DELETE SubTask
-  router.delete("/delete",
+  router.delete("/delete/:subtask_id",
         authenticateJWT,
         validateRequest(DeleteSubTaskSchema), async (req: Request, res: Response) => {
         const { subtask_id } = req.params;
