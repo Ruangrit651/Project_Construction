@@ -28,6 +28,12 @@ export const CREATE_TASK = "/v1/task/create";
 export const UPDATE_TASK = "/v1/task/update";
 export const DELETE_TASK = "/v1/task/delete";
 
+//subtask
+export const GET_SUBTASK_ALL = "/v1/subtask/get";
+export const CREATE_SUBTASK = "/v1/subtask/create";
+export const UPDATE_SUBTASK = "/v1/subtask/update";
+export const DELETE_SUBTASK = "/v1/subtask/delete";
+
 //resource
 export const GET_RESOURCE_ALL = "/v1/resource/get"
 export const CREATE_RESOURCE = "/v1/resource/create"
