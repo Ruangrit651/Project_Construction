@@ -14,6 +14,18 @@ export default function TaskPage() {
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [years, setYears] = useState<number[]>([]);
 
+    // Helper function to format date as dd/mm/yy
+    const formatDate = (dateString: string | undefined) => {
+        if (!dateString) return "-";
+        
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear().toString().slice(-2); // Get last 2 digits
+        
+        return `${day}/${month}/${year}`;
+    };
+
     const fetchTasks = async () => {
         setIsLoading(true);
         try {
@@ -22,8 +34,7 @@ export default function TaskPage() {
                 const taskData = response.responseObject;
                 setTasks(taskData);
                 
-                // Extract all unique years from tasks
-                const taskYears = taskData.reduce<number[]>((acc, task) => {
+                const taskYears: number[] = taskData.reduce((acc: number[], task) => {
                     if (task.start_date) {
                         const year = new Date(task.start_date).getFullYear();
                         if (!acc.includes(year)) acc.push(year);
@@ -188,8 +199,8 @@ export default function TaskPage() {
                                         <>
                                             <Table.Row key={task.task_id} className="border-b border-gray-200">
                                                 <Table.Cell>{task.task_name}</Table.Cell>
-                                                <Table.Cell>{task.start_date || "-"}</Table.Cell>
-                                                <Table.Cell>{task.end_date || "-"}</Table.Cell>
+                                                <Table.Cell>{formatDate(task.start_date)}</Table.Cell>
+                                                <Table.Cell>{formatDate(task.end_date)}</Table.Cell>
                                                 <Table.Cell>{task.status}</Table.Cell>
                                                 <Table.Cell>
                                                     <div className="grid grid-cols-12 gap-1 h-8">
@@ -216,8 +227,8 @@ export default function TaskPage() {
                                                     return (
                                                         <Table.Row key={subtask.subtask_id} className="bg-gray-50">
                                                             <Table.Cell className="pl-8">{subtask.subtask_name}</Table.Cell>
-                                                            <Table.Cell>{subtask.start_date || "-"}</Table.Cell>
-                                                            <Table.Cell>{subtask.end_date || "-"}</Table.Cell>
+                                                            <Table.Cell>{formatDate(subtask.start_date)}</Table.Cell>
+                                                            <Table.Cell>{formatDate(subtask.end_date)}</Table.Cell>
                                                             <Table.Cell>{subtask.status}</Table.Cell>
                                                             <Table.Cell>
                                                                 <div className="grid grid-cols-12 gap-1 h-6">

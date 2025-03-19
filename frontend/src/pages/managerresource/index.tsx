@@ -58,7 +58,6 @@ export default function ResourcePage() {
                             <Table.ColumnHeaderCell>Cost</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Quantity</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Total</Table.ColumnHeaderCell>
-                            <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
                         </Table.Row>
                     </Table.Header>
                     <Table.Body>
@@ -84,23 +83,6 @@ export default function ResourcePage() {
                                                 <Table.Cell className="align-left">{new Intl.NumberFormat("en-US").format(resource.cost)}</Table.Cell>
                                                 <Table.Cell className="align-center">{new Intl.NumberFormat("en-US").format(resource.quantity)}</Table.Cell>
                                                 <Table.Cell className="align-left">{new Intl.NumberFormat("en-US").format(resource.total)}</Table.Cell>
-                                                {/* <Table.Cell colSpan={2}>
-                                                    <Flex gap="2" align="center">
-                                                        <div className="w-[72px] h-[36px] flex items-center justify-center">
-                                                            {index === 0 && (
-                                                            <DialogAddResource getResourceData={getResourceData} task_id={task_id} />
-                                                            )}
-                                                        </div>
-
-                                                        <DialogEditResource getResourceData={getResourceData} resource={resource} />
-                                                        <AlertDialogDeleteResource
-                                                            getResourceData={getResourceData}
-                                                            resource_id={resource.resource_id}
-                                                            task_name={resource.tasks.task_name}
-                                                            resource_name={resource.resource_name}
-                                                        />
-                                                    </Flex>
-                                                </Table.Cell> */}
                                             </Table.Row>
                                         ))
                                     ) : (
