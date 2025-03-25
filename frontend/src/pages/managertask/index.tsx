@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Text, Flex, Spinner, Button, Table } from "@radix-ui/themes";
 import { getTask } from "@/services/task.service";
 import { TypeTask } from "@/types/response/response.task";
@@ -6,6 +6,9 @@ import { getSubtask } from "@/services/subtask.service";
 import { TypeSubTask } from "@/types/response/response.subtask";
 import DialogAddTask from "./components/DialogAddTask";
 import DialogAddSubTask from "./components/DialogAddSubTask";
+import { ChevronDownIcon, ChevronRightIcon } from "@radix-ui/react-icons";
+import DialogEditTask from "./components/DialogEditTask";
+import AlertDialogDeleteTask from "./components/AlertDialogDeleteTask";
 
 export default function TaskPage() {
     const [tasks, setTasks] = useState<TypeTask[]>([]);
@@ -13,6 +16,15 @@ export default function TaskPage() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [years, setYears] = useState<number[]>([]);
+    const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
+
+    // Helper function to toggle task expansion
+    const toggleTaskExpansion = (taskId: string) => {
+        setExpandedTasks(prev => ({
+            ...prev,
+            [taskId]: !prev[taskId]
+        }));
+    };
 
     // Helper function to format date as dd/mm/yy
     const formatDate = (dateString: string | undefined) => {
@@ -139,7 +151,6 @@ export default function TaskPage() {
                 <Text size="4" weight="bold">Task Management</Text>
                 <Flex gap="2">
                     <DialogAddTask getTaskData={fetchTasks} />
-                    <DialogAddSubTask getSubtaskData={fetchSubtasks} />
                 </Flex>
             </Flex>
             
@@ -168,22 +179,17 @@ export default function TaskPage() {
                     <Table.Root variant="surface" className="min-w-[1200px]">
                         <Table.Header>
                             <Table.Row>
-                                <Table.ColumnHeaderCell className="w-[200px]">Task Name</Table.ColumnHeaderCell>
+                                <Table.ColumnHeaderCell className="w-[180px]">Task Name</Table.ColumnHeaderCell>
                                 <Table.ColumnHeaderCell className="w-[100px]">Start Date</Table.ColumnHeaderCell>
                                 <Table.ColumnHeaderCell className="w-[100px]">End Date</Table.ColumnHeaderCell>
-                                <Table.ColumnHeaderCell className="w-[100px]">Status</Table.ColumnHeaderCell>
-                                <Table.ColumnHeaderCell>
-                                    <div className="flex-1">
-                                        <Flex className="text-lg font-semibold mb-2">Timeline - {selectedYear}</Flex>
-                                        <Flex className="grid grid-cols-12 gap-1">
-                                            {Array.from({ length: 12 }).map((_, index) => (
-                                                <Text key={index} className="text-center text-xs">
-                                                    {new Date(selectedYear, index).toLocaleString("default", { month: "short" })}
-                                                </Text>
-                                            ))}
-                                        </Flex>
-                                    </div>
-                                </Table.ColumnHeaderCell>
+                                <Table.ColumnHeaderCell className="w-[100px] border-r-2 border-gray-300">Status</Table.ColumnHeaderCell>
+                                {Array.from({ length: 12 }).map((_, index) => (
+                                    <Table.ColumnHeaderCell key={index} className="sticky top-0">
+                                        <Text className="text-center text-xs">
+                                            {new Date(selectedYear, index).toLocaleString("default", { month: "short" })}
+                                        </Text>
+                                    </Table.ColumnHeaderCell>
+                                ))}
                             </Table.Row>
                         </Table.Header>
                         <Table.Body>
@@ -194,26 +200,73 @@ export default function TaskPage() {
                                 })
                                 .map((task) => {
                                     const { start: startCol, span } = calculateTaskPosition(task.start_date, task.end_date, selectedYear);
+                                    const taskSubtasks = subtasks.filter(subtask => subtask.task_id === task.task_id);
+                                    const hasSubtasks = taskSubtasks.length > 0;
+                                    const isExpanded = expandedTasks[task.task_id] || false;
                                     
                                     return (
-                                        <>
-                                            <Table.Row key={task.task_id} className="border-b border-gray-200">
-                                                <Table.Cell>{task.task_name}</Table.Cell>
+                                        <React.Fragment key={task.task_id}>
+                                            <Table.Row className="border-b border-gray-200">
+                                                <Table.Cell>
+                                                    <Flex align="center" gap="2">
+                                                        {hasSubtasks && (
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="1" 
+                                                                onClick={() => toggleTaskExpansion(task.task_id)}
+                                                                className="p-0 cursor-pointer"
+                                                            >
+                                                                {isExpanded ? 
+                                                                    <ChevronDownIcon className="w-4 h-4" /> : 
+                                                                    <ChevronRightIcon className="w-4 h-4" />}
+                                                            </Button>
+                                                        )}
+                                                        <DialogEditTask 
+                                                            getTaskData={fetchTasks} 
+                                                            taskId={task.task_id} 
+                                                            trigger={<Text className="cursor-pointer">{task.task_name}</Text>}
+                                                        />
+                                                        <DialogAddSubTask 
+                                                            getSubtaskData={fetchSubtasks} 
+                                                            taskId={task.task_id} 
+                                                            taskName={task.task_name} 
+                                                        />
+                                                    </Flex>
+                                                </Table.Cell>
                                                 <Table.Cell>{formatDate(task.start_date)}</Table.Cell>
                                                 <Table.Cell>{formatDate(task.end_date)}</Table.Cell>
-                                                <Table.Cell>{task.status}</Table.Cell>
-                                                <Table.Cell>
-                                                    <div className="grid grid-cols-12 gap-1 h-8">
-                                                        <div 
-                                                            className={`col-start-${startCol} col-span-${span} h-6 rounded-md ${getStatusColor(task.status)}`}
-                                                            style={{ gridColumn: `${startCol} / span ${span}` }}
-                                                        ></div>
-                                                    </div>
-                                                </Table.Cell>
+                                                <Table.Cell className="border-r-2 border-gray-300" >{task.status}</Table.Cell>
+                                                    {Array.from({ length: 12 }).map((_, monthIndex) => {
+                                                                const isStart = monthIndex + 1 === startCol;
+                                                                const showBar = monthIndex + 1 >= startCol && monthIndex + 1 < startCol + span;
+                            
+                                                                return (
+                                                                <Table.Cell
+                                                                    key={monthIndex}
+                                                                    className="relative group"
+                                                                >
+                                                                    {isStart && (
+                                                                    <div
+                                                                        className="absolute h-4 top-1/2 transform -translate-y-1/2 rounded bg-blue-500 group-hover:bg-blue-600 transition-all duration-300"
+                                                                        style={{
+                                                                        left: 0,
+                                                                        width: `calc(${span} * 100%)`
+                                                                        }}
+                                                                    >
+                                                                        {/* Hover Tooltip */}
+                                                                        <div className="hidden group-hover:block absolute top-[-80px] left-1/2 transform -translate-x-1/2 px-4 py-2 text-xs bg-gray-700 text-white rounded shadow w-64">
+                                                                            {task.task_name}<br />
+                                                                            {formatDate(task.start_date)} - {formatDate(task.end_date)}<br />
+                                                                            Status: {task.status}
+                                                                            </div>
+                                                                    </div>
+                                                                    )}
+                                                                </Table.Cell>
+                                                                );
+                                                            })}
                                             </Table.Row>
                                             
-                                            {subtasks
-                                                .filter(subtask => subtask.task_id === task.task_id)
+                                            {isExpanded && taskSubtasks
                                                 .map(subtask => {
                                                     const { start: subStartCol, span: subSpan } = calculateTaskPosition(
                                                         subtask.start_date, 
@@ -229,19 +282,38 @@ export default function TaskPage() {
                                                             <Table.Cell className="pl-8">{subtask.subtask_name}</Table.Cell>
                                                             <Table.Cell>{formatDate(subtask.start_date)}</Table.Cell>
                                                             <Table.Cell>{formatDate(subtask.end_date)}</Table.Cell>
-                                                            <Table.Cell>{subtask.status}</Table.Cell>
-                                                            <Table.Cell>
-                                                                <div className="grid grid-cols-12 gap-1 h-6">
-                                                                    <div 
-                                                                        className={`col-start-${subStartCol} col-span-${subSpan} h-4 rounded-md ${getSubtaskStatusColor(subtask.status)}`}
-                                                                        style={{ gridColumn: `${subStartCol} / span ${subSpan}` }}
-                                                                    ></div>
-                                                                </div>
-                                                            </Table.Cell>
+                                                            <Table.Cell className="border-r-2 border-gray-300" >{subtask.status}</Table.Cell>
+                                                                {Array.from({ length: 12 }).map((_, monthIndex) => {
+                                                                const isStart = monthIndex + 1 === subStartCol;
+                        
+                                                                return (
+                                                                <Table.Cell
+                                                                    key={monthIndex}
+                                                                    className="relative group"
+                                                                >
+                                                                    {isStart && (
+                                                                    <div
+                                                                        className="absolute h-3 top-1/2 transform -translate-y-1/2 rounded bg-green-500 group-hover:bg-green-600 transition-all duration-300"
+                                                                        style={{
+                                                                        left: 0,
+                                                                        width: `calc(${subSpan} * 100%)`
+                                                                        }}
+                                                                    >
+                                                                        {/* Hover Tooltip */}
+                                                                        <div className="hidden group-hover:block absolute top-[-80px] left-1/2 transform -translate-x-1/2 px-4 py-2 text-xs bg-gray-700 text-white rounded shadow w-64">
+                                                                        {subtask.subtask_name}<br />
+                                                                        {formatDate(subtask.start_date)} - {formatDate(subtask.end_date)}<br />
+                                                                        Status: {subtask.status}
+                                                                        </div>
+                                                                    </div>
+                                                                    )}
+                                                                </Table.Cell>
+                                                                );
+                                                            })}
                                                         </Table.Row>
                                                     );
                                                 })}
-                                        </>
+                                        </React.Fragment>
                                     );
                                 })}
                         </Table.Body>

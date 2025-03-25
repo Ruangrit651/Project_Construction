@@ -1,48 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, Button, Flex, TextField, Text, Select } from "@radix-ui/themes";
 import { postSubtask } from "@/services/subtask.service";
-import { getTask } from "@/services/task.service";
 
 interface DialogAddSubTaskProps {
     getSubtaskData: () => void;
+    taskId: string;
+    taskName: string;
 }
 
-const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData }) => {
-    const [taskId, setTaskId] = useState<string>("");
+const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, taskId, taskName }) => {
     const [subtaskName, setSubtaskName] = useState("");
     const [description, setDescription] = useState("");
     const [budget, setBudget] = useState(0);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [status, setStatus] = useState("pending");
-    const [tasks, setTasks] = useState<{ task_id: string; task_name: string }[]>([]);
     const [errorMessage, setErrorMessage] = useState("");
-
-    useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                const response = await getTask();
-                if (response.success) {
-                    setTasks(response.responseObject);
-                } else {
-                    console.error("Failed to fetch tasks:", response.message);
-                }
-            } catch (error) {
-                console.error("Error fetching tasks:", error);
-            }
-        };
-        fetchTasks();
-    }, []);
+    const [open, setOpen] = useState(false);
 
     const handleAddSubtask = async (e: React.MouseEvent) => {
         e.preventDefault();
         setErrorMessage("");
-
-        // Validate inputs
-        if (!taskId) {
-            setErrorMessage("Please select a task.");
-            return;
-        }
 
         if (!subtaskName || !description || budget <= 0 || !startDate || !endDate) {
             setErrorMessage("Please fill out all required fields properly.");
@@ -62,7 +40,6 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData }) =
 
             if (response.success) {
                 // Reset form
-                setTaskId("");
                 setSubtaskName("");
                 setDescription("");
                 setBudget(0);
@@ -70,8 +47,9 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData }) =
                 setEndDate("");
                 setStatus("pending");
                 
-                // Fetch updated subtask data
+                // Close dialog and fetch updated subtask data
                 getSubtaskData();
+                setOpen(false); // Close dialog after successful save
             } else {
                 setErrorMessage(response.message || "Failed to add subtask");
             }
@@ -81,43 +59,22 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData }) =
         }
     };
 
-    // Find selected task name
-    const selectedTaskName = taskId 
-        ? tasks.find(task => task.task_id === taskId)?.task_name || "Select Task" 
-        : "Select Task";
-
     return (
-        <Dialog.Root>
+        <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger asChild>
-                <Button variant="soft" className="cursor-pointer">+ Add Subtask</Button>
+                <Button size="1" variant="ghost" className="cursor-pointer">
+                    <Text size="1">+ Add</Text>
+                </Button>
             </Dialog.Trigger>
             <Dialog.Content style={{ maxWidth: 450 }}>
-                <Dialog.Title>Add Subtask</Dialog.Title>
+                <Dialog.Title>Add Subtask for: {taskName}</Dialog.Title>
                 <form onSubmit={(e) => e.preventDefault()}>
                     <Flex direction="column" gap="2">
                         {errorMessage && (
                             <Text color="red" size="2">{errorMessage}</Text>
                         )}
                         
-                        <label>
-                            <Text as="div" size="2" mb="1" weight="bold">Task *</Text>
-                            <Select.Root value={taskId} onValueChange={setTaskId}>
-                                <Select.Trigger placeholder="Select Task" />
-                                <Select.Content position="popper">
-                                    {tasks.length > 0 ? (
-                                        tasks.map(task => (
-                                            <Select.Item key={task.task_id} value={task.task_id}>
-                                                {task.task_name}
-                                            </Select.Item>
-                                        ))
-                                    ) : (
-                                        <Select.Item value="no-tasks" disabled>
-                                            No tasks available
-                                        </Select.Item>
-                                    )}
-                                </Select.Content>
-                            </Select.Root>
-                        </label>
+                        {/* Task selection removed as it's now pre-selected */}
                         
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">Subtask Name *</Text>
@@ -128,6 +85,7 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData }) =
                             />
                         </label>
                         
+                        {/* Rest of the form fields remain unchanged */}
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">Description *</Text>
                             <TextField.Root 
@@ -179,15 +137,10 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData }) =
                     </Flex>
                     
                     <Flex gap="3" mt="4" justify="end">
-                        <Dialog.Close>
-                            <Button variant="soft" color="gray">
-                                Cancel
-                            </Button>
-                        </Dialog.Close>
-                        <Button 
-                            type="submit" 
-                            onClick={handleAddSubtask}
-                        >
+                        <Button variant="soft" color="gray" onClick={() => setOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" onClick={handleAddSubtask}>
                             Save
                         </Button>
                     </Flex>
