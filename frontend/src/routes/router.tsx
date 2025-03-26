@@ -4,6 +4,9 @@ import Planning from "@/pages/managertask";
 import Resource from "@/pages/managerresource";
 import Report from "@/pages/managerreport";
 
+//CEO
+import Dashboardceo from "@/pages/dashBoard";
+
 // Admin
 import AdminPage from "@/pages/admin";
 import AdminProjectPage from "@/pages/project";
@@ -30,6 +33,7 @@ import CategoriesPage from "@/pages/category";
 
 // login
 import Login from "@/pages/login";
+import MainLayoutCEO from "@/components/layouts/layout.ceo";
 
 
 const router = createBrowserRouter([  
@@ -60,26 +64,39 @@ const router = createBrowserRouter([
 
   {
     path: "/",
-    element: <MainLayoutManager />,
+    element: <MainLayoutCEO />,
     children: [
       {
-        path: "/ManagerDash",
-        element: <Dashboard />,
+        path: "/CEODash",
+        element: <Dashboardceo />,
       },
-      {
-        path: "/ManagerPlan",
-        element: <Planning />,
-      },
-      {
-        path: "/ManagerResource",
-        element: <Resource />,
-      },
-      {
-        path: "/ManagerReport",
-        element: <Report />,
-      },
+      
     ],
 },
+
+{
+  path: "/",
+  element: <MainLayoutManager />,
+  children: [
+    {
+      path: "/ManagerDash",
+      element: <Dashboard />,
+    },
+    {
+      path: "/ManagerPlan",
+      element: <Planning />,
+    },
+    {
+      path: "/ManagerResource",
+      element: <Resource />,
+    },
+    {
+      path: "/ManagerReport",
+      element: <Report />,
+    },
+  ],
+},
+
 {
   path: "/",
   element: <MainLayoutEmployee />,

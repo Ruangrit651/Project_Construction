@@ -1,13 +1,23 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState , useEffect} from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import * as Label from '@radix-ui/react-label';
 import { loginUser } from '@/services/login.service';
+import * as Toast from '@radix-ui/react-toast';
+
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // State สำหรับ Toast Notification
+  const timerRef = React.useRef(0);
+
+  const [openSuccess, setOpenSuccess] = useState(false);
+  const [openError, setOpenError] = useState(false);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +35,15 @@ const Login: React.FC = () => {
       setError('An error occurred. Please try again.');
     }
   };
+
+  useEffect(() => {
+    if (location.state?.logoutSuccess) {
+      setOpenSuccess(true);
+      return () => clearTimeout(timerRef.current);
+    } else if (location.state?.logoutFailed) {
+      setOpenError(true);
+    }
+  }, [location.state]);
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">
@@ -66,6 +85,27 @@ const Login: React.FC = () => {
           Login
         </button>
       </form>
+
+      {/* Toast Notification */}
+      {/* Toast เอาไปไว้ในหน้้า login พร้อม ส่ง props ไปที่หน้า Login ด้วย */}
+      <Toast.Provider swipeDirection="right">
+        <Toast.Root
+          className="grid grid-cols-[auto_max-content] items-center gap-x-[15px] rounded-md bg-white p-[15px] shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] [grid-template-areas:_'title_action'] data-[swipe=cancel]:translate-x-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[state=closed]:animate-hide data-[state=open]:animate-slideIn data-[swipe=end]:animate-swipeOut data-[swipe=cancel]:transition-[transform_200ms_ease-out] "
+          open={openSuccess}
+          onOpenChange = {setOpenSuccess}
+        >
+          <Toast.Title className="mb-[5px] text-[15px] font-medium text-slate12 [grid-area:_title]">
+            Logout successful 🎉
+          </Toast.Title>
+          <Toast.Action
+            className="[grid-area:_action]"
+            asChild
+            altText="Goto schedule to undo"
+          >
+          </Toast.Action>
+        </Toast.Root>
+        <Toast.Viewport className="fixed bottom-0 right-0 z-[2147483647] m-0 flex w-[250px] max-w-[100vw] list-none flex-col gap-2.5 p-[var(--viewport-padding)] outline-none [--viewport-padding:_25px]" />
+      </Toast.Provider>
     </div>
   );
 };
