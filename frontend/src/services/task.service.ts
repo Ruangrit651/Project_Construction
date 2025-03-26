@@ -33,4 +33,5 @@ export const deleteTask = async (data: PayloadDeleteTask) => {
         DELETE_TASK + "/" + data.task_id
   );
   return response;
+
 }

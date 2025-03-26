@@ -40,11 +40,11 @@ export const taskRouter = (() => {
     });
 
     // DELETE a task
-    router.delete("/delete", 
+    router.delete("/delete/:task_id", 
         authenticateJWT,
         rolegrop5,
         validateRequest(DeleteTaskSchema), async (req: Request, res: Response) => {
-        const { task_id } = req.params; // Extract task_id from the body
+        const { task_id } = req.params; // Extract task_id from the URL params
         const ServiceResponse = await taskService.delete(task_id);
         handleServiceResponse(ServiceResponse, res);
     });
