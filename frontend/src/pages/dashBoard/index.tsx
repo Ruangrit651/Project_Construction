@@ -428,11 +428,11 @@ const Dashboard = () => {
           {/* Charts Section */}
           <div className="grid bg-white shadow-lg rounded-lg p-6 border border-gray-200">
             <div className="grid gap-2 ">
-              <div className="bg-white shadow-md rounded-lg ">
+              <div className="bg-white shadow-md rounded-lg border border-gray-200 ">
                 <div className="text-sm font-semibold p-1 mt-2  ">ProjectCompletionRate</div>
                 <ProjectCompletionRate />
               </div>
-              <div className="bg-white shadow-md rounded-lg ">
+              <div className="bg-white shadow-md rounded-lg border border-gray-200 ">
                 <div className="text-sm font-semibold p-1 mt-2  ">UtilizedDuration</div>
                 <UtilizedDuration />
               </div>

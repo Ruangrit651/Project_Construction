@@ -67,7 +67,7 @@ const router = createBrowserRouter([
     element: <MainLayoutCEO />,
     children: [
       {
-        path: "/CEODash",
+        path: "/CEODashBoard",
         element: <Dashboardceo />,
       },
       
