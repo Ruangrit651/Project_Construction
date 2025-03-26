@@ -1,6 +1,5 @@
 import prisma from "@src/db";
-import { TypePayloadDashboard } from "@modules/dashboad/dashboardModel";
-import { TypePayloadProject } from "@modules/project/projectModel";
+import { TypePayloadDashboard } from "@modules/dashboard/dashboardModel";
 
 export const DashboardRepository = {
     // ดึงข้อมูล Dashboard ทั้งหมด
