@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, Button, Flex, TextField, Text, Select } from "@radix-ui/themes";
 import { patchTask, getTask } from "@/services/task.service";
-import AlertDialogDeleteTask from "./AlertDialogDeleteTask";
+import AlertDialogDeleteTask from "./alertDialogDeleteTask";
 
 interface DialogEditTaskProps {
     getTaskData: () => void;
@@ -45,33 +45,32 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
     }, [taskId]);
 
     const handleEditTask = async () => {
-      if (!taskName || !description || !budget || !startDate || !endDate) {
-          alert("Please fill out all required fields.");
-          return;
-      }
-  
-      try {
-          // Update this line to match the correct function signature
-          const response = await patchTask({
-              id: taskId,
-              task_name: taskName,
-              description,
-              budget,
-              start_date: startDate,
-              end_date: endDate,
-              status: status,
-          });
-  
-          if (response.success) {
-              getTaskData();
-          } else {
-              alert(`Error: ${response.message}`);
-          }
-      } catch (error) {
-          console.error("Failed to update task:", error);
-          alert("An error occurred while updating the task.");
-      }
-  };
+        if (!taskName || !description || !budget || !startDate || !endDate) {
+            alert("Please fill out all required fields.");
+            return;
+        }
+    
+        try {
+            const response = await patchTask({
+                task_id: taskId, // Use task_id instead of id
+                task_name: taskName,
+                description,
+                budget,
+                start_date: startDate,
+                end_date: endDate,
+                status,
+            });
+    
+            if (response.success) {
+                getTaskData();
+            } else {
+                alert(`Error: ${response.message}`);
+            }
+        } catch (error) {
+            console.error("Failed to update task:", error);
+            alert("An error occurred while updating the task.");
+        }
+    };
 
     return (
         <Dialog.Root>
