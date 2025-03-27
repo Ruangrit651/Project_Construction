@@ -8,7 +8,7 @@ import DialogAddTask from "./components/DialogAddTask";
 import DialogAddSubTask from "./components/DialogAddSubTask";
 import { ChevronDownIcon, ChevronRightIcon } from "@radix-ui/react-icons";
 import DialogEditTask from "./components/DialogEditTask";
-import AlertDialogDeleteTask from "./components/AlertDialogDeleteTask";
+import DialogEditSubTask from "./components/DialogEditSubTask";
 
 export default function TaskPage() {
     const [tasks, setTasks] = useState<TypeTask[]>([]);
@@ -279,7 +279,13 @@ export default function TaskPage() {
                                                     
                                                     return (
                                                         <Table.Row key={subtask.subtask_id} className="bg-gray-50">
-                                                            <Table.Cell className="pl-8">{subtask.subtask_name}</Table.Cell>
+                                                             <Table.Cell className="pl-8">
+                                                                <DialogEditSubTask 
+                                                                    getSubtaskData={fetchSubtasks} 
+                                                                    subtaskId={subtask.subtask_id} 
+                                                                    trigger={<Text className="cursor-pointer">{subtask.subtask_name}</Text>} 
+                                                                />
+                                                            </Table.Cell>
                                                             <Table.Cell>{formatDate(subtask.start_date)}</Table.Cell>
                                                             <Table.Cell>{formatDate(subtask.end_date)}</Table.Cell>
                                                             <Table.Cell className="border-r-2 border-gray-300" >{subtask.status}</Table.Cell>
