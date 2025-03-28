@@ -24,6 +24,8 @@ export const taskRouter = (() => {
         rolegrop5,
         validateRequest(CreateTaskSchema), async (req: Request, res: Response) => {
         const payload = req.body;
+        payload.created_by = req.user.userId; // Set created_by from the authenticated user
+        payload.updated_by = req.user.userId; // Set updated_by from the authenticated user
         const ServiceResponse = await taskService.create(payload);
         handleServiceResponse(ServiceResponse, res);
     });
@@ -35,6 +37,7 @@ export const taskRouter = (() => {
         validateRequest(UpdateTaskSchema), async (req: Request, res: Response) => {
         const { task_id } = req.body;
         const payload = req.body;
+        payload.updated_by = req.user.userId; // Set updated_by from the authenticated user
         const ServiceResponse = await taskService.update(task_id, payload);
         handleServiceResponse(ServiceResponse, res);
     });

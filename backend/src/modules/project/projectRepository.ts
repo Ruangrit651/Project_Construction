@@ -82,9 +82,12 @@ export const ProjectRepository = {
             start_date: startDate,
             end_date: payload.end_date,
             status: payload.status,
-            project_image: payload.project_image
+            project_image: payload.project_image,
+            created_at: new Date(),
+            created_by: payload.created_by,
+            updated_at: new Date(),
+            updated_by: payload.updated_by
         }
-
         return await prisma.project.create({
             data: setPayload
         });

@@ -9,10 +9,10 @@ export type TypePayloadTask = {
   start_date?: string;
   end_date?: string;
   status: string;
-  // created_at?: string;
-  // created_by?: string;
-  // updated_at?: string;
-  // updated_by?: string;
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
 };
 
 // Schema สำหรับการสร้าง Task ใหม่
@@ -25,10 +25,10 @@ export const CreateTaskSchema = z.object({
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     status: z.string().optional(),
-    // created_at: z.string().optional(),
-    // created_by: z.string().optional(),
-    // updated_at: z.string().optional(),
-    // updated_by: z.string().optional(),
+    created_at: z.string().optional(),
+    created_by: z.string().optional(),
+    updated_at: z.string().optional(),
+    updated_by: z.string().optional(),
   }),
 });
 
@@ -43,8 +43,8 @@ export const UpdateTaskSchema = z.object({
     start_date: z.string().optional(),
     end_date: z.string().optional(),
     status: z.string().optional(),
-    //updated_at: z.string().optional(),
-    //updated_by: z.string().optional(), // ต้องมี updated_by เพื่อบันทึกว่าใครแก้ไข
+    updated_at: z.string().optional(),
+    updated_by: z.string().optional(), // ต้องมี updated_by เพื่อบันทึกว่าใครแก้ไข
   }),
 });
 

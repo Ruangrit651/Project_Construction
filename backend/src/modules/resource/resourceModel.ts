@@ -8,6 +8,10 @@ export type TypePayloadResource = {
     cost: number;
     total: number;
     quantity: number;
+    created_at?:string;
+    created_by?: string;
+    updated_at?:string;
+    updated_by?: string;
 };
 
 // Schema สำหรับการสร้างทรัพยากรใหม่
@@ -19,6 +23,10 @@ export const CreateResourceSchema = z.object({
         cost: z.number().min(0),
         total: z.number().min(0),
         quantity: z.number().min(0),
+        created_at: z.string().optional(),
+        created_by: z.string().optional(),
+        updated_at: z.string().optional(),
+        updated_by: z.string().optional(),
     }),
 });
 
@@ -32,6 +40,8 @@ export const UpdateResourceSchema = z.object({
         total: z.number().min(0).optional(),
         quantity: z.number().min(0).optional(),
         task_id: z.string().uuid().optional(),
+        updated_at: z.string().optional(),
+        updated_by: z.string().optional(),  // ต้องมี updated_by เพื่อบันทึกว่าใครแก้ไข
     }),
 });
 
