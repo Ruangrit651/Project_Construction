@@ -8,6 +8,7 @@ export type PayloadCreateTask = {
 };
 
 export type PayloadUpdateTask = {
+    task_id: string; 
     task_name: string;
     description?: string;
     budget?: number;

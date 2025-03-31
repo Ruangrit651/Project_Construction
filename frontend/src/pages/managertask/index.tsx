@@ -8,7 +8,11 @@ import DialogAddTask from "./components/DialogAddTask";
 import DialogAddSubTask from "./components/DialogAddSubTask";
 import { ChevronDownIcon, ChevronRightIcon } from "@radix-ui/react-icons";
 import DialogEditTask from "./components/DialogEditTask";
-import DialogEditSubTask from "./components/DialogEditSubTask";
+import DialogEditSubTask from "./components/DialogEditSubtask";
+import TaskRow from "./components/taskRow";
+import SubtaskRow from "./components/subtaskRow";
+import Gatt from "./components/Gatt.css";
+
 
 export default function TaskPage() {
     const [tasks, setTasks] = useState<TypeTask[]>([]);
@@ -193,136 +197,96 @@ export default function TaskPage() {
                             </Table.Row>
                         </Table.Header>
                         <Table.Body>
-                            {tasks
-                                .filter(task => {
-                                    const { start, span } = calculateTaskPosition(task.start_date, task.end_date, selectedYear);
-                                    return start !== 0 && span !== 0;
-                                })
-                                .map((task) => {
-                                    const { start: startCol, span } = calculateTaskPosition(task.start_date, task.end_date, selectedYear);
-                                    const taskSubtasks = subtasks.filter(subtask => subtask.task_id === task.task_id);
-                                    const hasSubtasks = taskSubtasks.length > 0;
-                                    const isExpanded = expandedTasks[task.task_id] || false;
-                                    
-                                    return (
-                                        <React.Fragment key={task.task_id}>
-                                            <Table.Row className="border-b border-gray-200">
-                                                <Table.Cell>
-                                                    <Flex align="center" gap="2">
-                                                        {hasSubtasks && (
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="1" 
-                                                                onClick={() => toggleTaskExpansion(task.task_id)}
-                                                                className="p-0 cursor-pointer"
-                                                            >
-                                                                {isExpanded ? 
-                                                                    <ChevronDownIcon className="w-4 h-4" /> : 
-                                                                    <ChevronRightIcon className="w-4 h-4" />}
-                                                            </Button>
-                                                        )}
-                                                        <DialogEditTask 
-                                                            getTaskData={fetchTasks} 
-                                                            taskId={task.task_id} 
-                                                            trigger={<Text className="cursor-pointer">{task.task_name}</Text>}
-                                                        />
-                                                        <DialogAddSubTask 
-                                                            getSubtaskData={fetchSubtasks} 
-                                                            taskId={task.task_id} 
-                                                            taskName={task.task_name} 
-                                                        />
-                                                    </Flex>
-                                                </Table.Cell>
-                                                <Table.Cell>{formatDate(task.start_date)}</Table.Cell>
-                                                <Table.Cell>{formatDate(task.end_date)}</Table.Cell>
-                                                <Table.Cell className="border-r-2 border-gray-300" >{task.status}</Table.Cell>
-                                                    {Array.from({ length: 12 }).map((_, monthIndex) => {
-                                                                const isStart = monthIndex + 1 === startCol;
-                                                                const showBar = monthIndex + 1 >= startCol && monthIndex + 1 < startCol + span;
-                            
-                                                                return (
-                                                                <Table.Cell
-                                                                    key={monthIndex}
-                                                                    className="relative group"
+                                {tasks
+                                    .filter(task => {
+                                        const { start, span } = calculateTaskPosition(task.start_date, task.end_date, selectedYear);
+                                        return start !== 0 && span !== 0;
+                                    })
+                                    .map((task) => {
+                                        const { start: startCol, span } = calculateTaskPosition(task.start_date, task.end_date, selectedYear);
+                                        const taskSubtasks = subtasks.filter(subtask => subtask.task_id === task.task_id);
+                                        const hasSubtasks = taskSubtasks.length > 0;
+                                        const isExpanded = expandedTasks[task.task_id] || false;
+
+                                        return (
+                                            <React.Fragment key={task.task_id}>
+                                                <Table.Row >
+                                                    <Table.Cell className="hover:bg-gray-100 cursor-pointer">
+                                                        <Flex align="center" gap="2">
+                                                            {hasSubtasks && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="1"
+                                                                    onClick={() => toggleTaskExpansion(task.task_id)}
+                                                                    className="p-0 cursor-pointer"
                                                                 >
-                                                                    {isStart && (
-                                                                    <div
-                                                                        className="absolute h-4 top-1/2 transform -translate-y-1/2 rounded bg-blue-500 group-hover:bg-blue-600 transition-all duration-300"
-                                                                        style={{
-                                                                        left: 0,
-                                                                        width: `calc(${span} * 100%)`
-                                                                        }}
-                                                                    >
-                                                                        {/* Hover Tooltip */}
-                                                                        <div className="hidden group-hover:block absolute top-[-80px] left-1/2 transform -translate-x-1/2 px-4 py-2 text-xs bg-gray-700 text-white rounded shadow w-64">
-                                                                            {task.task_name}<br />
-                                                                            {formatDate(task.start_date)} - {formatDate(task.end_date)}<br />
-                                                                            Status: {task.status}
-                                                                            </div>
-                                                                    </div>
+                                                                    {isExpanded ? (
+                                                                        <ChevronDownIcon className="w-4 h-4" />
+                                                                    ) : (
+                                                                        <ChevronRightIcon className="w-4 h-4" />
                                                                     )}
+                                                                </Button>
+                                                            )}
+                                                            <DialogEditTask
+                                                                getTaskData={fetchTasks}
+                                                                taskId={task.task_id}
+                                                                trigger={<Text className="cursor-pointer hover:text-blue-500">{task.task_name}</Text>}
+                                                            />
+                                                            <DialogAddSubTask
+                                                                getSubtaskData={fetchSubtasks}
+                                                                taskId={task.task_id}
+                                                                taskName={task.task_name}
+                                                            />
+                                                        </Flex>
+                                                    </Table.Cell>
+                                                    <Table.Cell>{formatDate(task.start_date)}</Table.Cell>
+                                                    <Table.Cell>{formatDate(task.end_date)}</Table.Cell>
+                                                    <TaskRow
+                                                        taskName={task.task_name}
+                                                        startDate={formatDate(task.start_date)}
+                                                        endDate={formatDate(task.end_date)}
+                                                        status={task.status}
+                                                        startCol={startCol}
+                                                        span={span}
+                                                    />
+                                                </Table.Row>
+
+                                                {isExpanded &&
+                                                    taskSubtasks.map(subtask => {
+                                                        const { start: subStartCol, span: subSpan } = calculateTaskPosition(
+                                                            subtask.start_date,
+                                                            subtask.end_date,
+                                                            selectedYear
+                                                        );
+
+                                                        if (subStartCol === 0 || subSpan === 0) return null;
+
+                                                        return (
+                                                            <Table.Row key={subtask.subtask_id} className="bg-gray-50">
+                                                                <Table.Cell className=" hover:bg-gray-100 cursor-pointer" colSpan={1}>
+                                                                    <DialogEditSubTask
+                                                                        getSubtaskData={fetchSubtasks}
+                                                                        subtaskId={subtask.subtask_id}
+                                                                        trigger={<Text className="cursor-pointer hover:text-blue-500">{subtask.subtask_name}</Text>}
+                                                                    />
                                                                 </Table.Cell>
-                                                                );
-                                                            })}
-                                            </Table.Row>
-                                            
-                                            {isExpanded && taskSubtasks
-                                                .map(subtask => {
-                                                    const { start: subStartCol, span: subSpan } = calculateTaskPosition(
-                                                        subtask.start_date, 
-                                                        subtask.end_date, 
-                                                        selectedYear
-                                                    );
-                                                    
-                                                    // Skip subtasks that don't fall within the selected year
-                                                    if (subStartCol === 0 || subSpan === 0) return null;
-                                                    
-                                                    return (
-                                                        <Table.Row key={subtask.subtask_id} className="bg-gray-50">
-                                                             <Table.Cell className="pl-8">
-                                                                <DialogEditSubTask 
-                                                                    getSubtaskData={fetchSubtasks} 
-                                                                    subtaskId={subtask.subtask_id} 
-                                                                    trigger={<Text className="cursor-pointer">{subtask.subtask_name}</Text>} 
+                                                                <Table.Cell>{formatDate(subtask.start_date)}</Table.Cell>
+                                                                <Table.Cell>{formatDate(subtask.end_date)}</Table.Cell>
+                                                                <SubtaskRow
+                                                                    subtaskName={subtask.subtask_name}
+                                                                    startDate={formatDate(subtask.start_date)}
+                                                                    endDate={formatDate(subtask.end_date)}
+                                                                    status={subtask.status}
+                                                                    startCol={subStartCol}
+                                                                    span={subSpan}
                                                                 />
-                                                            </Table.Cell>
-                                                            <Table.Cell>{formatDate(subtask.start_date)}</Table.Cell>
-                                                            <Table.Cell>{formatDate(subtask.end_date)}</Table.Cell>
-                                                            <Table.Cell className="border-r-2 border-gray-300" >{subtask.status}</Table.Cell>
-                                                                {Array.from({ length: 12 }).map((_, monthIndex) => {
-                                                                const isStart = monthIndex + 1 === subStartCol;
-                        
-                                                                return (
-                                                                <Table.Cell
-                                                                    key={monthIndex}
-                                                                    className="relative group"
-                                                                >
-                                                                    {isStart && (
-                                                                    <div
-                                                                        className="absolute h-3 top-1/2 transform -translate-y-1/2 rounded bg-green-500 group-hover:bg-green-600 transition-all duration-300"
-                                                                        style={{
-                                                                        left: 0,
-                                                                        width: `calc(${subSpan} * 100%)`
-                                                                        }}
-                                                                    >
-                                                                        {/* Hover Tooltip */}
-                                                                        <div className="hidden group-hover:block absolute top-[-80px] left-1/2 transform -translate-x-1/2 px-4 py-2 text-xs bg-gray-700 text-white rounded shadow w-64">
-                                                                        {subtask.subtask_name}<br />
-                                                                        {formatDate(subtask.start_date)} - {formatDate(subtask.end_date)}<br />
-                                                                        Status: {subtask.status}
-                                                                        </div>
-                                                                    </div>
-                                                                    )}
-                                                                </Table.Cell>
-                                                                );
-                                                            })}
-                                                        </Table.Row>
-                                                    );
-                                                })}
-                                        </React.Fragment>
-                                    );
-                                })}
-                        </Table.Body>
+                                                            </Table.Row>
+                                                        );
+                                                    })}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                            </Table.Body>
                     </Table.Root>
                 </div>
             )}
