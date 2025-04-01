@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ReactApexChart from "react-apexcharts";
 
 const BudgetVariance = () => {
@@ -295,6 +295,7 @@ export { BudgetVariance, ProjectCompletionRate, UtilizedDuration, CostBreakdown,
 const CustomSelect = ({ options, placeholder }: { options: string[], placeholder: string }) => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleCheckboxChange = (option: string) => {
     if (option === "All") {
@@ -314,18 +315,29 @@ const CustomSelect = ({ options, placeholder }: { options: string[], placeholder
 
   const displayText = selectedOptions.length === options.length - 1 ? "All" : selectedOptions.join(", ") || placeholder;
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
-    <div className="relative w-full border rounded p-2 mb-2">
-      <div
-        className="cursor-pointer"
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-      >
+    <div ref={dropdownRef} className="relative w-full border rounded p-2 mb-2">
+      <div className="cursor-pointer" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
         {displayText}
       </div>
       {isDropdownOpen && (
         <div className="absolute bg-white border rounded mt-2 w-full z-10">
           {options.map((option) => (
-            <div key={option} className="flex items-center mb-2 p-2">
+            <div key={option} className="flex items-center mb-2 p-2 hover:bg-teal-100 cursor-pointer">
+              {/* Checkbox for each option */}
               <input
                 type="checkbox"
                 id={option}
@@ -372,8 +384,8 @@ const Dashboard = () => {
         <div className="grid grid-cols-3 gap-3">
           {/* Project Details */}
           <div className="bg-white shadow-lg rounded-lg p-2 border border-gray-200">
-            <div className="space-y-3 p-4 bg-white shadow-lg rounded-lg border border-gray-200">
-              <h2 className="text-xl font-semibold mb-2">Project Details</h2>
+            <div className="space-y-3 p-4 mt-4 bg-red-100 shadow-lg rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold mb-4">Project Details</h2>
               <p className="text-lg"><strong>Project Name:</strong> Apartment Building</p>
               {/* <p className="text-lg"><strong>Project Type:</strong> Residential Project</p> */}
               <p className="text-lg"><strong>Start Date:</strong> 03.05.2024</p>
@@ -381,14 +393,14 @@ const Dashboard = () => {
             </div>
 
             {/* Budget Summary */}
-            <div className="  mt-3">
+            <div className="  mt-4 bg-white shadow-lg rounded-lg border border-gray-200">
               <div className=" p-1">
                 <div className="grid rounded-lg shadow-lg bg-blue-300">
                   <h2 className="text-center font-semibold text-l mt-6 mb-4 ">Estimate Completion</h2>
                   <h2 className="text-center font-semibold text-4xl mt-2 mb-6">$2.42 M</h2>
                 </div>
               </div>
-              <div className=" p-1">
+              <div className=" p-1 mt-3">
                 <div className="grid p-4 rounded-lg shadow-lg bg-indigo-400">
                   <h2 className="text-center font-semibold text-4xl mt-2">$2.42 M</h2>
                   <h2 className="text-center font-semibold text-l mt-4">Utilized Budget</h2>
