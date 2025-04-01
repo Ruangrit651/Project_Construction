@@ -12,6 +12,7 @@ import DialogEditSubTask from "./components/DialogEditSubtask";
 import TaskRow from "./components/taskRow";
 import SubtaskRow from "./components/subtaskRow";
 import Gatt from "./components/Gatt.css";
+import DateTable from "./test";
 
 
 export default function TaskPage() {
@@ -289,7 +290,12 @@ export default function TaskPage() {
                             </Table.Body>
                     </Table.Root>
                 </div>
+                
             )}
+            <div>
+                <h1 className="text-xl font-bold mb-4">Task Management</h1>
+                <DateTable taskType="Development" year={selectedYear} />
+            </div>
         </Card>
     );
 }
