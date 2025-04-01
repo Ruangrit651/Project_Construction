@@ -11,7 +11,7 @@ const BudgetVariance = () => {
       },
       {
         name: "Social Media",
-        type: "line",
+        type: "line" as "line",
         data: [23, 42, 35, 27, 43, 22, 17, 31, 22, 22, 12, 16],
       },
     ],
@@ -123,171 +123,171 @@ const CostBreakdown = () => {
   );
 };
 
-const Testtttt = () => {
-  const [state, setState] = React.useState({
+// const Testtttt = () => {
+//   const [state, setState] = React.useState({
 
-    series: [
-      {
-        name: 'Q1 Budget',
-        group: 'budget',
-        color: '#80c7fd',
-        data: [44000, 55000, 41000, 67000, 22000],
-      },
-      {
-        name: 'Q1 Actual',
-        group: 'actual',
-        color: '#008FFB',
-        data: [48000, 50000, 40000, 65000, 25000],
-      },
-      {
-        name: 'Q2 Budget',
-        group: 'budget',
-        color: '#80f1cb',
-        data: [13000, 36000, 20000, 8000, 13000],
-      },
-      {
-        name: 'Q2 Actual',
-        group: 'actual',
-        color: '#00E396',
-        data: [20000, 40000, 25000, 10000, 12000],
-      },
-    ],
-    options: {
-      chart: {
-        type: 'bar',
-        height: 350,
-        stacked: true,
-      },
-      stroke: {
-        width: 1,
-        colors: ['#fff']
-      },
-      dataLabels: {
-        formatter: (val) => {
-          return val / 1000 + 'K'
-        }
-      },
-      plotOptions: {
-        bar: {
-          horizontal: true
-        }
-      },
-      xaxis: {
-        categories: [
-          'Online advertising',
-          'Sales Training',
-          'Print advertising',
-          'Catalogs',
-          'Meetings'
-        ],
-        labels: {
-          formatter: (val) => {
-            return val / 1000 + 'K'
-          }
-        }
-      },
-      fill: {
-        opacity: 1,
-      },
-      legend: {
-        position: 'top',
-        clusterGroupedSeriesOrientation: "horizontal",
-        horizontalAlign: "left"
-      }
-    },
-
-
-  });
+//     series: [
+//       {
+//         name: 'Q1 Budget',
+//         group: 'budget',
+//         color: '#80c7fd',
+//         data: [44000, 55000, 41000, 67000, 22000],
+//       },
+//       {
+//         name: 'Q1 Actual',
+//         group: 'actual',
+//         color: '#008FFB',
+//         data: [48000, 50000, 40000, 65000, 25000],
+//       },
+//       {
+//         name: 'Q2 Budget',
+//         group: 'budget',
+//         color: '#80f1cb',
+//         data: [13000, 36000, 20000, 8000, 13000],
+//       },
+//       {
+//         name: 'Q2 Actual',
+//         group: 'actual',
+//         color: '#00E396',
+//         data: [20000, 40000, 25000, 10000, 12000],
+//       },
+//     ],
+//     options: {
+//       chart: {
+//         type: 'bar',
+//         height: 350,
+//         stacked: true,
+//       },
+//       stroke: {
+//         width: 1,
+//         colors: ['#fff']
+//       },
+//       dataLabels: {
+//         formatter: (val) => {
+//           return val / 1000 + 'K'
+//         }
+//       },
+//       plotOptions: {
+//         bar: {
+//           horizontal: true
+//         }
+//       },
+//       xaxis: {
+//         categories: [
+//           'Online advertising',
+//           'Sales Training',
+//           'Print advertising',
+//           'Catalogs',
+//           'Meetings'
+//         ],
+//         labels: {
+//           formatter: (val) => {
+//             return val / 1000 + 'K'
+//           }
+//         }
+//       },
+//       fill: {
+//         opacity: 1,
+//       },
+//       legend: {
+//         position: 'top',
+//         clusterGroupedSeriesOrientation: "horizontal",
+//         horizontalAlign: "left"
+//       }
+//     },
 
 
-
-  return (
-    <div>
-      <div id="chart">
-        <ReactApexChart options={state.options} series={state.series} type="bar" height={350} />
-      </div>
-      <div id="html-dist"></div>
-    </div>
-  );
-}
-
-// const domContainer = document.querySelector('#app');
-// ReactDOM.render(<ApexChart />, domContainer);
-
-
-const Testt = () => {
-  const [state, setState] = React.useState({
-
-    series: [{
-      name: 'Net Profit',
-      data: [44, 55, 57, 56, 61, 58, 63, 60, 66]
-    }, {
-      name: 'Revenue',
-      data: [76, 85, 101, 98, 87, 105, 91, 114, 94]
-    }, {
-      name: 'Free Cash Flow',
-      data: [35, 41, 36, 26, 45, 48, 52, 53, 41]
-    }],
-    options: {
-      chart: {
-        type: 'bar',
-        height: 350
-      },
-      plotOptions: {
-        bar: {
-          horizontal: false,
-          columnWidth: '55%',
-          borderRadius: 5,
-          borderRadiusApplication: 'end'
-        },
-      },
-      dataLabels: {
-        enabled: false
-      },
-      stroke: {
-        show: true,
-        width: 2,
-        colors: ['transparent']
-      },
-      xaxis: {
-        categories: ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-      },
-      yaxis: {
-        title: {
-          text: '$ (thousands)'
-        }
-      },
-      fill: {
-        opacity: 1
-      },
-      tooltip: {
-        y: {
-          formatter: function (val) {
-            return "$ " + val + " thousands"
-          }
-        }
-      }
-    },
-
-
-  });
+//   });
 
 
 
-  return (
-    <div>
-      <div id="chart">
-        <ReactApexChart options={state.options} series={state.series} type="bar" height={350} />
-      </div>
-      <div id="html-dist"></div>
-    </div>
-  );
-}
+//   return (
+//     <div>
+//       <div id="chart">
+//         <ReactApexChart options={state.options} series={state.series} type="bar" height={350} />
+//       </div>
+//       <div id="html-dist"></div>
+//     </div>
+//   );
+// }
 
 // const domContainer = document.querySelector('#app');
 // ReactDOM.render(<ApexChart />, domContainer);
 
-export { BudgetVariance, ProjectCompletionRate, UtilizedDuration, CostBreakdown, Testtttt, Testt };
+
+// const Testt = () => {
+//   const [state, setState] = React.useState({
+
+//     series: [{
+//       name: 'Net Profit',
+//       data: [44, 55, 57, 56, 61, 58, 63, 60, 66]
+//     }, {
+//       name: 'Revenue',
+//       data: [76, 85, 101, 98, 87, 105, 91, 114, 94]
+//     }, {
+//       name: 'Free Cash Flow',
+//       data: [35, 41, 36, 26, 45, 48, 52, 53, 41]
+//     }],
+//     options: {
+//       chart: {
+//         type: 'bar',
+//         height: 350
+//       },
+//       plotOptions: {
+//         bar: {
+//           horizontal: false,
+//           columnWidth: '55%',
+//           borderRadius: 5,
+//           borderRadiusApplication: 'end'
+//         },
+//       },
+//       dataLabels: {
+//         enabled: false
+//       },
+//       stroke: {
+//         show: true,
+//         width: 2,
+//         colors: ['transparent']
+//       },
+//       xaxis: {
+//         categories: ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+//       },
+//       yaxis: {
+//         title: {
+//           text: '$ (thousands)'
+//         }
+//       },
+//       fill: {
+//         opacity: 1
+//       },
+//       tooltip: {
+//         y: {
+//           formatter: function (val) {
+//             return "$ " + val + " thousands"
+//           }
+//         }
+//       }
+//     },
+
+
+//   });
+
+
+
+//   return (
+//     <div>
+//       <div id="chart">
+//         <ReactApexChart options={state.options} series={state.series} type="bar" height={350} />
+//       </div>
+//       <div id="html-dist"></div>
+//     </div>
+//   );
+// }
+
+// const domContainer = document.querySelector('#app');
+// ReactDOM.render(<ApexChart />, domContainer);
+
+export { BudgetVariance, ProjectCompletionRate, UtilizedDuration, CostBreakdown,};
 
 //--------------------------------------------------------------------------------------------------------------------------------------//
 //--------------------------------------------------------------------------------------------------------------------------------------//
@@ -374,8 +374,8 @@ const Dashboard = () => {
           <div className="bg-white shadow-lg rounded-lg p-2 border border-gray-200">
             <div className="space-y-3 p-4 bg-white shadow-lg rounded-lg border border-gray-200">
               <h2 className="text-xl font-semibold mb-2">Project Details</h2>
-              <p className="text-lg"><strong>Project Type:</strong> Apartment Building</p>
-              <p className="text-lg"><strong>Project Type:</strong> Residential Project</p>
+              <p className="text-lg"><strong>Project Name:</strong> Apartment Building</p>
+              {/* <p className="text-lg"><strong>Project Type:</strong> Residential Project</p> */}
               <p className="text-lg"><strong>Start Date:</strong> 03.05.2024</p>
               <p className="text-lg"><strong>Finish Date:</strong> 06.06.2024</p>
             </div>
@@ -440,12 +440,12 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          {/* Testt */}
+        <div /**className="grid grid-cols-2 gap-3"**/>
+          {/* Testt
           <div className="bg-white shadow-lg rounded-lg p-6 mt-4 border border-gray-200">
             <h2 className="text-xl font-semibold mb-4">Testt</h2>
             <Testt />
-          </div>
+          </div> */}
 
           {/* Budget Variance Chart */}
           <div className="bg-white shadow-lg rounded-lg p-6 mt-4 border border-gray-200">
@@ -456,11 +456,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Testtttt */}
+        {/* Testtttt
         <div className="bg-white shadow-lg rounded-lg p-6 mt-4 border border-gray-200">
           <h2 className="text-xl font-semibold mb-4">Testtttt</h2>
           <Testtttt />
-        </div>
+        </div> */}
       </div>
     </div>
   );
