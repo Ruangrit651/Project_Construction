@@ -57,6 +57,10 @@ export const TaskRepository = {
       start_date: startDate,
       end_date: payload.end_date,
       status: payload.status,
+      created_at: payload.created_at,
+      created_by: payload.created_by,
+      updated_at: payload.updated_at,
+      updated_by: payload.updated_by
 
     };
 

@@ -25,6 +25,8 @@ export const userRouter = (() => {
         rolegrop1,
         validateRequest(CreateUserSchema), async (req: Request, res: Response) => {
         const payload = req.body;
+        payload.created_by = req.user.userId;
+        payload.updated_by = req.user.userId;
         const serviceResponse = await userService.create(payload);
         handleServiceResponse(serviceResponse, res);
     });
@@ -36,6 +38,7 @@ export const userRouter = (() => {
         validateRequest(UpdateUserSchema), async (req: Request, res: Response) => {
         const { user_id } = req.body; // user_id ควรอยู่ใน body
         const payload = req.body;
+        payload.updated_by = req.user.userId; // Set updated_by from the authenticated user
         const serviceResponse = await userService.update(user_id, payload);
         handleServiceResponse(serviceResponse, res);
     });
@@ -50,13 +53,6 @@ export const userRouter = (() => {
         handleServiceResponse(serviceResponse, res);
     });
 
-    // router.post("/login", validateRequest(DeleteUserSchema), async (req: Request, res: Response) => {
-    //     const { user_id } = req.params; // รับ user_id จาก body
-    //     const serviceResponse = await userService.delete(user_id);
-    //     handleServiceResponse(serviceResponse, res);
-    // });
-    
-        
     return router;
 
     

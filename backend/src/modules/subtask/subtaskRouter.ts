@@ -21,6 +21,8 @@ export const subtaskRouter = (() => {
         authenticateJWT,
         validateRequest(CreateSubTaskSchema), async (req: Request, res: Response) => {
         const payload = req.body;
+        payload.created_by = req.user.userId; // Set created_by from the authenticated user
+        payload.updated_by = req.user.userId; // Set updated_by from the authenticated user
         const ServiceResponse = await subtaskService.create(payload);
         handleServiceResponse(ServiceResponse, res);
     });
@@ -31,6 +33,7 @@ export const subtaskRouter = (() => {
         validateRequest(UpdateSubTaskSchema),async (req: Request, res: Response) => {
         const { subtask_id } = req.body;
         const payload = req.body;
+        payload.updated_by = req.user.userId; // Set updated_by from the authenticated user
         const ServiceResponse = await subtaskService.update(subtask_id, payload);
         handleServiceResponse(ServiceResponse, res);
     });

@@ -4,16 +4,17 @@ import { z } from "zod";
 // ประเภทข้อมูลสำหรับ payload ของโปรเจกต์
 export type TypePayloadProject = {
     project_name: string;
+    user_id?: string; // อาจมี user_id ที่สร้างโปรเจกต์นี้
     budget: number;   // อาจมี budget ในการอัปเดตด้วย
     actual: number;
     start_date?: string;
     end_date?: string;
     status: string;
     project_image?: string;
-    // created_at?:string;
-    // created_by?: string;
-    // updated_at?:string;
-    // updated_by?: string;
+    created_at?:string;
+    created_by?: string;
+    updated_at?:string;
+    updated_by?: string;
 };
 
 // Schema สำหรับการสร้างโปรเจกต์ใหม่
@@ -26,10 +27,10 @@ export const CreateProjectSchema = z.object({
         end_date: z.string().optional(),
         status: z.string().optional(),
         project_image: z.string().optional(),
-        // created_at: z.string().optional(),
-        // created_by: z.string().optional(),
-        // updated_at: z.string().optional(),
-        // updated_by: z.string().optional()
+        created_at: z.string().optional(),
+        created_by: z.string().optional(),
+        updated_at: z.string().optional(),
+        updated_by: z.string().optional()
 
     })
 });
@@ -45,8 +46,8 @@ export const UpdateProjectSchema = z.object({
         end_date: z.string().optional(),
         status: z.string().optional(),
         project_image: z.string().optional(),
-        // updated_at: z.string().optional(),
-        // updated_by: z.string()  // ต้องมี updated_by เพื่อบันทึกว่าใครแก้ไข
+        updated_at: z.string().optional(),
+        updated_by: z.string().optional()  // ต้องมี updated_by เพื่อบันทึกว่าใครแก้ไข
     })
 });
 

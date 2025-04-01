@@ -24,8 +24,9 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
                 setLoading(true);
                 try {
                     const response = await getSubtask(subtaskId);
-                    const subtaskData = response.responseObject;
+                    const subtaskData = response.responseObject[0];
 
+                    
                     setSubtaskName(subtaskData.subtask_name);
                     setDescription(subtaskData.description);
                     setBudget(subtaskData.budget);
@@ -55,7 +56,7 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
                 subtask_id: subtaskId,
                 subtask_name: subtaskName,
                 description,
-                budget,
+                budget: Number(budget),
                 start_date: startDate,
                 end_date: endDate,
                 status,
@@ -89,7 +90,7 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
                                 value={subtaskName}
                                 type="text"
                                 onChange={(e) => setSubtaskName(e.target.value)}
-                                placeholder="Enter Subtask Name"
+                                placeholder="Enter  Name"
                             />
                         </label>
                         <label>

@@ -73,6 +73,10 @@ export const ResourceRepository = {
             total: payload.total,
             quantity: payload.quantity,
             task_id: payload.task_id,
+            created_at: payload.created_at,
+            created_by: payload.created_by,
+            updated_at: payload.updated_at,
+            updated_by: payload.updated_by,
         };
 
         return prisma.resource.create({

@@ -19,12 +19,14 @@ export const projectRouter = (() => {
         handleServiceResponse(ServiceResponse, res);
     });
 
-    // CREATE a project
+
     router.post("/create", 
         authenticateJWT,
         rolegrop1,
         validateRequest(CreateProjectSchema), async (req: Request, res: Response) => {
         const payload = req.body;
+        payload.created_by = req.user.userId; 
+        payload.updated_by = req.user.userId; 
         const ServiceResponse = await projectService.create(payload);
         handleServiceResponse(ServiceResponse, res);
     });
@@ -36,6 +38,7 @@ export const projectRouter = (() => {
         validateRequest(UpdateProjectSchema), async (req: Request, res: Response) => {
         const {project_id} = req.body;
         const payload = req.body;
+        payload.updated_by = req.user.userId; // Set updated_by from the authenticated user
         const ServiceResponse = await projectService.update(project_id, payload);
         handleServiceResponse(ServiceResponse, res);
     });

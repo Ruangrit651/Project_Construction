@@ -18,6 +18,10 @@ const config: Config = {
         ...green,
         ...mauve,
         ...violet,
+        "task-done": "#22c55e",
+        "task-pending": "#3b82f6",
+        "subtask-done": "#86efac",
+        "subtask-pending": "#93c5fd",
       },
       keyframes: {
         hide: {
