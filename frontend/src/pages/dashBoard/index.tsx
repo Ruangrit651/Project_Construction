@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactApexChart from "react-apexcharts";
+import { getDashboard } from "@/services/dashboard.service";
+import { DashboardResponse } from "@/types/response/response.dashboard";
+import { TypeDashboard } from "@/types/response/response.dashboard"; // Ensure this path is correct
 
 const BudgetVariance = () => {
   const [state] = useState({
@@ -123,174 +126,8 @@ const CostBreakdown = () => {
   );
 };
 
-// const Testtttt = () => {
-//   const [state, setState] = React.useState({
+export { BudgetVariance, ProjectCompletionRate, UtilizedDuration, CostBreakdown, };
 
-//     series: [
-//       {
-//         name: 'Q1 Budget',
-//         group: 'budget',
-//         color: '#80c7fd',
-//         data: [44000, 55000, 41000, 67000, 22000],
-//       },
-//       {
-//         name: 'Q1 Actual',
-//         group: 'actual',
-//         color: '#008FFB',
-//         data: [48000, 50000, 40000, 65000, 25000],
-//       },
-//       {
-//         name: 'Q2 Budget',
-//         group: 'budget',
-//         color: '#80f1cb',
-//         data: [13000, 36000, 20000, 8000, 13000],
-//       },
-//       {
-//         name: 'Q2 Actual',
-//         group: 'actual',
-//         color: '#00E396',
-//         data: [20000, 40000, 25000, 10000, 12000],
-//       },
-//     ],
-//     options: {
-//       chart: {
-//         type: 'bar',
-//         height: 350,
-//         stacked: true,
-//       },
-//       stroke: {
-//         width: 1,
-//         colors: ['#fff']
-//       },
-//       dataLabels: {
-//         formatter: (val) => {
-//           return val / 1000 + 'K'
-//         }
-//       },
-//       plotOptions: {
-//         bar: {
-//           horizontal: true
-//         }
-//       },
-//       xaxis: {
-//         categories: [
-//           'Online advertising',
-//           'Sales Training',
-//           'Print advertising',
-//           'Catalogs',
-//           'Meetings'
-//         ],
-//         labels: {
-//           formatter: (val) => {
-//             return val / 1000 + 'K'
-//           }
-//         }
-//       },
-//       fill: {
-//         opacity: 1,
-//       },
-//       legend: {
-//         position: 'top',
-//         clusterGroupedSeriesOrientation: "horizontal",
-//         horizontalAlign: "left"
-//       }
-//     },
-
-
-//   });
-
-
-
-//   return (
-//     <div>
-//       <div id="chart">
-//         <ReactApexChart options={state.options} series={state.series} type="bar" height={350} />
-//       </div>
-//       <div id="html-dist"></div>
-//     </div>
-//   );
-// }
-
-// const domContainer = document.querySelector('#app');
-// ReactDOM.render(<ApexChart />, domContainer);
-
-
-// const Testt = () => {
-//   const [state, setState] = React.useState({
-
-//     series: [{
-//       name: 'Net Profit',
-//       data: [44, 55, 57, 56, 61, 58, 63, 60, 66]
-//     }, {
-//       name: 'Revenue',
-//       data: [76, 85, 101, 98, 87, 105, 91, 114, 94]
-//     }, {
-//       name: 'Free Cash Flow',
-//       data: [35, 41, 36, 26, 45, 48, 52, 53, 41]
-//     }],
-//     options: {
-//       chart: {
-//         type: 'bar',
-//         height: 350
-//       },
-//       plotOptions: {
-//         bar: {
-//           horizontal: false,
-//           columnWidth: '55%',
-//           borderRadius: 5,
-//           borderRadiusApplication: 'end'
-//         },
-//       },
-//       dataLabels: {
-//         enabled: false
-//       },
-//       stroke: {
-//         show: true,
-//         width: 2,
-//         colors: ['transparent']
-//       },
-//       xaxis: {
-//         categories: ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-//       },
-//       yaxis: {
-//         title: {
-//           text: '$ (thousands)'
-//         }
-//       },
-//       fill: {
-//         opacity: 1
-//       },
-//       tooltip: {
-//         y: {
-//           formatter: function (val) {
-//             return "$ " + val + " thousands"
-//           }
-//         }
-//       }
-//     },
-
-
-//   });
-
-
-
-//   return (
-//     <div>
-//       <div id="chart">
-//         <ReactApexChart options={state.options} series={state.series} type="bar" height={350} />
-//       </div>
-//       <div id="html-dist"></div>
-//     </div>
-//   );
-// }
-
-// const domContainer = document.querySelector('#app');
-// ReactDOM.render(<ApexChart />, domContainer);
-
-export { BudgetVariance, ProjectCompletionRate, UtilizedDuration, CostBreakdown,};
-
-//--------------------------------------------------------------------------------------------------------------------------------------//
-//--------------------------------------------------------------------------------------------------------------------------------------//
 //--------------------------------------------------------------------------------------------------------------------------------------//
 const CustomSelect = ({ options, placeholder }: { options: string[], placeholder: string }) => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -362,6 +199,32 @@ const Dashboard = () => {
   const projectOptions = ["All", "Project 1", "Project 2", "Project 3", "Project 4", "Project 5"];
   const statusOptions = ["All", "In Progress", "Completed", "On Hold"];
 
+  
+  const [projectDetails, setProjectDetails] = useState<TypeDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  // ดึงข้อมูลจาก API เมื่อ Component ถูกโหลด
+  useEffect(() => {
+    const fetchProjectDetails = async () => {
+      try {
+        const data = await getDashboard();
+        console.log("API Response:", data); // ตรวจสอบข้อมูลที่ได้รับ
+  
+        // ตรวจสอบว่า responseObject เป็น Array และมีข้อมูล
+        if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
+          setProjectDetails(data.responseObject[0]); // เก็บข้อมูลใน state
+        } else {
+          console.error("responseObject is not an array or is empty");
+        }
+      } catch (error) {
+        console.error("Error fetching project details:", error);
+      } finally {
+        setLoading(false); // ปิดสถานะ loading
+      }
+    };
+  
+    fetchProjectDetails();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-400 p-3">
       <div className="container mx-auto">
@@ -384,13 +247,28 @@ const Dashboard = () => {
         <div className="grid grid-cols-3 gap-3">
           {/* Project Details */}
           <div className="bg-white shadow-lg rounded-lg p-2 border border-gray-200">
-            <div className="space-y-3 p-4 mt-4 bg-red-100 shadow-lg rounded-lg border border-gray-200">
-              <h2 className="text-xl font-semibold mb-4">Project Details</h2>
-              <p className="text-lg"><strong>Project Name:</strong> Apartment Building</p>
-              {/* <p className="text-lg"><strong>Project Type:</strong> Residential Project</p> */}
-              <p className="text-lg"><strong>Start Date:</strong> 03.05.2024</p>
-              <p className="text-lg"><strong>Finish Date:</strong> 06.06.2024</p>
-            </div>
+          <div className="bg-white shadow-lg rounded-lg p-2 border border-gray-200">
+          <div className="space-y-3 p-4 mt-4 bg-red-100 shadow-lg rounded-lg border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Project Details</h2>
+            {loading ? (
+              <p>Loading...</p> // แสดงข้อความ Loading ระหว่างรอข้อมูล
+            ) : projectDetails ? (
+              <>
+                <p className="text-lg">
+                  <strong>Project Name:</strong> {projectDetails.project_name} 
+                </p>
+                <p className="text-lg">
+                  <strong>Start Date:</strong> {projectDetails.start_date}
+                </p>
+                <p className="text-lg">
+                  <strong>Finish Date:</strong> {projectDetails.end_date}
+                </p>
+              </>
+            ) : (
+              <p>No project details available.</p> // กรณีไม่มีข้อมูล
+            )}
+          </div>
+        </div>
 
             {/* Budget Summary */}
             <div className="  mt-4 bg-white shadow-lg rounded-lg border border-gray-200">
@@ -451,14 +329,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
-        <div /**className="grid grid-cols-2 gap-3"**/>
-          {/* Testt
-          <div className="bg-white shadow-lg rounded-lg p-6 mt-4 border border-gray-200">
-            <h2 className="text-xl font-semibold mb-4">Testt</h2>
-            <Testt />
-          </div> */}
-
+        <div >
           {/* Budget Variance Chart */}
           <div className="bg-white shadow-lg rounded-lg p-6 mt-4 border border-gray-200">
             <h2 className="text-xl font-semibold mb-4">Budget Variance</h2>
@@ -467,12 +338,6 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
-        {/* Testtttt
-        <div className="bg-white shadow-lg rounded-lg p-6 mt-4 border border-gray-200">
-          <h2 className="text-xl font-semibold mb-4">Testtttt</h2>
-          <Testtttt />
-        </div> */}
       </div>
     </div>
   );

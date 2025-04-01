@@ -43,3 +43,6 @@ export const DELETE_RESOURCE = "/v1/resource/delete"
 // login
 export const LOGIN = "/v1/auth/login";
 export const LOGOUT = "/v1/auth/logout";
+
+// dashboard
+export const GET_DASHBOARD = "/v1/dashboard/get";
