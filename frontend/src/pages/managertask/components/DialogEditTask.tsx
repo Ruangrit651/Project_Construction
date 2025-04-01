@@ -24,14 +24,20 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
                 setLoading(true);
                 try {
                     const response = await getTask(taskId);
-                    const taskData = response.responseObject;
+                    console.log("API Response:", response); // ตรวจสอบข้อมูลทั้งหมดที่ได้จาก API
                     
-                    setTaskName(taskData.task_name);
-                    setDescription(taskData.description);
-                    setBudget(taskData.budget);
-                    setStartDate(taskData.start_date);
-                    setEndDate(taskData.end_date);
-                    setStatus(taskData.status);
+                    // เข้าถึงรายการแรกใน responseObject
+                    const taskData = response.responseObject[0]; 
+                    console.log("Fetched Task Data:", taskData); // ตรวจสอบข้อมูลที่ได้จาก API
+    
+                    // ตั้งค่าข้อมูลใน state
+                    setTaskName(taskData?.task_name || "");
+                    console.log("Task Name set to:", taskData?.task_name); // ตรวจสอบค่า taskName
+                    setDescription(taskData?.description || "");
+                    setBudget(taskData?.budget || 0);
+                    setStartDate(taskData?.start_date || "");
+                    setEndDate(taskData?.end_date || "");
+                    setStatus(taskData?.status || "pending");
                 } catch (error) {
                     console.error("Failed to fetch task details:", error);
                     alert("An error occurred while fetching task details.");
@@ -40,7 +46,7 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
                 }
             }
         };
-        
+    
         fetchTaskDetails();
     }, [taskId]);
 
@@ -55,7 +61,7 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
                 task_id: taskId, // Use task_id instead of id
                 task_name: taskName,
                 description,
-                budget,
+                budget: Number(budget),
                 start_date: startDate,
                 end_date: endDate,
                 status,
