@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { handleServiceResponse, validateRequest } from "@common/utils/httpHandlers";
 import { taskService } from "@modules/task/taskService";
-import { CreateTaskSchema, UpdateTaskSchema, DeleteTaskSchema } from "@modules/task/taskModel";
+import { CreateTaskSchema, UpdateTaskSchema, DeleteTaskSchema,UpdateEndDateSchema, UpdateStartDateSchema } from "@modules/task/taskModel";
 import { authenticateJWT } from "@common/middleware/authMiddleware";
 import rolegrop4 from "@common/middleware/roleGroup4";
 import rolegrop5 from "@common/middleware/roleGroup5";
@@ -49,6 +49,28 @@ export const taskRouter = (() => {
         validateRequest(DeleteTaskSchema), async (req: Request, res: Response) => {
         const { task_id } = req.params; // Extract task_id from the URL params
         const ServiceResponse = await taskService.delete(task_id);
+        handleServiceResponse(ServiceResponse, res);
+    });
+
+    // UPDATE start date
+    router.put("/update/startdate", 
+        authenticateJWT,
+        rolegrop5,
+        validateRequest(UpdateStartDateSchema), async (req: Request, res: Response) => {
+        const { task_id } = req.body;
+        const payload = req.body;
+        const ServiceResponse = await taskService.updateStartDate(task_id, payload);
+        handleServiceResponse(ServiceResponse, res);
+    });
+
+    // UPDATE end date
+    router.put("/update/enddate", 
+        authenticateJWT,
+        rolegrop5,
+        validateRequest(UpdateEndDateSchema), async (req: Request, res: Response) => {
+        const { task_id } = req.body;
+        const payload = req.body;
+        const ServiceResponse = await taskService.updateEndDate(task_id, payload);
         handleServiceResponse(ServiceResponse, res);
     });
 

@@ -96,6 +96,48 @@ export const taskService = {
         }
     },
 
+    // อัปเดตวันที่เริ่มต้น
+    updateStartDate: async (task_id: string, start_date: string) => {
+        try {
+            const updatedTask = await TaskRepository.updateStartDate(task_id, start_date);
+            return new ServiceResponse<task>(
+                ResponseStatus.Success,
+                "Update task start date success",
+                updatedTask,
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            const errorMessage = "Error updating task start date: " + (ex as Error).message;
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                errorMessage,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
+
+    // อัปเดตวันที่สิ้นสุด
+    updateEndDate: async (task_id: string, end_date: string) => {
+        try {
+            const updatedTask = await TaskRepository.updateEndDate(task_id, end_date);
+            return new ServiceResponse<task>(
+                ResponseStatus.Success,
+                "Update task end date success",
+                updatedTask,
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            const errorMessage = "Error updating task end date: " + (ex as Error).message;
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                errorMessage,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
+
     // ลบ task
     delete: async (task_id: string) => {
         try {

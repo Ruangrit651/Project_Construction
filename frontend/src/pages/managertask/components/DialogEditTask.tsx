@@ -13,31 +13,53 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
     const [taskName, setTaskName] = useState("");
     const [description, setDescription] = useState("");
     const [budget, setBudget] = useState(0);
+    const [formattedBudget, setFormattedBudget] = useState("0"); // สำหรับแสดง budget แบบ formatted
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [status, setStatus] = useState("pending");
     const [loading, setLoading] = useState(false);
 
+    const formatNumber = (value: number) => {
+        return new Intl.NumberFormat("en-US").format(value);
+    };
+
+    const handleBudgetChange = (event: any) => {
+        const value = event.target.value.replace(/,/g, ""); // ลบ comma ออกจาก input
+        const numericValue = value === "" ? 0 : Number(value);
+        setBudget(numericValue); // อัปเดตค่า budget
+        setFormattedBudget(formatNumber(numericValue)); // อัปเดตค่า formattedBudget
+    };
+
     useEffect(() => {
+        console.log("taskId:", taskId); // Debugging: ตรวจสอบ taskId
         const fetchTaskDetails = async () => {
             if (taskId) {
                 setLoading(true);
                 try {
-                    const response = await getTask(taskId);
-                    console.log("API Response:", response); // ตรวจสอบข้อมูลทั้งหมดที่ได้จาก API
-                    
-                    // เข้าถึงรายการแรกใน responseObject
-                    const taskData = response.responseObject[0]; 
-                    console.log("Fetched Task Data:", taskData); // ตรวจสอบข้อมูลที่ได้จาก API
+                    const response = await getTask(taskId); // ดึงข้อมูล Task ตาม ID
+                    console.log("API Response:", response); // Debugging: ตรวจสอบ API Response
+                    if (response.responseObject && response.responseObject.length > 0) {
+                        // ค้นหา Task ที่ตรงกับ taskId
+                        const taskData = response.responseObject.find(
+                            (task: any) => task.task_id === taskId
+                        );
     
-                    // ตั้งค่าข้อมูลใน state
-                    setTaskName(taskData?.task_name || "");
-                    console.log("Task Name set to:", taskData?.task_name); // ตรวจสอบค่า taskName
-                    setDescription(taskData?.description || "");
-                    setBudget(taskData?.budget || 0);
-                    setStartDate(taskData?.start_date || "");
-                    setEndDate(taskData?.end_date || "");
-                    setStatus(taskData?.status || "pending");
+                        if (taskData) {
+                            setTaskName(taskData.task_name || "");
+                            setDescription(taskData.description || "");
+                            setBudget(Number(taskData.budget || 0)); // แปลง budget เป็นตัวเลข
+                            setFormattedBudget(formatNumber(Number(taskData.budget || 0))); // แสดง budget แบบมี comma
+                            setStartDate(taskData.start_date || "");
+                            setEndDate(taskData.end_date || "");
+                            setStatus(taskData.status || "pending");
+                        } else {
+                            console.error("Task not found.");
+                            alert("Task not found.");
+                        }
+                    } else {
+                        console.error("No task data found.");
+                        alert("No task data found.");
+                    }
                 } catch (error) {
                     console.error("Failed to fetch task details:", error);
                     alert("An error occurred while fetching task details.");
@@ -55,10 +77,10 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
             alert("Please fill out all required fields.");
             return;
         }
-    
+
         try {
             const response = await patchTask({
-                task_id: taskId, // Use task_id instead of id
+                task_id: taskId,
                 task_name: taskName,
                 description,
                 budget: Number(budget),
@@ -66,7 +88,7 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
                 end_date: endDate,
                 status,
             });
-    
+
             if (response.success) {
                 getTaskData();
             } else {
@@ -91,45 +113,45 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
                     <Flex direction="column">
                         <label>
                             <Text as="div" size="2" mb="3" weight="bold">Task Name</Text>
-                            <TextField.Root 
-                                value={taskName} 
+                            <TextField.Root
+                                value={taskName}
                                 type="text"
-                                onChange={(e) => setTaskName(e.target.value)} 
-                                placeholder="Enter Task Name" 
+                                onChange={(e) => setTaskName(e.target.value)}
+                                placeholder="Enter Task Name"
                             />
                         </label>
                         <label>
                             <Text as="div" size="2" mb="3" mt="3" weight="bold">Description</Text>
-                            <TextField.Root 
-                                value={description} 
+                            <TextField.Root
+                                value={description}
                                 type="text"
-                                onChange={(e) => setDescription(e.target.value)} 
-                                placeholder="Enter Task Description" 
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Enter Task Description"
                             />
                         </label>
                         <label>
                             <Text as="div" size="2" mb="3" mt="3" weight="bold">Budget</Text>
-                            <TextField.Root 
-                                value={budget} 
+                            <TextField.Root
+                                value={formattedBudget} // ใช้ formattedBudget เพื่อแสดงค่า
                                 type="text"
-                                onChange={(e) => setBudget(Number(e.target.value))} 
-                                placeholder="Enter Budget" 
+                                onChange={handleBudgetChange}
+                                placeholder="Enter Budget"
                             />
                         </label>
                         <label>
                             <Text as="div" size="2" mb="3" mt="3" weight="bold">Start Date</Text>
-                            <TextField.Root 
-                                value={startDate} 
+                            <TextField.Root
+                                value={startDate}
                                 type="date"
-                                onChange={(e) => setStartDate(e.target.value)} 
+                                onChange={(e) => setStartDate(e.target.value)}
                             />
                         </label>
                         <label>
                             <Text as="div" size="2" mb="3" mt="3" weight="bold">End Date</Text>
-                            <TextField.Root 
-                                value={endDate} 
+                            <TextField.Root
+                                value={endDate}
                                 type="date"
-                                onChange={(e) => setEndDate(e.target.value)} 
+                                onChange={(e) => setEndDate(e.target.value)}
                             />
                         </label>
                         <label>
@@ -148,25 +170,22 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
                     <Dialog.Close>
                         <Button className="cursor-pointer" variant="soft" color="gray" mb="3" mt="3">Cancel</Button>
                     </Dialog.Close>
-                    <Flex gap="3"  mt="3">
-                      <Dialog.Close >
-                          <AlertDialogDeleteTask 
-                              getTaskData={getTaskData} 
-                              task_id={taskId} 
-                              task_name={taskName} 
-                          />
-                      </Dialog.Close>
+                    <Flex gap="3" mt="3">
+                        <Dialog.Close>
+                            <AlertDialogDeleteTask
+                                getTaskData={getTaskData}
+                                task_id={taskId}
+                                task_name={taskName}
+                            />
+                        </Dialog.Close>
                     </Flex>
                     <Dialog.Close>
                         <Button className="cursor-pointer" variant="soft" mb="3" mt="3" onClick={handleEditTask}>Update</Button>
                     </Dialog.Close>
                 </Flex>
-                
             </Dialog.Content>
         </Dialog.Root>
     );
 };
 
 export default DialogEditTask;
-
-//test

@@ -10,10 +10,22 @@ const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData }) => {
     const [taskName, setTaskName] = useState("");
     const [description, setDescription] = useState("");
     const [budget, setBudget] = useState(0);
+    const [formattedBudget, setFormattedBudget] = useState("0"); // สำหรับแสดง budget แบบ formatted
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [status, setStatus] = useState("pending");
     const [tasks, setTasks] = useState<{ task_id: string; task_name: string }[]>([]);
+
+    const formatNumber = (value: number) => {
+        return new Intl.NumberFormat("en-US").format(value);
+    };
+
+    const handleBudgetChange = (event: any) => {
+        const value = event.target.value.replace(/,/g, ""); // ลบ comma ออกจาก input
+        const numericValue = value === "" ? 0 : Number(value);
+        setBudget(numericValue); // อัปเดตค่า budget
+        setFormattedBudget(formatNumber(numericValue)); // อัปเดตค่า formattedBudget
+    };
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -24,11 +36,11 @@ const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData }) => {
     }, []);
 
     const handleAddTask = async () => {
-        if (!taskName || !description || !budget ||!startDate || !endDate) {
+        if (!taskName || !description || !budget || !startDate || !endDate) {
             alert("Please fill out all required fields.");
             return;
         }
-    
+
         try {
             const response = await postTask({
                 task_name: taskName,
@@ -38,8 +50,17 @@ const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData }) => {
                 end_date: endDate,
                 status: status,
             });
-    
+
             if (response.success) {
+                // รีเซ็ตฟอร์ม
+                setTaskName("");
+                setDescription("");
+                setBudget(0);
+                setFormattedBudget("0");
+                setStartDate("");
+                setEndDate("");
+                setStatus("pending");
+
                 getTaskData();
             } else {
                 alert(`Error: ${response.message}`);
@@ -60,45 +81,45 @@ const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData }) => {
                 <Flex direction="column">
                     <label>
                         <Text as="div" size="2" mb="3" weight="bold">Task Name</Text>
-                        <TextField.Root 
-                            value={taskName} 
+                        <TextField.Root
+                            value={taskName}
                             type="text"
-                            onChange={(e) => setTaskName(e.target.value)} 
-                            placeholder="Enter Task Name" 
+                            onChange={(e) => setTaskName(e.target.value)}
+                            placeholder="Enter Task Name"
                         />
                     </label>
                     <label>
                         <Text as="div" size="2" mb="3" mt="3" weight="bold">Description</Text>
-                        <TextField.Root 
-                            value={description} 
+                        <TextField.Root
+                            value={description}
                             type="text"
-                            onChange={(e) => setDescription(e.target.value)} 
-                            placeholder="Enter Task Description" 
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Enter Task Description"
                         />
                     </label>
                     <label>
                         <Text as="div" size="2" mb="3" mt="3" weight="bold">Budget</Text>
-                        <TextField.Root 
-                            value={budget} 
+                        <TextField.Root
+                            value={formattedBudget} // ใช้ formattedBudget เพื่อแสดงค่า
                             type="text"
-                            onChange={(e) => setBudget(Number(e.target.value))} 
-                            placeholder="Enter Task Description" 
+                            onChange={handleBudgetChange}
+                            placeholder="Enter Task Budget"
                         />
                     </label>
                     <label>
                         <Text as="div" size="2" mb="3" mt="3" weight="bold">Start Date</Text>
-                        <TextField.Root 
-                            value={startDate} 
+                        <TextField.Root
+                            value={startDate}
                             type="date"
-                            onChange={(e) => setStartDate(e.target.value)} 
+                            onChange={(e) => setStartDate(e.target.value)}
                         />
                     </label>
                     <label>
                         <Text as="div" size="2" mb="3" mt="3" weight="bold">End Date</Text>
-                        <TextField.Root 
-                            value={endDate} 
+                        <TextField.Root
+                            value={endDate}
                             type="date"
-                            onChange={(e) => setEndDate(e.target.value)} 
+                            onChange={(e) => setEndDate(e.target.value)}
                         />
                     </label>
                     <label>

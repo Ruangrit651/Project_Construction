@@ -1,6 +1,6 @@
-import { CREATE_TASK, GET_TASK_ALL , UPDATE_TASK ,DELETE_TASK} from "@/apis/endpoint.api";
+import { CREATE_TASK, GET_TASK_ALL , UPDATE_TASK ,DELETE_TASK, UPDATE_START_DATE_TASK, UPDATE_END_DATE_TASK} from "@/apis/endpoint.api";
 import mainApi from "@/apis/main.api";
-import { PayloadCreateTask , PayloadDeleteTask ,PayloadUpdateTask} from "@/types/requests/request.task";
+import { PayloadCreateTask , PayloadDeleteTask ,PayloadUpdateTask, PayloadUpdateStartDate ,PayloadUpdateEndDate} from "@/types/requests/request.task";
 import { TaskResponse } from "@/types/response/response.task";
 
   
@@ -22,6 +22,22 @@ export const postTask = async (data: PayloadCreateTask) => {
 export const patchTask = async (data: PayloadUpdateTask) => {
   const { data: response } = await mainApi.put<TaskResponse>(
       UPDATE_TASK,
+      data
+  );
+  return response;
+}
+
+export const updateStartDateTask = async (data: PayloadUpdateStartDate) => {
+  const { data: response } = await mainApi.put<TaskResponse>(
+      UPDATE_START_DATE_TASK,
+      data
+  );
+  return response;
+}
+
+export const updateEndDateTask = async (data: PayloadUpdateEndDate) => {
+  const { data: response } = await mainApi.put<TaskResponse>(
+      UPDATE_END_DATE_TASK,
       data
   );
   return response;
