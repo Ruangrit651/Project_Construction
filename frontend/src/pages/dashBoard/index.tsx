@@ -94,7 +94,7 @@ const UtilizedDuration = () => {
             name: { show: true },
             value: {
               show: true,
-              formatter: () => "952 day(s)",
+              formatter: () => "90 day(s)",
             },
           },
         },
@@ -129,28 +129,37 @@ const CostBreakdown = () => {
 export { BudgetVariance, ProjectCompletionRate, UtilizedDuration, CostBreakdown, };
 
 //--------------------------------------------------------------------------------------------------------------------------------------//
-const CustomSelect = ({ options, placeholder }: { options: string[], placeholder: string }) => {
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+const CustomSelect = ({
+  options,
+  placeholder,
+  onChange,
+  selectedOptions,
+}: {
+  options: string[];
+  placeholder: string;
+  onChange: (value: string[]) => void;
+  selectedOptions: string[];
+}) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleCheckboxChange = (option: string) => {
-    if (option === "All") {
-      if (selectedOptions.length === options.length - 1) {
-        setSelectedOptions([]);
-      } else {
-        setSelectedOptions(options.slice(1)); // Exclude "All" from the selection
-      }
-    } else {
-      setSelectedOptions((prevSelectedOptions) =>
-        prevSelectedOptions.includes(option)
-          ? prevSelectedOptions.filter((item) => item !== option)
-          : [...prevSelectedOptions, option]
-      );
-    }
-  };
+    let updatedOptions: string[];
 
-  const displayText = selectedOptions.length === options.length - 1 ? "All" : selectedOptions.join(", ") || placeholder;
+    if (option === "All") {
+      // ถ้าเลือก All ให้เลือกทุกตัวเลือก
+      updatedOptions = selectedOptions.includes("All")
+        ? [] // ยกเลิกการเลือกทั้งหมด
+        : [...options]; // เลือกทั้งหมด
+    } else {
+      // ถ้าเลือกตัวเลือกอื่นที่ไม่ใช่ All
+      updatedOptions = selectedOptions.includes(option)
+        ? selectedOptions.filter((item) => item !== option) // เอาออกถ้าเลือกซ้ำ
+        : [...selectedOptions.filter((item) => item !== "All"), option]; // เพิ่มตัวเลือกใหม่และเอา All ออก
+    }
+
+    onChange(updatedOptions); // ส่งค่าที่เลือกกลับไปยัง Dashboard
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -167,20 +176,24 @@ const CustomSelect = ({ options, placeholder }: { options: string[], placeholder
 
   return (
     <div ref={dropdownRef} className="relative w-full border rounded p-2 mb-2">
-      <div className="cursor-pointer" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-        {displayText}
+      <div
+        className="cursor-pointer"
+        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+      >
+        {selectedOptions.length > 0
+          ? selectedOptions.join(", ") // แสดงตัวเลือกที่เลือก
+          : placeholder}
       </div>
       {isDropdownOpen && (
         <div className="absolute bg-white border rounded mt-2 w-full z-10">
           {options.map((option) => (
             <div key={option} className="flex items-center mb-2 p-2 hover:bg-teal-100 cursor-pointer">
-              {/* Checkbox for each option */}
               <input
                 type="checkbox"
                 id={option}
                 name={option}
                 value={option}
-                checked={selectedOptions.includes(option) || (option === "All" && selectedOptions.length === options.length - 1)}
+                checked={selectedOptions.includes(option)} // แสดงสถานะติ๊กถูก
                 onChange={() => handleCheckboxChange(option)}
                 className="mr-2"
               />
@@ -196,34 +209,53 @@ const CustomSelect = ({ options, placeholder }: { options: string[], placeholder
 };
 
 const Dashboard = () => {
-  const projectOptions = ["All", "Project 1", "Project 2", "Project 3", "Project 4", "Project 5"];
-  const statusOptions = ["All", "In Progress", "Completed", "On Hold"];
-
-  
-  const [projectDetails, setProjectDetails] = useState<TypeDashboard | null>(null);
+  const [projectDetails, setProjectDetails] = useState<TypeDashboard[] | null>(null);
+  const [filteredProjects, setFilteredProjects] = useState<TypeDashboard[] | null>(null);
+  const [projectOptions, setProjectOptions] = useState<string[]>(["All"]);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(["All"]); // เก็บโปรเจ็กต์ที่เลือก
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["All"]); // เก็บสถานะที่เลือก
   const [loading, setLoading] = useState(true);
+
   // ดึงข้อมูลจาก API เมื่อ Component ถูกโหลด
   useEffect(() => {
     const fetchProjectDetails = async () => {
       try {
         const data = await getDashboard();
-        console.log("API Response:", data); // ตรวจสอบข้อมูลที่ได้รับ
-  
-        // ตรวจสอบว่า responseObject เป็น Array และมีข้อมูล
+        console.log("API Response:", data);
+
         if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
-          setProjectDetails(data.responseObject[0]); // เก็บข้อมูลใน state
+          setProjectDetails(data.responseObject);
+          setFilteredProjects(data.responseObject);
+
+          // สร้าง projectOptions จากข้อมูลจริง
+          const options = ["All", ...data.responseObject.map((project) => project.project_name)];
+          setProjectOptions(options);
         } else {
           console.error("responseObject is not an array or is empty");
         }
       } catch (error) {
         console.error("Error fetching project details:", error);
       } finally {
-        setLoading(false); // ปิดสถานะ loading
+        setLoading(false);
       }
     };
-  
+
     fetchProjectDetails();
   }, []);
+
+  // ฟังก์ชันสำหรับกรองข้อมูล
+  useEffect(() => {
+    if (projectDetails) {
+      const filtered = projectDetails.filter((project) => {
+        const matchesProject =
+          selectedProjects.includes("All") || selectedProjects.includes(project.project_name); // ตรวจสอบหลายโปรเจ็กต์
+        const matchesStatus =
+          selectedStatuses.includes("All") || selectedStatuses.includes(project.status); // ตรวจสอบหลายสถานะ
+        return matchesProject && matchesStatus; // ตรวจสอบทั้งสองเงื่อนไข
+      });
+      setFilteredProjects(filtered);
+    }
+  }, [selectedProjects, selectedStatuses, projectDetails]); // ทำงานเมื่อ selectedProjects หรือ selectedStatuses เปลี่ยน
 
   return (
     <div className="min-h-screen bg-gray-400 p-3">
@@ -234,11 +266,21 @@ const Dashboard = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 rounded-lg shadow-md border border-gray-200">
               <h3 className="text-lg font-semibold mb-2">Projects</h3>
-              <CustomSelect options={projectOptions} placeholder="Select Projects" />
+              <CustomSelect
+                options={projectOptions}
+                placeholder="Select Projects"
+                selectedOptions={selectedProjects} // ส่งค่าที่เลือก
+                onChange={(value) => setSelectedProjects(value)} // อัปเดต selectedProjects
+              />
             </div>
             <div className="p-4 rounded-lg shadow-md border border-gray-200">
               <h3 className="text-lg font-semibold mb-2">Project Status</h3>
-              <CustomSelect options={statusOptions} placeholder="Select Status" />
+              <CustomSelect
+                options={["All", "In progress", "Suspend operations", "Project Cancellation"]}
+                placeholder="Select Status"
+                selectedOptions={selectedStatuses} // ส่งค่าที่เลือก
+                onChange={(value) => setSelectedStatuses(value)} // อัปเดต selectedStatuses
+              />
             </div>
           </div>
         </div>
@@ -247,41 +289,64 @@ const Dashboard = () => {
         <div className="grid grid-cols-3 gap-3">
           {/* Project Details */}
           <div className="bg-white shadow-lg rounded-lg p-2 border border-gray-200">
-          <div className="bg-white shadow-lg rounded-lg p-2 border border-gray-200">
-          <div className="space-y-3 p-4 mt-4 bg-red-100 shadow-lg rounded-lg border border-gray-200">
-            <h2 className="text-xl font-semibold mb-4">Project Details</h2>
-            {loading ? (
-              <p>Loading...</p> // แสดงข้อความ Loading ระหว่างรอข้อมูล
-            ) : projectDetails ? (
-              <>
-                <p className="text-lg">
-                  <strong>Project Name:</strong> {projectDetails.project_name} 
-                </p>
-                <p className="text-lg">
-                  <strong>Start Date:</strong> {projectDetails.start_date}
-                </p>
-                <p className="text-lg">
-                  <strong>Finish Date:</strong> {projectDetails.end_date}
-                </p>
-              </>
-            ) : (
-              <p>No project details available.</p> // กรณีไม่มีข้อมูล
-            )}
-          </div>
-        </div>
+            <div className=" bg-indigo-200 shadow-lg rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold pl-2 mt-2 ">Project Details</h2>
+              <div
+                className="space-y-3 p-4 mt-4 bg-indigo-100 shadow-lg rounded-lg border border-gray-200 overflow-y-auto"
+                style={{
+                  minHeight: "280px",
+                  maxHeight: "280px",
+                }}
+              >
+                {loading ? (
+                  <p>Loading...</p>
+                ) : filteredProjects && filteredProjects.length > 0 ? (
+                  filteredProjects.map((project, index) => (
+                    <div
+                      key={project.project_id}
+                      className={`mb-4 ${index !== filteredProjects.length - 1 ? "border-b border-emerald-700 pb-4" : ""}`}
+                    >
+                      <p className="text-lg">
+                        <strong>Project Name:</strong> {project.project_name}
+                      </p>
+                      <p className="text-lg">
+                        <strong>Start Date:</strong> {new Date(project.start_date).toLocaleDateString()}
+                      </p>
+                      <p className="text-lg">
+                        <strong>Finish Date:</strong> {new Date(project.end_date).toLocaleDateString()}
+                      </p>
+                      <p className="text-lg">
+                        <strong>Status:</strong> {project.status}
+                      </p>
+                      <p className="text-lg">
+                        <strong>Actual Cost:</strong> ${Number(project.actual).toLocaleString()}
+                      </p>
+                      <p className="text-lg">
+                        <strong>Budget:</strong> ${Number(project.budget).toLocaleString()}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No selected projects.</p>
+                )}
+              </div>
+            </div>
+
+
+
 
             {/* Budget Summary */}
-            <div className="  mt-4 bg-white shadow-lg rounded-lg border border-gray-200">
+            <div className="mt-3 bg-white shadow-lg rounded-lg border border-gray-200">
               <div className=" p-1">
                 <div className="grid rounded-lg shadow-lg bg-blue-300">
-                  <h2 className="text-center font-semibold text-l mt-6 mb-4 ">Estimate Completion</h2>
+                  <h2 className="text-center font-semibold text-l mt-6 mb-4 ">Estimate At Completion</h2>
                   <h2 className="text-center font-semibold text-4xl mt-2 mb-6">$2.42 M</h2>
                 </div>
               </div>
-              <div className=" p-1 mt-3">
+              <div className=" p-1 mt-1">
                 <div className="grid p-4 rounded-lg shadow-lg bg-indigo-400">
-                  <h2 className="text-center font-semibold text-4xl mt-2">$2.42 M</h2>
-                  <h2 className="text-center font-semibold text-l mt-4">Utilized Budget</h2>
+                  <h2 className="text-center font-semibold text-4xl mt-2">40.85 %</h2>
+                  <h2 className="text-center font-semibold text-l mt-4">Percent Of Target</h2>
                   <div className="flex justify-between w-full text-center mt-5">
                     <div className="w-1/2 pr-2">
                       <h2 className="text-center font-semibold text-l">$2.04 M</h2>
@@ -295,10 +360,10 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div >
 
           {/* Cost Breakdown */}
-          <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200">
+          < div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200" >
             <h2 className="text-xl font-semibold mb-4">Cost Breakdown</h2>
             <CostBreakdown />
             <div className="grid grid-cols-2 gap-2 p-2 mt-4 text-center ">
@@ -313,22 +378,22 @@ const Dashboard = () => {
               <div className="border p-2">Subcontractors</div>
               <div className="border p-2 bg-orange-400">$151,775</div>
             </div>
-          </div>
+          </div >
 
           {/* Charts Section */}
-          <div className="grid bg-white shadow-lg rounded-lg p-6 border border-gray-200">
+          < div className="grid bg-white shadow-lg rounded-lg p-6 border border-gray-200" >
             <div className="grid gap-2 ">
               <div className="bg-white shadow-md rounded-lg border border-gray-200 ">
-                <div className="text-sm font-semibold p-1 mt-2  ">ProjectCompletionRate</div>
+                <div className="text-sm font-semibold p-1 mt-2 pl-4 ">Project Completion Rate</div>
                 <ProjectCompletionRate />
               </div>
               <div className="bg-white shadow-md rounded-lg border border-gray-200 ">
-                <div className="text-sm font-semibold p-1 mt-2  ">UtilizedDuration</div>
+                <div className="text-sm font-semibold p-1 mt-2 pl-4">Utilized Duration</div>
                 <UtilizedDuration />
               </div>
             </div>
-          </div>
-        </div>
+          </div >
+        </div >
         <div >
           {/* Budget Variance Chart */}
           <div className="bg-white shadow-lg rounded-lg p-6 mt-4 border border-gray-200">
@@ -338,8 +403,8 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
