@@ -79,7 +79,7 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
                     <Text size="1">+ Add</Text>
                 </Button>
             </Dialog.Trigger>
-            <Dialog.Content style={{ maxWidth: 450 }}>
+            <Dialog.Content style={{ maxWidth: 450 }}  className="overflow-visible">
                 <Dialog.Title>Add Subtask for: {taskName}</Dialog.Title>
                 <form onSubmit={(e) => e.preventDefault()}>
                     <Flex direction="column" gap="2">

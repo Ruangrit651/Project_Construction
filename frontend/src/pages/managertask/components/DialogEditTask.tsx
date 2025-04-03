@@ -105,7 +105,7 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
             <Dialog.Trigger asChild>
                 {trigger}
             </Dialog.Trigger>
-            <Dialog.Content>
+            <Dialog.Content className="overflow-visible">
                 <Dialog.Title>Edit Task</Dialog.Title>
                 {loading ? (
                     <Text>Loading task details...</Text>

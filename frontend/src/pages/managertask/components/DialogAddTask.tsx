@@ -76,7 +76,7 @@ const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData }) => {
             <Dialog.Trigger asChild>
                 <Button variant="soft" className="cursor-pointer">+ Add Task</Button>
             </Dialog.Trigger>
-            <Dialog.Content>
+            <Dialog.Content className="overflow-visible">
                 <Dialog.Title>Add Task</Dialog.Title>
                 <Flex direction="column">
                     <label>

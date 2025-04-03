@@ -472,7 +472,7 @@ export default function TaskPage() {
                 </Flex>
             ) : (
                 <div>
-                    <Table.Root variant="surface" className="min-w-[1200px]">
+                    <Table.Root variant="surface" className="min-w-[1200px] overflow-visible">
                         <DateTable
                             year={selectedYear}
                             tasks={tasks.map(task => {

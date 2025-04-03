@@ -28,7 +28,7 @@ const AlertDialogDeleteSubtask: React.FC<AlertDialogDeleteSubtaskProps> = ({ get
             <Dialog.Trigger>
                 <Button color="red" variant="soft" className="cursor-pointer">Delete</Button>
             </Dialog.Trigger>
-            <Dialog.Content maxWidth="450px">
+            <Dialog.Content maxWidth="450px" className="overflow-visible">
                 <Dialog.Title>Delete Subtask</Dialog.Title>
                 <Flex direction="column" gap="3">
                     <Text size="2"><Strong>Subtask Name: </Strong>{subtask_name}</Text>

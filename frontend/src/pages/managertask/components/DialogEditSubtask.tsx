@@ -105,7 +105,7 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
             <Dialog.Trigger asChild>
                 {trigger}
             </Dialog.Trigger>
-            <Dialog.Content>
+            <Dialog.Content className="overflow-visible">
                 <Dialog.Title>Edit Subtask</Dialog.Title>
                 {loading ? (
                     <Text>Loading subtask details...</Text>

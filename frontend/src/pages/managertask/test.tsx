@@ -5,6 +5,7 @@ import DialogEditTask from "./components/DialogEditTask";
 import DialogEditSubTask from "./components/DialogEditSubtask";
 import DialogAddSubTask from "./components/DialogAddSubTask";
 import { ChevronDownIcon, ChevronRightIcon } from "@radix-ui/react-icons";
+import Srcoll from "./Scroll.css"; // นำเข้า CSS
 
 // Interfaces
 interface Task {
@@ -259,7 +260,8 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
     };
 
     return (
-        <Table.Root variant="surface" className="min-w-[1400px]">
+        <Table.Root variant="surface" className="min-w-[1400px] overflow-visible">
+           
             {/* Table Header */}
             <Table.Header>
                 <Table.Row>
