@@ -13,26 +13,53 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
     const [subtaskName, setSubtaskName] = useState("");
     const [description, setDescription] = useState("");
     const [budget, setBudget] = useState(0);
+    const [formattedBudget, setFormattedBudget] = useState("0"); // For displaying formatted budget
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [status, setStatus] = useState("pending");
     const [loading, setLoading] = useState(false);
 
+    const formatNumber = (value: number) => {
+        return new Intl.NumberFormat("en-US").format(value);
+    };
+
+    const handleBudgetChange = (event: any) => {
+        const value = event.target.value.replace(/,/g, ""); // Remove commas for parsing
+        const numericValue = value === "" ? 0 : Number(value);
+        setBudget(numericValue);
+        setFormattedBudget(formatNumber(numericValue)); // Update the formatted budget
+    };
+
     useEffect(() => {
+        console.log("subtaskId:", subtaskId); // Debugging: Check the subtaskId
         const fetchSubtaskDetails = async () => {
             if (subtaskId) {
                 setLoading(true);
                 try {
-                    const response = await getSubtask(subtaskId);
-                    const subtaskData = response.responseObject[0];
-
-                    
-                    setSubtaskName(subtaskData.subtask_name);
-                    setDescription(subtaskData.description);
-                    setBudget(subtaskData.budget);
-                    setStartDate(subtaskData.start_date);
-                    setEndDate(subtaskData.end_date);
-                    setStatus(subtaskData.status);
+                    const response = await getSubtask(subtaskId); // Fetch subtask by ID
+                    console.log("API Response:", response); // Debugging: Check the API response
+                    if (response.responseObject && response.responseObject.length > 0) {
+                        // Use the correct property name for subtask ID
+                        const subtaskData = response.responseObject.find(
+                            (subtask: any) => subtask.subtask_id === subtaskId
+                        );
+    
+                        if (subtaskData) {
+                            setSubtaskName(subtaskData.subtask_name);
+                            setDescription(subtaskData.description);
+                            setBudget(Number(subtaskData.budget)); // Convert budget to a number
+                            setFormattedBudget(formatNumber(Number(subtaskData.budget))); // Set formatted budget
+                            setStartDate(subtaskData.start_date);
+                            setEndDate(subtaskData.end_date);
+                            setStatus(subtaskData.status);
+                        } else {
+                            console.error("Subtask not found.");
+                            alert("Subtask not found.");
+                        }
+                    } else {
+                        console.error("No subtask data found.");
+                        alert("No subtask data found.");
+                    }
                 } catch (error) {
                     console.error("Failed to fetch subtask details:", error);
                     alert("An error occurred while fetching subtask details.");
@@ -41,7 +68,7 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
                 }
             }
         };
-
+    
         fetchSubtaskDetails();
     }, [subtaskId]);
 
@@ -78,7 +105,7 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
             <Dialog.Trigger asChild>
                 {trigger}
             </Dialog.Trigger>
-            <Dialog.Content>
+            <Dialog.Content className="overflow-visible">
                 <Dialog.Title>Edit Subtask</Dialog.Title>
                 {loading ? (
                     <Text>Loading subtask details...</Text>
@@ -90,7 +117,7 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
                                 value={subtaskName}
                                 type="text"
                                 onChange={(e) => setSubtaskName(e.target.value)}
-                                placeholder="Enter  Name"
+                                placeholder="Enter Name"
                             />
                         </label>
                         <label>
@@ -105,9 +132,9 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
                         <label>
                             <Text as="div" size="2" mb="3" mt="3" weight="bold">Budget</Text>
                             <TextField.Root
-                                value={budget}
+                                value={formattedBudget} // Display formatted budget
                                 type="text"
-                                onChange={(e) => setBudget(Number(e.target.value))}
+                                onChange={handleBudgetChange}
                                 placeholder="Enter Budget"
                             />
                         </label>

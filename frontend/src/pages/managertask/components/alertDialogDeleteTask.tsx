@@ -28,7 +28,7 @@ const AlertDialogDeleteTask: React.FC<AlertDialogDeleteTaskProps> = ({ getTaskDa
             <Dialog.Trigger>
                 <Button color="red" variant="soft" className="cursor-pointer">Delete</Button>
             </Dialog.Trigger>
-            <Dialog.Content maxWidth="450px">
+            <Dialog.Content maxWidth="450px " className="overflow-visible">
                 <Dialog.Title>Delete Task</Dialog.Title>
                 <Flex direction="column" gap="3">
                     <Text size="2"><Strong>Task Name: </Strong>{task_name}</Text>

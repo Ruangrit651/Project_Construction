@@ -29,7 +29,7 @@ export const TaskRepository = {
   // Find task by ID
   findById: async (task_id: string) => {
     return prisma.task.findUnique({
-        where: { task_id },
+      where: { task_id },
     });
   },
 
@@ -50,7 +50,7 @@ export const TaskRepository = {
     const task_name = payload.task_name.trim();
     const startDate = payload.start_date;
     const setPayload: any = {
-      project_id:payload.project_id,
+      project_id: payload.project_id,
       task_name: task_name,
       description: payload.description,
       budget: payload.budget,
@@ -74,6 +74,26 @@ export const TaskRepository = {
     return await prisma.task.update({
       where: { task_id: task_id },
       data: payload
+    });
+  },
+
+  // Update task's start date by task_id
+  updateStartDate: async (task_id: string, start_date: string) => {
+    return await prisma.task.update({
+      where: {
+        task_id: task_id, // ระบุ task_id ที่ต้องการอัปเดต
+      },
+      data: {
+        start_date: start_date, // อัปเดตค่า start_date โดยตรง
+      },
+    });
+  },
+
+  // Update task's end date by task_id
+  updateEndDate: async (task_id: string, end_date: string) => {
+    return await prisma.task.update({
+      where: { task_id: task_id },
+      data: { end_date }
     });
   },
 

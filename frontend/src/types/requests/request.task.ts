@@ -17,6 +17,16 @@ export type PayloadUpdateTask = {
     status: string;
 }
 
+export type PayloadUpdateStartDate = {
+    task_id: string;
+    start_date?: string;
+}
+
+export type PayloadUpdateEndDate = {
+    task_id: string;
+    end_date?: string;
+}
+
 export type PayloadDeleteTask = {
     task_id : string;
 }

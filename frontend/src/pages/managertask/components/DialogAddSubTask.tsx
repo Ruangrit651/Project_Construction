@@ -12,11 +12,23 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
     const [subtaskName, setSubtaskName] = useState("");
     const [description, setDescription] = useState("");
     const [budget, setBudget] = useState(0);
+    const [formattedBudget, setFormattedBudget] = useState("0"); // For displaying formatted budget
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [status, setStatus] = useState("pending");
     const [errorMessage, setErrorMessage] = useState("");
     const [open, setOpen] = useState(false);
+
+    const formatNumber = (value: number) => {
+        return new Intl.NumberFormat("en-US").format(value);
+    };
+
+    const handleBudgetChange = (event: any) => {
+        const value = event.target.value.replace(/,/g, ""); // Remove commas for parsing
+        const numericValue = value === "" ? 0 : Number(value);
+        setBudget(numericValue);
+        setFormattedBudget(formatNumber(numericValue)); // Update the formatted budget
+    };
 
     const handleAddSubtask = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -43,10 +55,11 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
                 setSubtaskName("");
                 setDescription("");
                 setBudget(0);
+                setFormattedBudget("0");
                 setStartDate("");
                 setEndDate("");
                 setStatus("pending");
-                
+
                 // Close dialog and fetch updated subtask data
                 getSubtaskData();
                 setOpen(false); // Close dialog after successful save
@@ -66,63 +79,60 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
                     <Text size="1">+ Add</Text>
                 </Button>
             </Dialog.Trigger>
-            <Dialog.Content style={{ maxWidth: 450 }}>
+            <Dialog.Content style={{ maxWidth: 450 }}  className="overflow-visible">
                 <Dialog.Title>Add Subtask for: {taskName}</Dialog.Title>
                 <form onSubmit={(e) => e.preventDefault()}>
                     <Flex direction="column" gap="2">
                         {errorMessage && (
                             <Text color="red" size="2">{errorMessage}</Text>
                         )}
-                        
-                        {/* Task selection removed as it's now pre-selected */}
-                        
+
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">Subtask Name *</Text>
-                            <TextField.Root 
-                                value={subtaskName} 
-                                onChange={(e) => setSubtaskName(e.target.value)} 
-                                placeholder="Enter Subtask Name" 
+                            <TextField.Root
+                                value={subtaskName}
+                                onChange={(e) => setSubtaskName(e.target.value)}
+                                placeholder="Enter Subtask Name"
                             />
                         </label>
-                        
-                        {/* Rest of the form fields remain unchanged */}
+
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">Description *</Text>
-                            <TextField.Root 
-                                value={description} 
-                                onChange={(e) => setDescription(e.target.value)} 
-                                placeholder="Enter Subtask Description" 
+                            <TextField.Root
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Enter Subtask Description"
                             />
                         </label>
-                        
+
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">Budget *</Text>
-                            <TextField.Root 
-                                value={budget} 
-                                type="number"
-                                onChange={(e) => setBudget(Number(e.target.value))} 
-                                placeholder="Enter Subtask Budget" 
+                            <TextField.Root
+                                value={formattedBudget} // Display formatted budget
+                                type="text"
+                                onChange={handleBudgetChange}
+                                placeholder="Enter Subtask Budget"
                             />
                         </label>
-                        
+
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">Start Date *</Text>
-                            <TextField.Root 
-                                value={startDate} 
+                            <TextField.Root
+                                value={startDate}
                                 type="date"
-                                onChange={(e) => setStartDate(e.target.value)} 
+                                onChange={(e) => setStartDate(e.target.value)}
                             />
                         </label>
-                        
+
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">End Date *</Text>
-                            <TextField.Root 
-                                value={endDate} 
+                            <TextField.Root
+                                value={endDate}
                                 type="date"
-                                onChange={(e) => setEndDate(e.target.value)} 
+                                onChange={(e) => setEndDate(e.target.value)}
                             />
                         </label>
-                        
+
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">Status</Text>
                             <Select.Root value={status} onValueChange={setStatus}>
@@ -135,7 +145,7 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
                             </Select.Root>
                         </label>
                     </Flex>
-                    
+
                     <Flex gap="3" mt="4" justify="end">
                         <Button variant="soft" color="gray" onClick={() => setOpen(false)}>
                             Cancel

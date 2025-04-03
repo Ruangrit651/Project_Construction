@@ -6,12 +6,11 @@ export type TypeTaskAll = {
     start_date?: string;
     end_date?: string;
     status: boolean;
-    // created_at?: string;
-    // created_by?: string;
-    // updated_at?: string;
-    // updated_by?: string;
+    created_at?: string;
+    created_by?: string;
+    updated_at?: string;
+    updated_by?: string;
 }
-
 
 export type TypeTask = {
     task_id: string;
@@ -21,10 +20,10 @@ export type TypeTask = {
     start_date?: string;
     end_date?: string;
     status: boolean;
-    // created_at?: string;
-    // created_by?: string;
-    // updated_at?: string;
-    // updated_by?: string;
+    created_at?: string;
+    created_by?: string;
+    updated_at?: string;
+    updated_by?: string;
 }
 
 export type TaskResponse = {
@@ -33,3 +32,10 @@ export type TaskResponse = {
     responseObject: TypeTask;
     statusCode:number;
 };
+
+export type TypeTaskAllResponse = {
+    success: boolean;
+    message: string;
+    responseObject: TypeTaskAll[];
+    statusCode:number;
+}

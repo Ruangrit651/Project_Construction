@@ -48,6 +48,20 @@ export const UpdateTaskSchema = z.object({
   }),
 });
 
+export const UpdateStartDateSchema = z.object({
+  body: z.object({
+    task_id: z.string().uuid(), // ต้องระบุ task_id เพื่อทำการอัปเดต
+    start_date: z.string().optional(),
+  }),
+});
+
+export const UpdateEndDateSchema = z.object({
+  body: z.object({
+    task_id: z.string().uuid(), // ต้องระบุ task_id เพื่อทำการอัปเดต
+    end_date: z.string().optional(),
+  }),
+});
+
 // Schema สำหรับการลบ Task
 export const DeleteTaskSchema = z.object({
   params: z.object({

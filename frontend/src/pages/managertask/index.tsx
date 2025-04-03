@@ -34,12 +34,12 @@
 //     // Helper function to format date as dd/mm/yy
 //     const formatDate = (dateString: string | undefined) => {
 //         if (!dateString) return "-";
-        
+
 //         const date = new Date(dateString);
 //         const day = date.getDate().toString().padStart(2, '0');
 //         const month = (date.getMonth() + 1).toString().padStart(2, '0');
 //         const year = date.getFullYear().toString().slice(-2); // Get last 2 digits
-        
+
 //         return `${day}/${month}/${year}`;
 //     };
 
@@ -50,7 +50,7 @@
 //             if (response.success) {
 //                 const taskData = response.responseObject;
 //                 setTasks(taskData);
-                
+
 //                 const taskYears: number[] = taskData.reduce((acc: number[], task) => {
 //                     if (task.start_date) {
 //                         const year = new Date(task.start_date).getFullYear();
@@ -62,7 +62,7 @@
 //                     }
 //                     return acc;
 //                 }, []);
-                
+
 //                 // Set the years and default to current year if available
 //                 if (taskYears.length > 0) {
 //                     setYears(taskYears.sort());
@@ -98,10 +98,10 @@
 //     // Calculate the column position and span for a task based on its dates
 //     const calculateTaskPosition = (startDate: string | undefined, endDate: string | undefined, year: number) => {
 //         if (!startDate || !endDate) return { start: 1, span: 1 };
-        
+
 //         const start = new Date(startDate);
 //         const end = new Date(endDate);
-        
+
 //         // Calculate start column (1-12 for Jan-Dec)
 //         let startCol = 1;
 //         if (start.getFullYear() === year) {
@@ -113,7 +113,7 @@
 //             // If task starts after the selected year, it shouldn't be visible
 //             return { start: 0, span: 0 };
 //         }
-        
+
 //         // Calculate end column and span
 //         let endCol = 12;
 //         if (end.getFullYear() === year) {
@@ -122,11 +122,11 @@
 //             // If task ends before the selected year, it shouldn't be visible
 //             return { start: 0, span: 0 };
 //         }
-        
+
 //         const span = endCol - startCol + 1;
 //         return { start: startCol, span: span > 0 ? span : 1 };
 //     };
-    
+
 //     useEffect(() => {
 //         fetchTasks();
 //         fetchSubtasks();
@@ -158,7 +158,7 @@
 //                     <DialogAddTask getTaskData={fetchTasks} />
 //                 </Flex>
 //             </Flex>
-            
+
 //             {/* Year selector */}
 //             {years.length > 0 && (
 //                 <Flex gap="2" mb="4">
@@ -174,7 +174,7 @@
 //                     </select>
 //                 </Flex>
 //             )}
-            
+
 //             {isLoading ? (
 //                 <Flex justify="center" align="center" style={{ height: "200px" }}>
 //                     <Spinner size="3" />
@@ -290,7 +290,7 @@
 //                             </Table.Body>
 //                     </Table.Root>
 //                 </div>
-                
+
 //             )}
 //         </Card>
 //     );
@@ -312,25 +312,25 @@ export default function TaskPage() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [years, setYears] = useState<number[]>([]);
-    const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
+    // const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
 
-    // Helper function to toggle task expansion
-    const toggleTaskExpansion = (taskId: string) => {
-        setExpandedTasks(prev => ({
-            ...prev,
-            [taskId]: !prev[taskId]
-        }));
-    };
+    // // Helper function to toggle task expansion
+    // const toggleTaskExpansion = (taskId: string) => {
+    //     setExpandedTasks(prev => ({
+    //         ...prev,
+    //         [taskId]: !prev[taskId]
+    //     }));
+    // };
 
     // Helper function to format date as dd/mm/yy
     const formatDate = (dateString: string | undefined) => {
         if (!dateString) return "-";
-        
+
         const date = new Date(dateString);
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const year = date.getFullYear().toString().slice(-2); // Get last 2 digits
-        
+
         return `${day}/${month}/${year}`;
     };
 
@@ -341,7 +341,7 @@ export default function TaskPage() {
             if (response.success) {
                 const taskData = response.responseObject;
                 setTasks(taskData);
-                
+
                 const taskYears: number[] = taskData.reduce((acc: number[], task) => {
                     if (task.start_date) {
                         const year = new Date(task.start_date).getFullYear();
@@ -353,7 +353,7 @@ export default function TaskPage() {
                     }
                     return acc;
                 }, []);
-                
+
                 // Set the years and default to current year if available
                 if (taskYears.length > 0) {
                     setYears(taskYears.sort());
@@ -389,10 +389,10 @@ export default function TaskPage() {
     // Calculate the column position and span for a task based on its dates
     const calculateTaskPosition = (startDate: string | undefined, endDate: string | undefined, year: number) => {
         if (!startDate || !endDate) return { start: 1, span: 1 };
-        
+
         const start = new Date(startDate);
         const end = new Date(endDate);
-        
+
         // Calculate start column (1-12 for Jan-Dec)
         let startCol = 1;
         if (start.getFullYear() === year) {
@@ -404,7 +404,7 @@ export default function TaskPage() {
             // If task starts after the selected year, it shouldn't be visible
             return { start: 0, span: 0 };
         }
-        
+
         // Calculate end column and span
         let endCol = 12;
         if (end.getFullYear() === year) {
@@ -413,33 +413,33 @@ export default function TaskPage() {
             // If task ends before the selected year, it shouldn't be visible
             return { start: 0, span: 0 };
         }
-        
+
         const span = endCol - startCol + 1;
         return { start: startCol, span: span > 0 ? span : 1 };
     };
-    
+
     useEffect(() => {
         fetchTasks();
         fetchSubtasks();
     }, []);
 
-    // Helper function to determine the status color
-    const getStatusColor = (status: string | boolean) => {
-        if (typeof status === "string") {
-            return status.toLowerCase() === "done" ? "bg-green-500" : "bg-blue-500";
-        }
-        // If status is boolean
-        return status ? "bg-green-500" : "bg-blue-500";
-    };
+    // // Helper function to determine the status color
+    // const getStatusColor = (status: string | boolean) => {
+    //     if (typeof status === "string") {
+    //         return status.toLowerCase() === "done" ? "bg-green-500" : "bg-blue-500";
+    //     }
+    //     // If status is boolean
+    //     return status ? "bg-green-500" : "bg-blue-500";
+    // };
 
-    // Helper function to get subtask status color
-    const getSubtaskStatusColor = (status: string | boolean) => {
-        if (typeof status === "string") {
-            return status.toLowerCase() === "done" ? "bg-green-300" : "bg-blue-300";
-        }
-        // If status is boolean
-        return status ? "bg-green-300" : "bg-blue-300";
-    };
+    // // Helper function to get subtask status color
+    // const getSubtaskStatusColor = (status: string | boolean) => {
+    //     if (typeof status === "string") {
+    //         return status.toLowerCase() === "done" ? "bg-green-300" : "bg-blue-300";
+    //     }
+    //     // If status is boolean
+    //     return status ? "bg-green-300" : "bg-blue-300";
+    // };
 
     return (
         <Card variant="surface">
@@ -449,12 +449,12 @@ export default function TaskPage() {
                     <DialogAddTask getTaskData={fetchTasks} />
                 </Flex>
             </Flex>
-            
+
             {/* Year selector */}
             {years.length > 0 && (
                 <Flex gap="2" mb="4">
                     <Text>Year:</Text>
-                    <select 
+                    <select
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                         className="px-2 py-1 border border-gray-300 rounded"
@@ -465,46 +465,50 @@ export default function TaskPage() {
                     </select>
                 </Flex>
             )}
-            
+
             {isLoading ? (
                 <Flex justify="center" align="center" style={{ height: "200px" }}>
                     <Spinner size="3" />
                 </Flex>
             ) : (
-                <div className="overflow-x-auto">
-                    <Table.Root variant="surface" className="min-w-[1200px]">
-                    <DateTable
-                        year={selectedYear}
-                        tasks={tasks.map(task => {
-                            const { start, span } = calculateTaskPosition(task.start_date, task.end_date, selectedYear);
-                            const taskSubtasks = subtasks
-                                .filter(subtask => subtask.task_id === task.task_id)
-                                .map(subtask => {
-                                    const { start: subStart, span: subSpan } = calculateTaskPosition(subtask.start_date, subtask.end_date, selectedYear);
-                                    return {
-                                        subtaskName: subtask.subtask_name,
-                                        startDate: formatDate(subtask.start_date),
-                                        endDate: formatDate(subtask.end_date),
-                                        status: subtask.status,
-                                        startCol: subStart,
-                                        span: subSpan,
-                                        subtaskId: subtask.subtask_id,
-                                    };
-                                });
-                            return {
-                                taskName: task.task_name,
-                                startDate: formatDate(task.start_date),
-                                endDate: formatDate(task.end_date),
-                                status: task.status,
-                                startCol: start,
-                                span: span,
-                                taskId: task.task_id,
-                                subtasks: taskSubtasks,
-                            };
-                        })}
-                        fetchTasks={fetchTasks}
-                        fetchSubtasks={fetchSubtasks}
-                    />
+                <div>
+                    <Table.Root variant="surface" className="min-w-[1200px] overflow-visible">
+                        <DateTable
+                            year={selectedYear}
+                            tasks={tasks.map(task => {
+                                const { start, span } = calculateTaskPosition(task.start_date, task.end_date, selectedYear);
+                                const taskSubtasks = subtasks
+                                    .filter(subtask => subtask.task_id === task.task_id)
+                                    .map(subtask => {
+                                        const { start: subStart, span: subSpan } = calculateTaskPosition(subtask.start_date, subtask.end_date, selectedYear);
+                                        return {
+                                            subtaskName: subtask.subtask_name,
+                                            startDate: formatDate(subtask.start_date),
+                                            endDate: formatDate(subtask.end_date),
+                                            description: subtask.description,
+                                            budget: subtask.budget,
+                                            status: subtask.status,
+                                            startCol: subStart,
+                                            span: subSpan,
+                                            subtaskId: subtask.subtask_id,
+                                        };
+                                    });
+                                return {
+                                    taskName: task.task_name,
+                                    startDate: formatDate(task.start_date),
+                                    endDate: formatDate(task.end_date),
+                                    description: task.description,
+                                    budget: task.budget,
+                                    status: task.status,
+                                    startCol: start,
+                                    span: span,
+                                    taskId: task.task_id,
+                                    subtasks: taskSubtasks,
+                                };
+                            })}
+                            fetchTasks={fetchTasks}
+                            fetchSubtasks={fetchSubtasks}
+                        />
                     </Table.Root>
                 </div>
             )}
