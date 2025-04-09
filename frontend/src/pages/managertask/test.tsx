@@ -5,7 +5,6 @@ import DialogEditTask from "./components/DialogEditTask";
 import DialogEditSubTask from "./components/DialogEditSubtask";
 import DialogAddSubTask from "./components/DialogAddSubTask";
 import { ChevronDownIcon, ChevronRightIcon } from "@radix-ui/react-icons";
-import Srcoll from "./Scroll.css"; // นำเข้า CSS
 
 // Interfaces
 interface Task {
@@ -260,195 +259,186 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
     };
 
     return (
-        <Table.Root variant="surface" className="min-w-[1400px] overflow-visible">
-           
-            {/* Table Header */}
-            <Table.Header>
-                <Table.Row>
-                    <Table.ColumnHeaderCell rowSpan={2} className="w-[200px] text-left align-middle ; ">
-                        Task Name
-                    </Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell rowSpan={2} className="w-[200px] text-center align-middle ;" >
-                        Start Date
-                    </Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell rowSpan={2} className="w-[200px] text-center align-middle ;" >
-                        End Date
-                    </Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell rowSpan={2} className="w-[200px] text-center align-middle border-r-2 border-gray-300 ;" >
-                        Status
-                    </Table.ColumnHeaderCell>
-                    {months.map((month, index) => (
-                        <Table.ColumnHeaderCell
-                            key={index}
-                            colSpan={month.days}
-                            className={`text-center bg-gray-100 ${index < months.length - 1 ? "border-r border-gray-300" : ""
-                                }`}
-                        >
-                            <Text size="2">{month.name}</Text>
-                        </Table.ColumnHeaderCell>
-                    ))}
-                </Table.Row>
-                <Table.Row>
-                    {months.map((month, index) =>
-                        Array.from({ length: month.days }, (_, dayIndex) => (
-                            <Table.ColumnHeaderCell
-                                key={`${index}-${dayIndex}`}
-                                className={`text-center bg-gray-50 ${dayIndex === month.days - 1 && index < months.length - 1
-                                    ? "border-r border-gray-300"
-                                    : ""
-                                    }`}
-                            >
-                                <Text size="1">{dayIndex + 1}</Text>
-                            </Table.ColumnHeaderCell>
-                        ))
-                    )}
-                </Table.Row>
+        <div className=" relative w-screen overflow-hidden ">
+        {/* Fixed left columns container */}
+        <div className="absolute left-0 top-0 z-10  overflow-hidden">
+          <Table.Root variant="surface" className="w-auto ">
+            <Table.Header className=" h-[88px]">
+              <Table.Row>
+                <Table.ColumnHeaderCell rowSpan={2} className="w-[50px] bg-yellow-200 text-left align-middle">
+                  Task Name
+                </Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell rowSpan={2} className="w-[100px] bg-yellow-200 text-center align-middle">
+                  Start Date
+                </Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell rowSpan={2} className="w-[100px] bg-yellow-200 text-center align-middle">
+                  End Date
+                </Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell rowSpan={2} className="w-[100px] bg-yellow-200 text-center align-middle border-r-2 border-gray-300">
+                  Status
+                </Table.ColumnHeaderCell>
+              </Table.Row>
+              <Table.Row></Table.Row> {/* Empty row for alignment */}
             </Table.Header>
-
-            {/* Table Body */}
+            
             <Table.Body>
-                {tasks.map((task, taskIndex) => {
-                    const { startCol, span } = calculateStartColAndSpan(task.startDate, task.endDate, year);
-                    return (
-                        <React.Fragment key={taskIndex}>
-                            <Table.Row>
-                                <Table.Cell className="w-[350px] flex items-center;">
-                                    <button
-                                        onClick={() => toggleSubtasks(task.taskId)}
-                                        className="mr-2 focus:outline-none"
-                                    >
-                                        {expandedTasks.includes(task.taskId) ? (
-                                            <ChevronDownIcon className="w-4 h-4" />
-                                        ) : (
-                                            <ChevronRightIcon className="w-4 h-4" />
-                                        )}
-                                    </button>
-                                    <DialogEditTask
-                                        getTaskData={fetchTasks}
-                                        taskId={task.taskId}
-                                        trigger={
-                                            <Text className="cursor-pointer hover:text-blue-600 hover:underline">
-                                                {task.taskName}
-                                            </Text>
-                                        }
-                                    />
-                                    <div className="ml-4 flex items-center">
-                                        <DialogAddSubTask
-                                            getSubtaskData={fetchSubtasks}
-                                            taskId={task.taskId}
-                                            taskName={task.taskName}
-                                        />
-                                    </div>
-                                </Table.Cell>
-                                <Table.Cell className="w-[200px]">{formatDate(task.startDate)}</Table.Cell>
-                                <Table.Cell className="w-[200px]">{formatDate(task.endDate)}</Table.Cell>
-                                <Table.Cell className="w-[200px] border-r-2 border-gray-300">{task.status}</Table.Cell>
-                                {Array.from({ length: 365 }).map((_, dayIndex) => {
-                                    const isStart = dayIndex + 1 === startCol;
-                                    return (
-                                        <Table.Cell key={dayIndex} className="relative group">
-                                            {isStart && span > 0 && (
-                                                <div
-                                                    className="absolute h-3 top-1/2 transform -translate-y-1/2 rounded bg-blue-500 group-hover:bg-blue-600 transition-all duration-300"
-                                                    style={{
-                                                        left: 0,
-                                                        width: `calc(${span} * 100%)`,
-                                                    }}
-                                                >
-                                                    <div className="hidden group-hover:block absolute top-[-80px] left-1/2 transform -translate-x-1/2 px-4 py-2 text-xs bg-gray-700 text-white rounded shadow w-64">
-                                                        <strong>Task Name:</strong> {task.taskName}
-                                                        <br />
-                                                        <strong>Description:</strong> {task.description}
-                                                        <br />
-                                                        <strong>Start Date:</strong> {task.startDate}
-                                                        <br />
-                                                        <strong>End Date:</strong> {task.endDate}
-                                                        <br />
-                                                        <strong>Status:</strong> {task.status}
-                                                    </div>
-
-                                                    {/* Handle สำหรับ Resize ด้านซ้าย */}
-                                                    <div
-                                                        className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
-                                                        onMouseDown={(e) => handleResizeStart(e, task, "start")}
-                                                        onMouseMove={handleResizeMove}
-                                                        onMouseUp={handleResizeEnd}
-                                                    ></div>
-
-                                                    {/* Handle สำหรับ Resize ด้านขวา */}
-                                                    <div
-                                                        className="absolute right-0 top-0 h-full w-2 cursor-ew-resize"
-                                                        onMouseDown={(e) => handleResizeStart(e, task, "end")}
-                                                        onMouseMove={handleResizeMove}
-                                                        onMouseUp={handleResizeEnd}
-                                                    ></div>
-                                                </div>
-                                            )}
-                                        </Table.Cell>
-                                    );
-                                })}
-                            </Table.Row>
-                            {expandedTasks.includes(task.taskId) &&
-                                task.subtasks?.map((subtask, subtaskIndex) => {
-                                    const { startCol, span } = calculateStartColAndSpan(
-                                        subtask.startDate,
-                                        subtask.endDate,
-                                        year
-                                    );
-                                    return (
-                                        <Table.Row key={subtaskIndex} className="bg-gray-50">
-                                            <Table.Cell className="pl-8 w-[250px]">
-                                                <DialogEditSubTask
-                                                    getSubtaskData={fetchSubtasks}
-                                                    subtaskId={subtask.subtaskId}
-                                                    trigger={
-                                                        <Text className="cursor-pointer hover:text-blue-600 hover:underline">
-                                                            {subtask.subtaskName}
-                                                        </Text>
-                                                    }
-                                                />
-                                            </Table.Cell>
-                                            <Table.Cell className="w-[150px]">{formatDate(subtask.startDate)}</Table.Cell>
-                                            <Table.Cell className="w-[150px]">{formatDate(subtask.endDate)}</Table.Cell>
-                                            <Table.Cell className="w-[150px] border-r-2 border-gray-300">
-                                                {subtask.status}
-                                            </Table.Cell>
-                                            {Array.from({ length: 365 }).map((_, dayIndex) => {
-                                                const isStart = dayIndex + 1 === startCol;
-                                                return (
-                                                    <Table.Cell key={dayIndex} className="relative group">
-                                                        {isStart && (
-                                                            <div
-                                                                className="absolute h-3 top-1/2 transform -translate-y-1/2 rounded bg-green-500 group-hover:bg-green-600 transition-all duration-300"
-                                                                style={{
-                                                                    left: 0,
-                                                                    width: `calc(${span} * 100%)`,
-                                                                }}
-                                                            >
-                                                                <div className="hidden group-hover:block absolute top-[-80px] left-1/2 transform -translate-x-1/2 px-4 py-2 text-xs bg-gray-700 text-white rounded shadow w-64">
-                                                                    <strong>SubTask Name:</strong> {subtask.subtaskName}
-                                                                    <br />
-                                                                    <strong>Description:</strong> {subtask.description}
-                                                                    <br />
-                                                                    <strong>Start Date:</strong> {subtask.startDate}
-                                                                    <br />
-                                                                    <strong>End Date:</strong> {subtask.endDate}
-                                                                    <br />
-                                                                    <strong>Status:</strong> {subtask.status}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </Table.Cell>
-                                                );
-                                            })}
-                                        </Table.Row>
-                                    );
-                                })}
-                        </React.Fragment>
-                    );
-                })}
+              {tasks.map((task, taskIndex) => (
+                <React.Fragment key={taskIndex}>
+                  <Table.Row>
+                    <Table.Cell className="w-[350px] bg-yellow-200 flex items-center">
+                      {/* Your task name cell content */}
+                      <button onClick={() => toggleSubtasks(task.taskId)} className="mr-2 focus:outline-none">
+                        {expandedTasks.includes(task.taskId) ? (
+                          <ChevronDownIcon className="w-4 h-4" />
+                        ) : (
+                          <ChevronRightIcon className="w-4 h-4" />
+                        )}
+                      </button>
+                      <DialogEditTask
+                        getTaskData={fetchTasks}
+                        taskId={task.taskId}
+                        trigger={
+                          <Text className="cursor-pointer hover:text-blue-600 hover:underline">
+                            {task.taskName}
+                          </Text>
+                        }
+                      />
+                      <div className="ml-4 flex items-center">
+                        <DialogAddSubTask
+                          getSubtaskData={fetchSubtasks}
+                          taskId={task.taskId}
+                          taskName={task.taskName}
+                        />
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell className="w-[100px] bg-yellow-200">{formatDate(task.startDate)}</Table.Cell>
+                    <Table.Cell className="w-[100px] bg-yellow-200">{formatDate(task.endDate)}</Table.Cell>
+                    <Table.Cell className="w-[100px] bg-yellow-200 border-r-2 border-gray-300">{task.status}</Table.Cell>
+                  </Table.Row>
+                  
+                  {expandedTasks.includes(task.taskId) &&
+                    task.subtasks?.map((subtask, subtaskIndex) => (
+                      <Table.Row key={subtaskIndex} className="bg-gray-50">
+                        <Table.Cell className="pl-8 w-[250px] bg-yellow-200">
+                          <DialogEditSubTask
+                            getSubtaskData={fetchSubtasks}
+                            subtaskId={subtask.subtaskId}
+                            trigger={
+                              <Text className="cursor-pointer hover:text-blue-600 hover:underline">
+                                {subtask.subtaskName}
+                              </Text>
+                            }
+                          />
+                        </Table.Cell>
+                        <Table.Cell className="w-[100px] bg-yellow-200">{formatDate(subtask.startDate)}</Table.Cell>
+                        <Table.Cell className="w-[100px] bg-yellow-200">{formatDate(subtask.endDate)}</Table.Cell>
+                        <Table.Cell className="w-[100px] bg-yellow-200 border-r-2 border-gray-300">
+                          {subtask.status}
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                </React.Fragment>
+              ))}
             </Table.Body>
-        </Table.Root>
+          </Table.Root>
+        </div>
+        
+        {/* Scrollable right columns container */}
+        <div className="ml-[650px] overflow-x-auto">
+          <Table.Root variant="surface" className="w-auto">
+            <Table.Header>
+              <Table.Row>
+                {months.map((month, index) => (
+                  <Table.ColumnHeaderCell
+                    key={index}
+                    colSpan={month.days}
+                    className={`text-center ${index < months.length - 1 ? "border-r border-gray-300" : ""}`}
+                  >
+                    <Text size="2">{month.name}</Text>
+                  </Table.ColumnHeaderCell>
+                ))}
+              </Table.Row>
+              <Table.Row>
+                {months.map((month, index) =>
+                  Array.from({ length: month.days }, (_, dayIndex) => (
+                    <Table.ColumnHeaderCell
+                      key={`${index}-${dayIndex}`}
+                      className={`text-center bg-gray-50 ${
+                        dayIndex === month.days - 1 && index < months.length - 1
+                          ? "border-r border-gray-300"
+                          : ""
+                      }`}
+                    >
+                      <Text size="1">{dayIndex + 1}</Text>
+                    </Table.ColumnHeaderCell>
+                  ))
+                )}
+              </Table.Row>
+            </Table.Header>
+            
+            <Table.Body>
+              {tasks.map((task, taskIndex) => {
+                const { startCol, span } = calculateStartColAndSpan(task.startDate, task.endDate, year);
+                return (
+                  <React.Fragment key={taskIndex}>
+                    <Table.Row>
+                      {Array.from({ length: 365 }).map((_, dayIndex) => {
+                        const isStart = dayIndex + 1 === startCol;
+                        return (
+                          <Table.Cell key={dayIndex} className="relative group">
+                            {isStart && span > 0 && (
+                              <div
+                                className="absolute h-3 top-1/2 transform -translate-y-1/2 rounded bg-blue-500 group-hover:bg-blue-600 transition-all duration-300"
+                                style={{
+                                  left: 0,
+                                  width: `calc(${span} * 100%)`,
+                                }}
+                              >
+                                {/* Your tooltip and resize handles */}
+                              </div>
+                            )}
+                          </Table.Cell>
+                        );
+                      })}
+                    </Table.Row>
+                    
+                    {expandedTasks.includes(task.taskId) &&
+                      task.subtasks?.map((subtask, subtaskIndex) => {
+                        const { startCol, span } = calculateStartColAndSpan(
+                          subtask.startDate,
+                          subtask.endDate,
+                          year
+                        );
+                        return (
+                          <Table.Row key={subtaskIndex} className="bg-gray-50">
+                            {Array.from({ length: 365 }).map((_, dayIndex) => {
+                              const isStart = dayIndex + 1 === startCol;
+                              return (
+                                <Table.Cell key={dayIndex} className="relative group">
+                                  {isStart && (
+                                    <div
+                                      className="absolute h-3 top-1/2 transform -translate-y-1/2 rounded bg-green-500 group-hover:bg-green-600 transition-all duration-300"
+                                      style={{
+                                        left: 0,
+                                        width: `calc(${span} * 100%)`,
+                                      }}
+                                    >
+                                      {/* Your subtask tooltip */}
+                                    </div>
+                                  )}
+                                </Table.Cell>
+                              );
+                            })}
+                          </Table.Row>
+                        );
+                      })}
+                  </React.Fragment>
+                );
+              })}
+            </Table.Body>
+          </Table.Root>
+        </div>
+      </div>
     );
 };
 

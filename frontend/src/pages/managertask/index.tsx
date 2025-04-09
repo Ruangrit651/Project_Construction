@@ -472,8 +472,9 @@ export default function TaskPage() {
                 </Flex>
             ) : (
                 <div>
-                    <Table.Root variant="surface" className="min-w-[1200px] overflow-visible">
+                    <Table.Root variant="surface" className="min-w-[1200px] overflow-hidden">
                         <DateTable
+                        
                             year={selectedYear}
                             tasks={tasks.map(task => {
                                 const { start, span } = calculateTaskPosition(task.start_date, task.end_date, selectedYear);

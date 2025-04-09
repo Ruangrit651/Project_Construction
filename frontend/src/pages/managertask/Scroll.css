@@ -1,7 +1,0 @@
-[data-radix-scroll-area-viewport] {
-    overflow: visible !important; /* ปิดการ Scroll */
-}
-
-.rt-ScrollAreaRoot {
-    display: none !important; /* ซ่อน ScrollAreaRoot */
-}
