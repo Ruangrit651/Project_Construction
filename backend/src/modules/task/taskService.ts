@@ -97,9 +97,21 @@ export const taskService = {
     },
 
     // อัปเดตวันที่เริ่มต้น
-    updateStartDate: async (task_id: string, start_date: string) => {
+    updateStartDate: async (task_id: string, payload: { start_date: string, updated_by: string }) => {
         try {
-            const updatedTask = await TaskRepository.updateStartDate(task_id, start_date);
+            // Check if the task exists
+            const existingTask = await TaskRepository.findById(task_id);
+            if (!existingTask) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "Not found task",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+    
+            // Update the start date
+            const updatedTask = await TaskRepository.updateStartDate(task_id, payload.start_date, payload.updated_by);
             return new ServiceResponse<task>(
                 ResponseStatus.Success,
                 "Update task start date success",
@@ -118,9 +130,21 @@ export const taskService = {
     },
 
     // อัปเดตวันที่สิ้นสุด
-    updateEndDate: async (task_id: string, end_date: string) => {
+    updateEndDate: async (task_id: string, payload: { end_date: string, updated_by: string }) => {
         try {
-            const updatedTask = await TaskRepository.updateEndDate(task_id, end_date);
+            // Check if the task exists
+            const existingTask = await TaskRepository.findById(task_id);
+            if (!existingTask) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "Not found task",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            // Update the end date
+            const updatedTask = await TaskRepository.updateEndDate(task_id, payload.end_date, payload.updated_by);
             return new ServiceResponse<task>(
                 ResponseStatus.Success,
                 "Update task end date success",

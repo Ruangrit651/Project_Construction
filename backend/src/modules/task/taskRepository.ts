@@ -92,8 +92,12 @@ export const TaskRepository = {
   // Update task's end date by task_id
   updateEndDate: async (task_id: string, end_date: string) => {
     return await prisma.task.update({
-      where: { task_id: task_id },
-      data: { end_date }
+      where: {
+        task_id: task_id, // ระบุ task_id ที่ต้องการอัปเดต
+      },
+      data: {
+        end_date: end_date, // อัปเดตค่า end_date โดยตรง
+      },
     });
   },
 
