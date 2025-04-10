@@ -44,7 +44,7 @@ interface DateTableProps {
 // Utility Functions
 const parseDate = (dateString: string) => {
   const [day, month, year] = dateString.split("/").map(Number);
-  return new Date(year + 2000, month - 1, day); // เพิ่ม 2000 เพื่อให้เป็นปี 2025
+  return new Date(year + 2000, month - 1, day);
 };
 
 const isWeekend = (year: number, dayOfYear: number) => {
@@ -65,18 +65,21 @@ const calculateStartColAndSpan = (startDate: string, endDate: string, year: numb
   const start = parseDate(startDate);
   const end = parseDate(endDate);
 
-  if (start.getFullYear() !== year && end.getFullYear() !== year) {
+  // Convert the input year to a full year (e.g., 2025)
+  const fullYear = year;
+
+  if (start.getFullYear() !== fullYear && end.getFullYear() !== fullYear) {
     return { startCol: 0, span: 0 };
   }
 
   const startCol = Math.max(
     1,
-    Math.floor((start.getTime() - new Date(year, 0, 1).getTime()) / (1000 * 60 * 60 * 24)) + 1
+    Math.floor((start.getTime() - new Date(fullYear, 0, 1).getTime()) / (1000 * 60 * 60 * 24)) + 1
   );
 
   const endCol = Math.min(
     365,
-    Math.floor((end.getTime() - new Date(year, 0, 1).getTime()) / (1000 * 60 * 60 * 24)) + 1
+    Math.floor((end.getTime() - new Date(fullYear, 0, 1).getTime()) / (1000 * 60 * 60 * 24)) + 1
   );
 
   const span = endCol - startCol + 1;
