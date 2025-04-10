@@ -231,14 +231,14 @@ const Dashboard = () => {
 
   // ฟังก์ชันสำหรับคำนวณค่าใช้จ่ายรวม
   const aggregatedValues = projectDetails
-  ? calculateAggregatedValues(
+    ? calculateAggregatedValues(
       selectedProjects.includes("All")
         ? projectDetails
         : projectDetails.filter((project) =>
-            selectedProjects.includes(project.project_name)
-          )
+          selectedProjects.includes(project.project_name)
+        )
     )
-  : null;
+    : null;
 
   // ดึงข้อมูลจาก API เมื่อ Component ถูกโหลด
   useEffect(() => {
@@ -246,15 +246,15 @@ const Dashboard = () => {
       try {
         const data = await getDashboard();
         console.log("API Response:", data);
-  
+
         if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
           setProjectDetails(data.responseObject);
           setFilteredProjects(data.responseObject);
-  
+
           // สร้าง projectOptions จากข้อมูลจริง
           const options = ["All", ...data.responseObject.map((project) => project.project_name)];
           setProjectOptions(options);
-  
+
           // อัปเดต selectedProjects ให้เลือกทั้งหมดโดยค่าเริ่มต้น
           setSelectedProjects(["All"]);
         } else {
@@ -266,7 +266,7 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-  
+
     fetchProjectDetails();
   }, []);
 
@@ -370,10 +370,10 @@ const Dashboard = () => {
                   <h2 className="text-center font-semibold text-l mt-6 mb-4">Estimate At Completion</h2>
                   <h2 className="text-center font-semibold text-4xl mt-2 mb-6">
                     {aggregatedValues
-                    ? `$${aggregatedValues.totalBudget.toLocaleString()}`
-                    : filteredProjects && filteredProjects.length > 0
-                    ? `$${filteredProjects[0].budget.toLocaleString()}`
-                    : "Loading..."}
+                      ? `$${aggregatedValues.totalBudget.toLocaleString()}`
+                      : filteredProjects && filteredProjects.length > 0
+                        ? `$${filteredProjects[0].budget.toLocaleString()}`
+                        : "Loading..."}
                   </h2>
                 </div>
               </div>
@@ -381,30 +381,30 @@ const Dashboard = () => {
                 <div className="grid p-4 rounded-lg shadow-lg bg-indigo-400">
                   <h2 className="text-center font-semibold text-4xl mt-2">
                     {aggregatedValues
-                    ? `$${aggregatedValues.totalAmountSpent.toLocaleString()}`
-                    : filteredProjects && filteredProjects.length > 0
-                    ? `$${filteredProjects[0].amountSpent.toLocaleString()}`
-                    : "Loading..."}
+                      ? `$${aggregatedValues.totalAmountSpent.toLocaleString()}`
+                      : filteredProjects && filteredProjects.length > 0
+                        ? `$${filteredProjects[0].amountSpent.toLocaleString()}`
+                        : "Loading..."}
                   </h2>
                   <h2 className="text-center font-semibold text-l mt-4">Percent Of Target</h2>
                   <div className="flex justify-between w-full text-center mt-5">
                     <div className="w-1/2 pr-2">
                       {aggregatedValues
-                      ? `${aggregatedValues.percentTarget.toFixed(2)}%`
-                      : filteredProjects && filteredProjects.length > 0
-                      ? `${(
-                          (filteredProjects[0].amountSpent / filteredProjects[0].totalBudget) *
-                          100
-                        ).toFixed(2)}%`
-                      : "Loading..."}
+                        ? `${aggregatedValues.percentTarget.toFixed(2)}%`
+                        : filteredProjects && filteredProjects.length > 0
+                          ? `${(
+                            (filteredProjects[0].amountSpent / filteredProjects[0].totalBudget) *
+                            100
+                          ).toFixed(2)}%`
+                          : "Loading..."}
                       <h2 className="text-center font-semibold mt-1">Amount Spent</h2>
                     </div>
                     <div className="w-1/2 border-l-2 border-black pl-2">
                       {aggregatedValues
-                      ? `$${aggregatedValues.totalBudget.toLocaleString()}`
-                      : filteredProjects && filteredProjects.length > 0
-                      ? `$${filteredProjects[0].totalBudget.toLocaleString()}`
-                      : "Loading..."}
+                        ? `$${aggregatedValues.totalBudget.toLocaleString()}`
+                        : filteredProjects && filteredProjects.length > 0
+                          ? `$${filteredProjects[0].totalBudget.toLocaleString()}`
+                          : "Loading..."}
                       <h2 className="text-center font-semibold mt-1">Total Budget</h2>
                     </div>
                   </div>
@@ -412,9 +412,9 @@ const Dashboard = () => {
               </div>
             </div>
           </div >
-          
 
-          
+
+
 
           {/* Cost Breakdown */}
           < div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200" >
