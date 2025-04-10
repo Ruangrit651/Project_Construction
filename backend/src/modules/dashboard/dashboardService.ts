@@ -3,15 +3,14 @@ import { ResponseStatus, ServiceResponse } from "@common/models/serviceResponse"
 import { DashboardRepository } from "@modules/dashboard/dashboardReository";
 
 export const dashboardService = {
-    // ดึงข้อมูล Dashboard ทั้งหมด
     findAll: async () => {
-        const dashboardData = await DashboardRepository.findAllAsync();
-        return new ServiceResponse(
-            ResponseStatus.Success,
-            "Get all dashboard data success",
-            dashboardData,
-            StatusCodes.OK
-        );
+      const dashboardData = await DashboardRepository.findAllAsync();
+      return new ServiceResponse(
+        ResponseStatus.Success,
+        "Get all dashboard data success",
+        dashboardData,
+        StatusCodes.OK
+      );
     },
 
     // ดึงข้อมูล Dashboard ตาม project_id
