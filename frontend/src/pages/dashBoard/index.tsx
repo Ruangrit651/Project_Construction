@@ -208,6 +208,19 @@ const CustomSelect = ({
   );
 };
 
+const calculateAggregatedValues = (projects: TypeDashboard[]) => {
+  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget), 0);
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent), 0);
+  const percentTarget = totalBudget > 0 ? (totalAmountSpent / totalBudget) * 100 : 0;
+
+  return {
+    totalBudget,
+    totalAmountSpent,
+    percentTarget,
+  };
+};
+
+
 const Dashboard = () => {
   const [projectDetails, setProjectDetails] = useState<TypeDashboard[] | null>(null);
   const [filteredProjects, setFilteredProjects] = useState<TypeDashboard[] | null>(null);
@@ -216,20 +229,34 @@ const Dashboard = () => {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["All"]); // เก็บสถานะที่เลือก
   const [loading, setLoading] = useState(true);
 
+  // ฟังก์ชันสำหรับคำนวณค่าใช้จ่ายรวม
+  const aggregatedValues = projectDetails
+  ? calculateAggregatedValues(
+      selectedProjects.includes("All")
+        ? projectDetails
+        : projectDetails.filter((project) =>
+            selectedProjects.includes(project.project_name)
+          )
+    )
+  : null;
+
   // ดึงข้อมูลจาก API เมื่อ Component ถูกโหลด
   useEffect(() => {
     const fetchProjectDetails = async () => {
       try {
         const data = await getDashboard();
         console.log("API Response:", data);
-
+  
         if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
           setProjectDetails(data.responseObject);
           setFilteredProjects(data.responseObject);
-
+  
           // สร้าง projectOptions จากข้อมูลจริง
           const options = ["All", ...data.responseObject.map((project) => project.project_name)];
           setProjectOptions(options);
+  
+          // อัปเดต selectedProjects ให้เลือกทั้งหมดโดยค่าเริ่มต้น
+          setSelectedProjects(["All"]);
         } else {
           console.error("responseObject is not an array or is empty");
         }
@@ -239,7 +266,7 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-
+  
     fetchProjectDetails();
   }, []);
 
@@ -248,14 +275,15 @@ const Dashboard = () => {
     if (projectDetails) {
       const filtered = projectDetails.filter((project) => {
         const matchesProject =
-          selectedProjects.includes("All") || selectedProjects.includes(project.project_name); // ตรวจสอบหลายโปรเจ็กต์
+          selectedProjects.includes("All") || selectedProjects.includes(project.project_name);
         const matchesStatus =
-          selectedStatuses.includes("All") || selectedStatuses.includes(project.status); // ตรวจสอบหลายสถานะ
-        return matchesProject && matchesStatus; // ตรวจสอบทั้งสองเงื่อนไข
+          selectedStatuses.includes("All") || selectedStatuses.includes(project.status);
+        return matchesProject && matchesStatus;
       });
+      console.log("Filtered Projects:", filtered); // ตรวจสอบค่าที่กรองได้
       setFilteredProjects(filtered);
     }
-  }, [selectedProjects, selectedStatuses, projectDetails]); // ทำงานเมื่อ selectedProjects หรือ selectedStatuses เปลี่ยน
+  }, [selectedProjects, selectedStatuses, projectDetails]); // เมื่อ selectedProjects หรือ selectedStatuses เปลี่ยนแปลง
 
   return (
     <div className="min-h-screen bg-gray-400 p-3">
@@ -276,7 +304,7 @@ const Dashboard = () => {
             <div className="p-4 rounded-lg shadow-md border border-gray-200">
               <h3 className="text-lg font-semibold mb-2">Project Status</h3>
               <CustomSelect
-                options={["All", "In progress", "Suspend operations", "Project Cancellation"]}
+                options={["All", "In progress", "Completed", "Suspend operations", "Project Cancellation"]}
                 placeholder="Select Status"
                 selectedOptions={selectedStatuses} // ส่งค่าที่เลือก
                 onChange={(value) => setSelectedStatuses(value)} // อัปเดต selectedStatuses
@@ -339,21 +367,44 @@ const Dashboard = () => {
             <div className="mt-3 bg-white shadow-lg rounded-lg border border-gray-200">
               <div className=" p-1">
                 <div className="grid rounded-lg shadow-lg bg-blue-300">
-                  <h2 className="text-center font-semibold text-l mt-6 mb-4 ">Estimate At Completion</h2>
-                  <h2 className="text-center font-semibold text-4xl mt-2 mb-6">$2.42 M</h2>
+                  <h2 className="text-center font-semibold text-l mt-6 mb-4">Estimate At Completion</h2>
+                  <h2 className="text-center font-semibold text-4xl mt-2 mb-6">
+                    {aggregatedValues
+                    ? `$${aggregatedValues.totalBudget.toLocaleString()}`
+                    : filteredProjects && filteredProjects.length > 0
+                    ? `$${filteredProjects[0].budget.toLocaleString()}`
+                    : "Loading..."}
+                  </h2>
                 </div>
               </div>
               <div className=" p-1 mt-1">
                 <div className="grid p-4 rounded-lg shadow-lg bg-indigo-400">
-                  <h2 className="text-center font-semibold text-4xl mt-2">40.85 %</h2>
+                  <h2 className="text-center font-semibold text-4xl mt-2">
+                    {aggregatedValues
+                    ? `$${aggregatedValues.totalAmountSpent.toLocaleString()}`
+                    : filteredProjects && filteredProjects.length > 0
+                    ? `$${filteredProjects[0].amountSpent.toLocaleString()}`
+                    : "Loading..."}
+                  </h2>
                   <h2 className="text-center font-semibold text-l mt-4">Percent Of Target</h2>
                   <div className="flex justify-between w-full text-center mt-5">
                     <div className="w-1/2 pr-2">
-                      <h2 className="text-center font-semibold text-l">$2.04 M</h2>
+                      {aggregatedValues
+                      ? `${aggregatedValues.percentTarget.toFixed(2)}%`
+                      : filteredProjects && filteredProjects.length > 0
+                      ? `${(
+                          (filteredProjects[0].amountSpent / filteredProjects[0].totalBudget) *
+                          100
+                        ).toFixed(2)}%`
+                      : "Loading..."}
                       <h2 className="text-center font-semibold mt-1">Amount Spent</h2>
                     </div>
                     <div className="w-1/2 border-l-2 border-black pl-2">
-                      <h2 className="text-center font-semibold text-l">$1.50 M</h2>
+                      {aggregatedValues
+                      ? `$${aggregatedValues.totalBudget.toLocaleString()}`
+                      : filteredProjects && filteredProjects.length > 0
+                      ? `$${filteredProjects[0].totalBudget.toLocaleString()}`
+                      : "Loading..."}
                       <h2 className="text-center font-semibold mt-1">Total Budget</h2>
                     </div>
                   </div>
@@ -361,6 +412,9 @@ const Dashboard = () => {
               </div>
             </div>
           </div >
+          
+
+          
 
           {/* Cost Breakdown */}
           < div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200" >

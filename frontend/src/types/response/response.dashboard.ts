@@ -6,6 +6,8 @@ export type TypeDashboardAll = {
     status: boolean;
     start_date: string;
     end_date: string;
+    percentTarget: number;
+    variation: number;
   };
   
   export type TypeDashboard = {
@@ -16,6 +18,10 @@ export type TypeDashboardAll = {
     status: string;
     start_date: string;
     end_date: string;
+    percentTarget: number;
+    variation: number;
+    totalBudget: number;
+    amountSpent: number;
   };
   
   export type DashboardResponse = {
@@ -24,3 +30,5 @@ export type TypeDashboardAll = {
     responseObject: TypeDashboard[]; 
     statusCode: number;
   };
+
+  
