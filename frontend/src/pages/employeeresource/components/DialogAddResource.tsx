@@ -5,9 +5,10 @@ import { postResource } from "@/services/resource.service";
 interface DialogAddResourceProps {
     getResourceData: () => void;
     task_id: string;
+    subtask_id?: string; // เพิ่ม subtask_id เป็น optional parameter
 }
 
-const DialogAddResource: React.FC<DialogAddResourceProps> = ({ getResourceData, task_id }) => {
+const DialogAddResource: React.FC<DialogAddResourceProps> = ({ getResourceData, task_id, subtask_id }) => {
     const [resourceName, setResourceName] = useState("");
     const [resourceType, setResourceType] = useState("material");
     const [cost, setCost] = useState(0);
@@ -31,14 +32,45 @@ const DialogAddResource: React.FC<DialogAddResourceProps> = ({ getResourceData, 
     };
 
     const handleAddResource = async () => {
-        await postResource({ task_id, resource_name: resourceName, resource_type: resourceType, cost, quantity, total: cost * quantity });
-        getResourceData();
+        if (!resourceName || resourceType === '' || cost <= 0 || quantity <= 0) {
+            // Add validation to prevent submitting invalid data
+            alert("Please fill in all required fields with valid values");
+            return;
+        }
+    
+        try {
+            const response = await postResource({ 
+                task_id, 
+                subtask_id,
+                resource_name: resourceName, 
+                resource_type: resourceType, 
+                cost, 
+                quantity, 
+                total: cost * quantity 
+            });
+    
+            if (response.success) {
+                // Reset form fields after successful submission
+                setResourceName("");
+                setResourceType("material");
+                setCost(0);
+                setQuantity(0);
+                
+                // Refresh the resource data
+                getResourceData();
+            } else {
+                alert(`Error: ${response.message}`);
+            }
+        } catch (error) {
+            console.error("Failed to add resource:", error);
+            alert("An error occurred while adding the resource.");
+        }
     };
 
     return (
         <Dialog.Root>
             <Dialog.Trigger asChild>
-                <Button  variant="soft" className="cursor-pointer">+ Add</Button>
+                <Button variant="soft" className="cursor-pointer">+ Add</Button>
             </Dialog.Trigger>
             <Dialog.Content>
                 <Dialog.Title>Add Resource</Dialog.Title>

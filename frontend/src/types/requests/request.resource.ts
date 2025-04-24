@@ -1,5 +1,6 @@
 export type PayloadCreateResource = {
     task_id: string;
+    subtask_id?: string; // Optional subtask_id
     resource_name: string;
     resource_type: string;
     cost: number;

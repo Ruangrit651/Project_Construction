@@ -2,11 +2,15 @@ import { useState, useEffect } from "react";
 import { Dialog, Button, Flex, TextField, Text, Select } from "@radix-ui/themes";
 import { patchSubtask, getSubtask } from "@/services/subtask.service";
 import AlertDialogDeleteSubtask from "./alertDialogDeleteSubtask";
+import { patchTask } from "@/services/task.service";
+import { getTask } from "@/services/task.service";
 
 interface DialogEditSubtaskProps {
     getSubtaskData: () => void;
     subtaskId: string;
     trigger: React.ReactNode;
+    fetchSubTasks?: () => void; // Add fetchTasks as an optional prop
+    
 }
 
 const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, subtaskId, trigger }) => {
@@ -28,6 +32,24 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
         const numericValue = value === "" ? 0 : Number(value);
         setBudget(numericValue);
         setFormattedBudget(formatNumber(numericValue)); // Update the formatted budget
+    };
+
+    const updateSubtaskStatus = async (subtaskId: string, status: string) => {
+        try {
+            await patchSubtask({ subtask_id: subtaskId, status });
+            const response = await getTask(); // ดึงข้อมูล Task ทั้งหมด
+            const tasks = response.responseObject;
+            const task = tasks.find((t: any) => t.subtasks?.some((s: any) => s.subtask_id === subtaskId));
+            if (task) {
+                const allCompleted = task.subtasks?.every((s: any) => s.status === "Completed");
+                if (allCompleted) {
+                    await patchTask({ task_id: task.task_id, status: "Completed" });
+                }
+            }
+            getSubtaskData(); // รีเฟรชข้อมูล Subtask
+        } catch (error) {
+            console.error("Failed to update subtask status:", error);
+        }
     };
 
     useEffect(() => {
@@ -77,7 +99,7 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
             alert("Please fill out all required fields.");
             return;
         }
-
+    
         try {
             const response = await patchSubtask({
                 subtask_id: subtaskId,
@@ -88,8 +110,10 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ getSubtaskData, s
                 end_date: endDate,
                 status,
             });
-
+    
             if (response.success) {
+                // เรียก updateSubtaskStatus เพื่อเช็คสถานะ Task
+                await updateSubtaskStatus(subtaskId, status);
                 getSubtaskData();
             } else {
                 alert(`Error: ${response.message}`);

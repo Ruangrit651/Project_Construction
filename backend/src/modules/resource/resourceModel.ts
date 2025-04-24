@@ -3,6 +3,7 @@ import { z } from "zod";
 // ประเภทข้อมูลสำหรับ payload ของทรัพยากร
 export type TypePayloadResource = {
     task_id: string;
+    subtask_id?: string; // Optional subtask_id
     resource_name: string;
     resource_type: string;
     cost: number;
@@ -18,6 +19,7 @@ export type TypePayloadResource = {
 export const CreateResourceSchema = z.object({
     body: z.object({
         task_id: z.string().uuid(),
+        subtask_id: z.string().uuid().optional(), // Optional subtask_id
         resource_name: z.string().max(255),
         resource_type: z.string().max(255),
         cost: z.number().min(0),
@@ -40,6 +42,7 @@ export const UpdateResourceSchema = z.object({
         total: z.number().min(0).optional(),
         quantity: z.number().min(0).optional(),
         task_id: z.string().uuid().optional(),
+        subtask_id: z.string().uuid().optional(), // Optional subtask_id
         updated_at: z.string().optional(),
         updated_by: z.string().optional(),  // ต้องมี updated_by เพื่อบันทึกว่าใครแก้ไข
     }),

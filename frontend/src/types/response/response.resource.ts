@@ -6,11 +6,13 @@ export type TypeResourceAll = {
     total: number,
     quantity: number,
     task_id: string, 
+    subtask_id?: string, // Optional subtask_id
     // created_at?: string,
     // created_by?: string,
     // updated_at?: string,
     // updated_by?: string,
     tasks: {
+        task_id: string,
         task_name: string
     }
 

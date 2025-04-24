@@ -27,6 +27,7 @@ export const ResourceRepository = {
                 total: true,
                 quantity: true,
                 task_id: true, // เพิ่ม task_id
+                subtask_id: true, // เพิ่ม subtask_id
                 tasks: { select: { task_name: true } }, // ดึงชื่อ Task
                 created_at: true,
                 created_by: true,
@@ -42,6 +43,7 @@ export const ResourceRepository = {
             where: { resource_id: resource_id },
             select: {
                 task_id: true,
+                subtask_id: true, // เพิ่ม subtask_id
                 resource_id: true,
                 resource_name: true,
                 resource_type: true,
@@ -73,6 +75,7 @@ export const ResourceRepository = {
             total: payload.total,
             quantity: payload.quantity,
             task_id: payload.task_id,
+            subtask_id: payload.subtask_id, // เพิ่ม subtask_id
             created_at: payload.created_at,
             created_by: payload.created_by,
             updated_at: payload.updated_at,

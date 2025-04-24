@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Table, Text } from "@radix-ui/themes";
-import { getTask, updateStartDateTask, updateEndDateTask } from "@/services/task.service";
+import { getTask, updateStartDateTask, updateEndDateTask, patchTask } from "@/services/task.service";
 import DialogEditTask from "./components/DialogEditTask";
 import DialogEditSubTask from "./components/DialogEditSubtask";
 import DialogAddSubTask from "./components/DialogAddSubTask";
@@ -102,38 +102,47 @@ const getStatusColor = (status: string) => {
     case 'delayed':
       return 'bg-red-500 group-hover:bg-red-600';
     case 'pending':
-      return 'bg-yellow-500 group-hover:bg-yellow-600';
+      return ' group-hover:bg-yellow-600';
     default:
       return 'bg-gray-500 group-hover:bg-gray-600';
   }
 };
 
 // Main Component
+
 const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSubtasks }) => {
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
   const [expandedTasks, setExpandedTasks] = useState<string[]>([]);
+  const [taskList, setTaskList] = useState<Task[]>([]);
 
+  // useEffect(() => {
+  //   const fetchTasks = async () => {
+  //     const response = await getTask();
+  //     const mappedTasks = response.responseObject.map((task: any) => ({
+  //       taskId: task.task_id,
+  //       taskName: task.task_name,
+  //       description: task.description,
+  //       budget: Number(task.budget),
+  //       startDate: task.start_date,
+  //       endDate: task.end_date,
+  //       status: task.status,
+  //       subtasks: task.subtasks || [],
+  //     }));
+  //   };
+
+  //   fetchTasks();
+  // }, []);
 
   useEffect(() => {
     const fetchTasks = async () => {
       const response = await getTask();
       const mappedTasks = response.responseObject.map((task: any) => ({
-        taskId: task.task_id,
-        taskName: task.task_name,
-        description: task.description,
-        budget: Number(task.budget),
-        startDate: task.start_date,
-        endDate: task.end_date,
-        status: task.status,
-        subtasks: task.subtasks || [],
+        // ...mapping...
       }));
+      setTaskList(mappedTasks);
     };
-
     fetchTasks();
-
-
   }, []);
-
 
   const toggleSubtasks = (taskId: string) => {
     setExpandedTasks((prev) =>
@@ -145,81 +154,89 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
     name: new Date(year, index).toLocaleString("default", { month: "short" }),
     days: new Date(year, index + 1, 0).getDate(),
   }));
-
   const handleDragStart = (e: React.MouseEvent, task: Task) => {
-    e.preventDefault(); // ป้องกันการเลือกข้อความขณะลาก
-    const target = e.currentTarget as HTMLElement; // แปลงประเภทเป็น HTMLElement
+    e.preventDefault();
+    document.body.style.cursor = "grabbing"; // เปลี่ยน cursor
+    const target = e.currentTarget as HTMLElement;
     target.dataset.dragging = "true";
     target.dataset.startX = e.clientX.toString();
     target.dataset.taskId = task.taskId;
+  
+    // เพิ่ม Event Listener บน document
+    document.addEventListener("mousemove", handleDragMove);
+    document.addEventListener("mouseup", handleDragEnd);
   };
-
-  const handleDragMove = (e: React.MouseEvent) => {
-    e.preventDefault(); // ป้องกันการเลือกข้อความขณะลาก
-    const draggingElement = document.querySelector("[data-dragging='true']") as HTMLElement; // แปลงประเภทเป็น HTMLElement
+  
+  const handleDragMove = (e: MouseEvent) => {
+    e.preventDefault();
+    const draggingElement = document.querySelector("[data-dragging='true']") as HTMLElement;
     if (!draggingElement) return;
-
+  
     const startX = parseInt(draggingElement.dataset.startX || "0", 10);
     const deltaX = e.clientX - startX;
-
-    // คำนวณจำนวนวันที่เลื่อน
-    const daysMoved = Math.round(deltaX / 20); // สมมติว่า 20px = 1 วัน
+    const daysMoved = Math.round(deltaX / 20); // Adjust based on column width
+  
     const taskId = draggingElement.dataset.taskId;
-
     if (taskId) {
       const task = tasks.find((t) => t.taskId === taskId);
       if (task) {
         const newStartDate = new Date(parseDate(task.startDate));
         const newEndDate = new Date(parseDate(task.endDate));
-
+  
         newStartDate.setDate(newStartDate.getDate() + daysMoved);
         newEndDate.setDate(newEndDate.getDate() + daysMoved);
-
-        // อัปเดตวันที่ใหม่ใน UI (ถ้าจำเป็น)
-        draggingElement.style.transform = `translateX(${deltaX}px)`;
+  
+        // อัปเดตตำแหน่งใน UI แบบเรียลไทม์
+        setTaskList((prev) =>
+          prev.map((t) =>
+            t.taskId === taskId
+              ? { ...t, startDate: formatDate(newStartDate.toISOString()), endDate: formatDate(newEndDate.toISOString()) }
+              : t
+          )
+        );
       }
     }
   };
-
-  const handleDragEnd = async (e: React.MouseEvent) => {
-    e.preventDefault(); // ป้องกันการเลือกข้อความขณะลาก
-    const draggingElement = document.querySelector("[data-dragging='true']") as HTMLElement; // แปลงประเภทเป็น HTMLElement
+  
+  const handleDragEnd = async (e: MouseEvent) => {
+    e.preventDefault();
+    const draggingElement = document.querySelector("[data-dragging='true']") as HTMLElement;
     if (!draggingElement) return;
-
+  
     const taskId = draggingElement.dataset.taskId;
     const deltaX = parseInt(draggingElement.style.transform.replace("translateX(", "").replace("px)", ""), 10);
     const daysMoved = Math.round(deltaX / 20);
-
+  
     if (taskId) {
       const task = tasks.find((t) => t.taskId === taskId);
       if (task) {
         const newStartDate = new Date(parseDate(task.startDate));
         const newEndDate = new Date(parseDate(task.endDate));
-
+  
         newStartDate.setDate(newStartDate.getDate() + daysMoved);
         newEndDate.setDate(newEndDate.getDate() + daysMoved);
-
-        try {
-          // เรียก API เพื่ออัปเดตวันที่
-          console.log("Payload:", { task_id: taskId, start_date: newStartDate.toISOString().split("T")[0] });
-          await updateStartDateTask({ task_id: taskId, start_date: newStartDate.toISOString().split("T")[0] });
-          await updateEndDateTask({ task_id: taskId, end_date: newEndDate.toISOString().split("T")[0] });
-
-          // รีเฟรชข้อมูล Task
-          fetchTasks();
-        } catch (error) {
-          console.error("Failed to update task dates:", error);
-        }
+  
+        // อัปเดตข้อมูลใน Backend
+        await updateStartDateTask({ task_id: taskId, start_date: newStartDate.toISOString().split("T")[0] });
+        await updateEndDateTask({ task_id: taskId, end_date: newEndDate.toISOString().split("T")[0] });
+  
+        fetchTasks(); // Refresh tasks
       }
     }
-
-    // รีเซ็ตสถานะการลาก
+  
+    // Reset dragging state
     draggingElement.dataset.dragging = "false";
     draggingElement.style.transform = "";
+    document.body.style.cursor = "default";
+  
+    // ลบ Event Listener
+    document.removeEventListener("mousemove", handleDragMove);
+    document.removeEventListener("mouseup", handleDragEnd);
   };
 
+
   const handleResizeStart = (e: React.MouseEvent, task: Task, direction: "start" | "end") => {
-    e.preventDefault(); // ป้องกันการเลือกข้อความขณะลาก
+    e.preventDefault();
     const target = e.currentTarget as HTMLElement;
     target.dataset.resizing = direction;
     target.dataset.startX = e.clientX.toString();
@@ -227,13 +244,14 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
   };
 
   const handleResizeMove = (e: React.MouseEvent) => {
-    e.preventDefault(); // ป้องกันการเลือกข้อความขณะลาก
+    e.preventDefault();
     const resizingElement = document.querySelector("[data-resizing]") as HTMLElement;
     if (!resizingElement) return;
 
     const startX = parseInt(resizingElement.dataset.startX || "0", 10);
     const deltaX = e.clientX - startX;
-    const daysMoved = Math.round(deltaX / 20); // สมมติว่า 20px = 1 วัน
+    const daysMoved = Math.round(deltaX / 20); // Adjust based on column width
+
     const taskId = resizingElement.dataset.taskId;
     const direction = resizingElement.dataset.resizing as "start" | "end";
 
@@ -249,14 +267,14 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
           newEndDate.setDate(newEndDate.getDate() + daysMoved);
         }
 
-        // อัปเดตวันที่ใหม่ใน UI (ถ้าจำเป็น)
+        // Update UI (optional)
         resizingElement.style.transform = `translateX(${deltaX}px)`;
       }
     }
   };
 
   const handleResizeEnd = async (e: React.MouseEvent) => {
-    e.preventDefault(); // ป้องกันการเลือกข้อความขณะลาก
+    e.preventDefault();
     const resizingElement = document.querySelector("[data-resizing]") as HTMLElement;
     if (!resizingElement) return;
 
@@ -273,27 +291,17 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
 
         if (direction === "start") {
           newStartDate.setDate(newStartDate.getDate() + daysMoved);
+          await updateStartDateTask({ task_id: taskId, start_date: newStartDate.toISOString().split("T")[0] });
         } else if (direction === "end") {
           newEndDate.setDate(newEndDate.getDate() + daysMoved);
+          await updateEndDateTask({ task_id: taskId, end_date: newEndDate.toISOString().split("T")[0] });
         }
 
-        try {
-          // เรียก API เพื่ออัปเดตวันที่
-          if (direction === "start") {
-            await updateStartDateTask({ task_id: taskId, start_date: newStartDate.toISOString().split("T")[0] });
-          } else if (direction === "end") {
-            await updateEndDateTask({ task_id: taskId, end_date: newEndDate.toISOString().split("T")[0] });
-          }
-
-          // รีเฟรชข้อมูล Task
-          fetchTasks();
-        } catch (error) {
-          console.error("Failed to update task dates:", error);
-        }
+        fetchTasks(); // Refresh tasks
       }
     }
 
-    // รีเซ็ตสถานะการปรับขนาด
+    // Reset resizing state
     resizingElement.dataset.resizing = "";
     resizingElement.style.transform = "";
   };
@@ -313,16 +321,16 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
           <Table.Root variant="surface" className="w-auto shadow-md">
             <Table.Header className=" h-[88px]">
               <Table.Row>
-                <Table.ColumnHeaderCell rowSpan={2} className="w-[350px] bg-yellow-200 text-left align-middle">
+                <Table.ColumnHeaderCell rowSpan={2} className="w-[350px]  text-left align-middle">
                   Task Name
                 </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell rowSpan={2} className="w-[100px] bg-yellow-200 text-center align-middle">
+                <Table.ColumnHeaderCell rowSpan={2} className="w-[100px]  text-center align-middle">
                   Start Date
                 </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell rowSpan={2} className="w-[100px] bg-yellow-200 text-center align-middle">
+                <Table.ColumnHeaderCell rowSpan={2} className="w-[100px]  text-center align-middle">
                   End Date
                 </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell rowSpan={2} className="w-[100px] bg-yellow-200 text-center align-middle border-r-2 border-gray-300">
+                <Table.ColumnHeaderCell rowSpan={2} className="w-[100px]  text-center align-middle border-r-2 border-gray-300">
                   Status
                 </Table.ColumnHeaderCell>
               </Table.Row>
@@ -333,7 +341,7 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
               {tasks.map((task, taskIndex) => (
                 <React.Fragment key={taskIndex}>
                   <Table.Row>
-                    <Table.Cell className="w-[350px] bg-yellow-200 flex items-center">
+                    <Table.Cell className="w-[350px]  flex items-center">
                       {/* Your task name cell content */}
                       <button onClick={() => toggleSubtasks(task.taskId)} className="mr-2 focus:outline-none">
                         {expandedTasks.includes(task.taskId) ? (
@@ -344,6 +352,7 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                       </button>
                       <DialogEditTask
                         getTaskData={fetchTasks}
+                        fetchTasks={fetchTasks} // ส่ง fetchTasks เข้ามา
                         taskId={task.taskId}
                         trigger={
                           <Text className="cursor-pointer hover:text-blue-600 hover:underline">
@@ -359,15 +368,15 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                         />
                       </div>
                     </Table.Cell>
-                    <Table.Cell className="w-[100px] bg-yellow-200">{formatDate(task.startDate)}</Table.Cell>
-                    <Table.Cell className="w-[100px] bg-yellow-200">{formatDate(task.endDate)}</Table.Cell>
-                    <Table.Cell className="w-[100px] bg-yellow-200 border-r-2 border-gray-300">{task.status}</Table.Cell>
+                    <Table.Cell className="w-[100px] ">{formatDate(task.startDate)}</Table.Cell>
+                    <Table.Cell className="w-[100px] ">{formatDate(task.endDate)}</Table.Cell>
+                    <Table.Cell className="w-[100px]  border-r-2 border-gray-300">{task.status}</Table.Cell>
                   </Table.Row>
 
                   {expandedTasks.includes(task.taskId) &&
                     task.subtasks?.map((subtask, subtaskIndex) => (
                       <Table.Row key={subtaskIndex} className="bg-gray-50">
-                        <Table.Cell className="pl-8 w-[250px] bg-yellow-200">
+                        <Table.Cell className="pl-8 w-[250px] ">
                           <DialogEditSubTask
                             getSubtaskData={fetchSubtasks}
                             subtaskId={subtask.subtaskId}
@@ -378,9 +387,9 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                             }
                           />
                         </Table.Cell>
-                        <Table.Cell className="w-[100px] bg-yellow-200">{formatDate(subtask.startDate)}</Table.Cell>
-                        <Table.Cell className="w-[100px] bg-yellow-200">{formatDate(subtask.endDate)}</Table.Cell>
-                        <Table.Cell className="w-[100px] bg-yellow-200 border-r-2 border-gray-300">
+                        <Table.Cell className="w-[100px] ">{formatDate(subtask.startDate)}</Table.Cell>
+                        <Table.Cell className="w-[100px] ">{formatDate(subtask.endDate)}</Table.Cell>
+                        <Table.Cell className="w-[100px]  border-r-2 border-gray-300">
                           {subtask.status}
                         </Table.Cell>
                       </Table.Row>
@@ -400,7 +409,7 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                   <Table.ColumnHeaderCell
                     key={index}
                     colSpan={month.days}
-                    className={`text-center ${index < months.length - 1 ? "border-r border-gray-300" : ""}`}
+                    className={`text-center bg-yellow-500 ${index < months.length - 1 ? "border-r border-gray-300" : ""}`}
                   >
                     <Text size="2">{month.name}</Text>
                   </Table.ColumnHeaderCell>
@@ -411,7 +420,7 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                   Array.from({ length: month.days }, (_, dayIndex) => (
                     <Table.ColumnHeaderCell
                       key={`${index}-${dayIndex}`}
-                      className={`text-center ${isWeekend(year, dayIndex + 1 + months.slice(0, index).reduce((acc, m) => acc + m.days, 0))
+                      className={`text-center bg-yellow-500 ${isWeekend(year, dayIndex + 1 + months.slice(0, index).reduce((acc, m) => acc + m.days, 0))
                         ? 'bg-gray-100'
                         : 'bg-gray-50'
                         } ${isToday(year, dayIndex + 1 + months.slice(0, index).reduce((acc, m) => acc + m.days, 0))
@@ -434,139 +443,53 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
             <Table.Body>
               {tasks.map((task, taskIndex) => {
                 const { startCol, span } = calculateStartColAndSpan(task.startDate, task.endDate, year);
+
                 return (
                   <React.Fragment key={taskIndex}>
                     <Table.Row>
                       {Array.from({ length: 365 }).map((_, dayIndex) => {
                         const isStart = dayIndex + 1 === startCol;
+                        const isEnd = dayIndex + 1 === startCol + span - 1;
+
                         return (
-                          <Table.Cell key={dayIndex} className="relative group">
-                            {isStart && span > 0 && (
+                            <Table.Cell key={dayIndex} className="relative group border-b border-r border-gray-300">
+                            {isStart && (
                               <div
-                                className={`absolute h-6 top-1/2 transform -translate-y-1/2 rounded-md ${getStatusColor(task.status)} transition-all duration-300 cursor-grab active:cursor-grabbing overflow-visible hover:shadow-lg hover:z-20`}
-                                style={{
-                                  left: 0,
-                                  width: `calc(${span} * 100%)`,
-                                }}
-                                onMouseDown={(e) => handleDragStart(e, task)}
-                                onMouseMove={handleDragMove}
-                                onMouseUp={handleDragEnd}
-                                onMouseLeave={handleDragEnd}
+                              className="absolute h-6 top-1/2 transform -translate-y-1/2 flex items-center"
+                              style={{
+                                left: 0,
+                                width: `calc(${span} * 100%)`,
+                              }}
                               >
-                                {/* Progress bar */}
-                                {task.progress !== undefined && (
-                                  <div
-                                    className="absolute top-0 left-0 h-full bg-opacity-30 bg-white rounded-l-md"
-                                    style={{ width: `${task.progress}%` }}
-                                  ></div>
-                                )}
+                              {/* Div ซ้ายสำหรับ Start Date */}
+                              <div
+                                className="w-3 h-full bg-blue-500 cursor-w-resize"
+                                onMouseDown={(e) => handleResizeStart(e, task, "start")}
+                                onMouseMove={handleResizeMove}
+                                onMouseUp={handleResizeEnd}
+                              ></div>
 
-                                {/* Task name */}
-                                {span > 100 && (
-                                  <span className="text-xs text-white px-2 truncate max-w-full inline-block relative z-10">
-                                    {task.taskName}
-                                  </span>
-                                )}
+                              {/* Div กลางสำหรับ Task Body */}
+                              <div
+                                className="flex-1 bg-blue-400 text-white px-2 ">
+                                {task.taskName}
+                              </div>
 
-                                {/* Enhanced tooltip with more details */}
-                                <div className="absolute invisible group-hover:visible bg-gray-900 text-white p-3 rounded shadow-lg text-xs z-30 bottom-full left-0 mb-2 w-60 opacity-0 transition-opacity duration-200 ease-in-out hover:opacity-100 opacity-100">
-                                  <p className="font-bold text-sm">{task.taskName}</p>
-                                  <div className="flex justify-between items-center mt-1 mb-2">
-                                    <p className="text-gray-300">Duration: {span} days</p>
-                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${task.status === 'Completed' ? 'bg-green-500' : task.status === 'In Progress' ? 'bg-blue-500' : task.status === 'Delayed' ? 'bg-red-500' : 'bg-yellow-500'}`}>
-                                      {task.status}
-                                    </span>
-                                  </div>
-                                  <p className="text-gray-300 mb-1">From: {formatDate(task.startDate)}</p>
-                                  <p className="text-gray-300">To: {formatDate(task.endDate)}</p>
-                                  {task.progress !== undefined && (
-                                    <div className="mt-2">
-                                      <div className="flex justify-between items-center mb-1">
-                                        <span className="text-xs">Progress</span>
-                                        <span className="text-xs">{task.progress}%</span>
-                                      </div>
-                                      <div className="w-full bg-gray-700 rounded-full h-1.5">
-                                        <div className="bg-blue-400 h-1.5 rounded-full" style={{ width: `${task.progress}%` }}></div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* ส่วนจับขยายขอบด้านซ้าย */}
-                                <div
-                                  className="absolute left-0 top-0 w-3 h-full bg-gradient-to-r from-blue-700 to-transparent cursor-w-resize opacity-0 group-hover:opacity-80 hover:opacity-100 rounded-l-md transition-all duration-150 ease-in-out"
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleResizeStart(e, task, "start");
-                                  }}
-                                  onMouseMove={(e) => {
-                                    e.preventDefault();
-                                    handleResizeMove(e);
-                                  }}
-                                  onMouseUp={(e) => {
-                                    e.preventDefault();
-                                    handleResizeEnd(e);
-                                  }}
-                                  title="ลากเพื่อปรับวันที่เริ่มต้น"
-                                >
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="w-0.5 h-3 bg-white mx-0.5"></div>
-                                  </div>
-                                </div>
-
-                                {/* ส่วนจับขยายขอบด้านขวา */}
-                                <div
-                                  className="absolute right-0 top-0 w-3 h-full bg-gradient-to-l from-blue-700 to-transparent cursor-e-resize opacity-0 group-hover:opacity-80 hover:opacity-100 rounded-r-md transition-all duration-150 ease-in-out"
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleResizeStart(e, task, "end");
-                                  }}
-                                  onMouseMove={(e) => {
-                                    e.preventDefault();
-                                    handleResizeMove(e);
-                                  }}
-                                  onMouseUp={(e) => {
-                                    e.preventDefault();
-                                    handleResizeEnd(e);
-                                  }}
-                                  title="ลากเพื่อปรับวันที่สิ้นสุด"
-                                >
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="w-0.5 h-3 bg-white mx-0.5"></div>
-                                  </div>
-                                </div>
-
-                                {/* ส่วนจับลากตรงกลาง */}
-                                <div
-                                  className="absolute inset-0 cursor-grab active:cursor-grabbing hover:bg-black hover:bg-opacity-10 transition-colors duration-200"
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    handleDragStart(e, task);
-                                  }}
-                                  onMouseMove={(e) => {
-                                    e.preventDefault();
-                                    handleDragMove(e);
-                                  }}
-                                  onMouseUp={(e) => {
-                                    e.preventDefault();
-                                    handleDragEnd(e);
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.preventDefault();
-                                    handleDragEnd(e);
-                                  }}
-                                  title="ลากเพื่อย้ายงาน"
-                                ></div>
-
+                              {/* Div ขวาสำหรับ End Date */}
+                              <div
+                                className="w-3 h-full bg-blue-500 cursor-e-resize"
+                                onMouseDown={(e) => handleResizeStart(e, task, "end")}
+                                onMouseMove={handleResizeMove}
+                                onMouseUp={handleResizeEnd}
+                              ></div>
                               </div>
                             )}
-                          </Table.Cell>
+                            </Table.Cell>
                         );
                       })}
                     </Table.Row>
 
+                    {/* Subtasks */}
                     {expandedTasks.includes(task.taskId) &&
                       task.subtasks?.map((subtask, subtaskIndex) => {
                         const { startCol, span } = calculateStartColAndSpan(
@@ -574,19 +497,21 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                           subtask.endDate,
                           year
                         );
+
                         return (
                           <Table.Row key={subtaskIndex} className="bg-gray-50">
                             {Array.from({ length: 365 }).map((_, dayIndex) => {
                               const isStart = dayIndex + 1 === startCol;
+
                               return (
                                 <Table.Cell key={dayIndex} className="relative group">
                                   {isStart && (
                                     <div
-                                    className={`absolute h-6 top-1/2 transform -translate-y-1/2 rounded-md ${getStatusColor(subtask.status)} transition-all duration-300 cursor-grab active:cursor-grabbing overflow-visible hover:shadow-lg hover:z-20`}
-                                    style={{
-                                      left: 0,
-                                      width: `calc(${span} * 100%)`,
-                                    }}
+                                      className={`absolute h-6 top-1/2 transform -translate-y-1/2 rounded-md ${getStatusColor(subtask.status)} transition-all duration-300 cursor-grab active:cursor-grabbing overflow-visible hover:shadow-lg hover:z-20`}
+                                      style={{
+                                        left: 0,
+                                        width: `calc(${span} * 100%)`,
+                                      }}
                                     >
                                       {span > 30 && (
                                         <span className="text-xs text-white px-2 truncate max-w-full inline-block">
@@ -603,12 +528,12 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                                           <p className="text-gray-300">Duration: {span} days</p>
                                           <span
                                             className={`px-2 py-0.5 rounded-full text-xs font-medium ${subtask.status === "Completed"
-                                                ? "bg-green-500"
-                                                : subtask.status === "In Progress"
-                                                  ? "bg-blue-500"
-                                                  : subtask.status === "Delayed"
-                                                    ? "bg-red-500"
-                                                    : "bg-yellow-500"
+                                              ? "bg-green-500"
+                                              : subtask.status === "In Progress"
+                                                ? "bg-blue-500"
+                                                : subtask.status === "Delayed"
+                                                  ? "bg-red-500"
+                                                  : ""
                                               }`}
                                           >
                                             {subtask.status}

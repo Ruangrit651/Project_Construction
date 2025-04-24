@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { Dialog, Button, Flex, TextField, Text, Select } from "@radix-ui/themes";
 import { patchTask, getTask } from "@/services/task.service";
+import { patchSubtask } from "@/services/subtask.service";
 import AlertDialogDeleteTask from "./alertDialogDeleteTask";
 
 interface DialogEditTaskProps {
     getTaskData: () => void;
+    fetchTasks?: () => void; // Add fetchTasks as an optional prop
     taskId: string;
     trigger: React.ReactNode;
-}
+  }
 
 const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, trigger }) => {
     const [taskName, setTaskName] = useState("");
@@ -28,6 +30,25 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
         const numericValue = value === "" ? 0 : Number(value);
         setBudget(numericValue); // อัปเดตค่า budget
         setFormattedBudget(formatNumber(numericValue)); // อัปเดตค่า formattedBudget
+    };
+
+    const updateTaskStatus = async (taskId: string, status: string) => {
+        try {
+            await patchTask({ task_id: taskId, status });
+            if (status === "Completed") {
+                const response = await getTask(taskId); // ดึงข้อมูล Task พร้อม Subtasks
+                const task = response.responseObject;
+                if (task && task.subtasks) {
+                    const updatePromises = task.subtasks.map((subtask: any) =>
+                        patchSubtask({ subtask_id: subtask.subtask_id, status })
+                    );
+                    await Promise.all(updatePromises); // อัปเดต Subtasks พร้อมกัน
+                }
+            }
+            getTaskData(); // รีเฟรชข้อมูล Task
+        } catch (error) {
+            console.error("Failed to update task status:", error);
+        }
     };
 
     useEffect(() => {
@@ -77,7 +98,7 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
             alert("Please fill out all required fields.");
             return;
         }
-
+    
         try {
             const response = await patchTask({
                 task_id: taskId,
@@ -88,8 +109,12 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({ getTaskData, taskId, tr
                 end_date: endDate,
                 status,
             });
-
+    
             if (response.success) {
+                // เรียก updateTaskStatus ถ้าสถานะ Task เป็น Completed
+                if (status === "Completed") {
+                    await updateTaskStatus(taskId, "Completed");
+                }
                 getTaskData();
             } else {
                 alert(`Error: ${response.message}`);

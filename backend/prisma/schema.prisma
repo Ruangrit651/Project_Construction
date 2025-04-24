@@ -143,6 +143,7 @@ model subtask {
 
   // Relations
   task task? @relation(fields: [task_id], references: [task_id])
+  resources    resource[]
 }
 
 model task_dependency {
@@ -175,6 +176,7 @@ model plan {
 model resource {
   resource_id   String    @id @default(uuid()) @db.Uuid
   task_id       String?   @db.Uuid
+  subtask_id    String?   @db.Uuid
   cost          Decimal   @default(0.00) @db.Decimal(15, 2)
   total         Decimal   @default(0.00) @db.Decimal(15, 2) // เอาเก็บค่าที่ * เสร็จแล้ว
   resource_name String    @db.VarChar(255)
@@ -190,4 +192,5 @@ model resource {
   updated user? @relation("ResourceUpdatedBy", fields: [updated_by], references: [user_id])
   // projects      project?   @relation(fields: [project_id], references: [project_id])
   tasks   task? @relation(fields: [task_id], references: [task_id])
+  subtasks subtask? @relation(fields: [subtask_id], references: [subtask_id])
 }

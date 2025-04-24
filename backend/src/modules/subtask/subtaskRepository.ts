@@ -33,6 +33,20 @@ export const SubTaskRepository = {
     });
   },
 
+  findByTaskId: async (task_id: string) => {
+    return prisma.subtask.findMany({
+      where: { task_id },
+    });
+  },
+
+  // Update multiple subtasks by task_id
+  updateManyByTaskId: async (task_id: string, payload: Partial<subtask>) => {
+    return prisma.subtask.updateMany({
+      where: { task_id },
+      data: payload,
+    });
+  },
+
   // Find subtask by name
   findByName: async <Key extends keyof subtask>(
     subtask_name: string,
