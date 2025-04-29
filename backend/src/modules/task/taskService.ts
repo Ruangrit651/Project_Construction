@@ -186,7 +186,7 @@ export const taskService = {
     delete: async (task_id: string) => {
         try {
             // ตรวจสอบว่า Task มีอยู่หรือไม่
-            const existingTask = await TaskRepository.findById(task_id); // ต้องเพิ่ม findById ใน TaskRepository
+            const existingTask = await TaskRepository.findById(task_id);
             console.log("Checking Task:", task_id, "Exists:", existingTask);
 
             if (!existingTask) {
@@ -215,5 +215,4 @@ export const taskService = {
             );
         }
     }
-
 };

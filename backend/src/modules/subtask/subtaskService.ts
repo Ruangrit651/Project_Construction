@@ -4,6 +4,62 @@ import { SubTaskRepository } from "@modules/subtask/subtaskRepository";
 import { TaskRepository } from "@modules/task/taskRepository";
 import { TypePayloadSubTask } from "@modules/subtask/subtaskModel";
 import { subtask } from "@prisma/client";
+import { ProgressRepository } from "@modules/progress/progressREpository";
+
+// เพิ่มฟังก์ชันสำหรับคำนวณและอัปเดต progress ของ task จาก subtasks
+async function updateTaskProgress(task_id: string, updater_id: string) {
+  try {
+    // ดึง subtasks ทั้งหมดของ task
+    const subtasks = await SubTaskRepository.findByTaskId(task_id);
+    
+    // ถ้าไม่มี subtasks ไม่ต้องทำอะไร
+    if (!subtasks || subtasks.length === 0) {
+      return;
+    }
+    
+    // คำนวณความคืบหน้าเฉลี่ยจาก subtasks
+    let totalProgress = 0;
+    
+    for (const subtask of subtasks) {
+      // ดึง progress ล่าสุดของแต่ละ subtask
+      const latestProgress = await ProgressRepository.findLatestBySubtaskId(subtask.subtask_id);
+      
+      // ถ้ามี progress ให้นำค่าไปรวม
+      if (latestProgress) {
+        totalProgress += latestProgress.percent;
+      }
+    }
+    
+    // คำนวณค่าเฉลี่ย
+    const averageProgress = Math.round(totalProgress / subtasks.length);
+    
+    // บันทึก progress ใหม่ของ task
+    await ProgressRepository.create({
+      task_id,
+      percent: averageProgress,
+      description: `Auto-calculated from subtasks (average ${averageProgress}%)`,
+      created_by: updater_id,
+      updated_by: updater_id
+    });
+    
+    // อัปเดตสถานะของ task ตามความคืบหน้า
+    if (averageProgress === 100) {
+      await TaskRepository.update(task_id, {
+        status: "completed",
+        updated_by: updater_id
+      });
+    } else if (averageProgress > 0) {
+      await TaskRepository.update(task_id, {
+        status: "in progress", 
+        updated_by: updater_id
+      });
+    }
+    
+    console.log(`Updated task ${task_id} progress to ${averageProgress}%`);
+  } catch (error) {
+    console.error("Error updating task progress:", error);
+  }
+}
 
 export const subtaskService = {
   // อ่านข้อมูล subtask ทั้งหมด
@@ -85,6 +141,19 @@ export const subtaskService = {
       }
 
       const subtask = await SubTaskRepository.create(payload);
+      
+      // สร้าง progress เริ่มต้นที่ 0% สำหรับ subtask
+      await ProgressRepository.create({
+        subtask_id: subtask.subtask_id,
+        percent: 0,
+        description: "Initial progress",
+        created_by: payload.created_by || "system",
+        updated_by: payload.updated_by || "system"
+      });
+      
+      // หลังจากสร้าง subtask แล้ว ให้อัปเดต progress ของ task แม่
+      await updateTaskProgress(payload.task_id, payload.created_by || "system");
+      
       return new ServiceResponse<subtask>(
         ResponseStatus.Success,
         "Create subtask success",
@@ -114,6 +183,9 @@ export const subtaskService = {
         );
       }
 
+      // จัดเก็บ task_id ของ subtask ก่อนจะอัปเดต
+      const taskId = existingSubTask.task_id;
+
       // ตรวจสอบ task_id ถ้ามีการอัปเดต
       let parentTask;
       if (payload.task_id) {
@@ -134,49 +206,42 @@ export const subtaskService = {
       // ตรวจสอบว่า subtask dates อยู่ภายในช่วงเวลาของ parent task
       if (parentTask) {
         // ตรวจสอบวันที่ต่างๆ...
-        // ...existing date validation code...
       }
 
       // อัปเดต subtask
       const updatedSubTask = await SubTaskRepository.update(subtask_id, payload);
 
-      // ถ้า status ถูกอัปเดตเป็น Completed หรือมีการเปลี่ยนแปลง status
-      if (payload.status && existingSubTask.task_id) {
-        try {
-          // ดึง subtasks ทั้งหมดที่อยู่ภายใต้ task เดียวกัน
-          const subtasks = await SubTaskRepository.findByTaskId(existingSubTask.task_id);
-
-          // ตรวจสอบว่า subtasks ทั้งหมดมีสถานะเป็น Completed หรือไม่
-          const allCompleted = subtasks.every((subtask) =>
-            // ถ้า subtask คือตัวที่กำลังอัปเดต ให้ใช้ค่า status ใหม่
-            subtask.subtask_id === subtask_id
-              ? payload.status === "completed"
-              : subtask.status === "completed"
-          );
-
-          // ถ้า subtasks ทั้งหมดเป็น Completed ให้อัปเดต task เป็น completed
-          if (allCompleted) {
-            const updateTaskResult = await TaskRepository.update(existingSubTask.task_id, {
-              status: "completed",
-              updated_at: new Date().toISOString(), // แปลง Date เป็น string
-              updated_by: payload.updated_by ?? existingSubTask.updated_by ?? undefined
-            });
-            console.log(`Task ${existingSubTask.task_id} updated to completed because all subtasks are completed`);
-          } else {
-            const currentTask = await TaskRepository.findById(existingSubTask.task_id);
-            if (currentTask && currentTask.status === "completed") {
-              await TaskRepository.update(existingSubTask.task_id, {
-                status: "in progress",
-                updated_at: new Date().toISOString(), // แปลง Date เป็น string
-                updated_by: payload.updated_by ?? existingSubTask.updated_by ?? undefined
-              });
-              console.log(`Task ${existingSubTask.task_id} updated to in progress because not all subtasks are completed`);
-            }
-          }
-        } catch (error) {
-          console.error("Failed to update parent task status:", error);
-          // ไม่ return error เพื่อให้การอัปเดต subtask ยังคงสำเร็จ แม้จะมีปัญหาในการอัปเดต task
+      // ถ้า status ถูกอัปเดตเป็น "completed"
+      if (payload.status === "completed") {
+        // บันทึก progress 100%
+        await ProgressRepository.create({
+          subtask_id: subtask_id,
+          percent: 100,
+          description: "Completed subtask",
+          created_by: payload.updated_by || "system",
+          updated_by: payload.updated_by || "system"
+        });
+      } 
+      // ถ้า status ถูกอัปเดตเป็น "in progress"
+      else if (payload.status === "in progress") {
+        // ดึง progress ล่าสุดของ subtask
+        const latestProgress = await ProgressRepository.findLatestBySubtaskId(subtask_id);
+        
+        // ถ้าไม่มี progress หรือ progress เป็น 0 หรือ 100 ให้สร้าง progress 50%
+        if (!latestProgress || latestProgress.percent === 0 || latestProgress.percent === 100) {
+          await ProgressRepository.create({
+            subtask_id: subtask_id,
+            percent: 50,  // สมมติให้เป็น 50% เมื่อเปลี่ยนเป็น "in progress"
+            description: "In progress status update",
+            created_by: payload.updated_by || "system",
+            updated_by: payload.updated_by || "system"
+          });
         }
+      }
+
+      // อัปเดต progress ของ task แม่ (ถ้ามี)
+      if (taskId) {
+        await updateTaskProgress(taskId, payload.updated_by || "system");
       }
 
       return new ServiceResponse<subtask>(
@@ -198,8 +263,9 @@ export const subtaskService = {
   // ลบ subtask
   delete: async (subtask_id: string) => {
     try {
-      const existingSubTask = await SubTaskRepository.findById(subtask_id);
-      if (!existingSubTask) {
+      // ตรวจสอบว่า Subtask มีอยู่หรือไม่
+      const existingSubtask = await SubTaskRepository.findById(subtask_id);
+      if (!existingSubtask) {
         return new ServiceResponse(
           ResponseStatus.Failed,
           "Not found subtask",
@@ -208,7 +274,17 @@ export const subtaskService = {
         );
       }
 
+      // จัดเก็บ task_id ของ subtask ก่อนจะลบ
+      const taskId = existingSubtask.task_id;
+
+      // ลบ subtask
       await SubTaskRepository.delete(subtask_id);
+
+      // อัปเดต progress ของ task แม่ (ถ้ามี)
+      if (taskId) {
+        await updateTaskProgress(taskId, "system");
+      }
+
       return new ServiceResponse(
         ResponseStatus.Success,
         "Delete subtask success",
@@ -224,4 +300,73 @@ export const subtaskService = {
       );
     }
   },
+  
+  // เพิ่มเมธอดสำหรับบันทึกความคืบหน้าของ Subtask
+  recordProgress: async (subtask_id: string, percent: number, description?: string, updated_by?: string) => {
+    try {
+      // ตรวจสอบว่า Subtask มีอยู่หรือไม่
+      const existingSubtask = await SubTaskRepository.findById(subtask_id);
+      if (!existingSubtask) {
+        return new ServiceResponse(
+          ResponseStatus.Failed,
+          "Not found subtask",
+          null,
+          StatusCodes.NOT_FOUND
+        );
+      }
+
+      // ตรวจสอบค่า percent
+      if (percent < 0 || percent > 100) {
+        return new ServiceResponse(
+          ResponseStatus.Failed,
+          "Percent value must be between 0 and 100",
+          null,
+          StatusCodes.BAD_REQUEST
+        );
+      }
+
+      // บันทึก progress
+      const progress = await ProgressRepository.create({
+        subtask_id,
+        percent,
+        description: description || `Updated progress to ${percent}%`,
+        created_by: updated_by || "system",
+        updated_by: updated_by || "system"
+      });
+
+      // อัปเดตสถานะของ subtask
+      let status = existingSubtask.status;
+      if (percent === 100) {
+        status = "completed";
+      } else if (percent > 0) {
+        status = "in progress";
+      } else {
+        status = "pending";
+      }
+
+      await SubTaskRepository.update(subtask_id, {
+        status,
+        updated_by
+      });
+
+      // อัปเดต progress ของ task แม่ (ถ้ามี)
+      if (existingSubtask.task_id) {
+        await updateTaskProgress(existingSubtask.task_id, updated_by || "system");
+      }
+
+      return new ServiceResponse(
+        ResponseStatus.Success,
+        "Record subtask progress success",
+        progress,
+        StatusCodes.OK
+      );
+    } catch (ex) {
+      return new ServiceResponse(
+        ResponseStatus.Failed,
+        "Error recording subtask progress: " + (ex as Error).message,
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 };

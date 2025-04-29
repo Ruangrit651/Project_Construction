@@ -22,7 +22,13 @@ export const SubTaskRepository = {
   // Get all subtasks
   findAllAsync: async () => {
     return prisma.subtask.findMany({
-      include: { task: true },
+      include: { 
+        task: true,
+        progresses: {
+          orderBy: { date_recorded: 'desc' },
+          take: 1
+        }
+      },
     });
   },
 
@@ -30,12 +36,26 @@ export const SubTaskRepository = {
   findById: async (subtask_id: string) => {
     return prisma.subtask.findUnique({
       where: { subtask_id },
+      include: {
+        progresses: {
+          orderBy: { date_recorded: 'desc' },
+          take: 1
+        }
+      }
     });
   },
 
+  // Find subtasks by task_id with latest progress
   findByTaskId: async (task_id: string) => {
     return prisma.subtask.findMany({
       where: { task_id },
+      include: {
+        progresses: {
+          orderBy: { date_recorded: 'desc' },
+          take: 1
+        }
+      },
+      orderBy: { created_at: 'asc' }
     });
   },
 
@@ -91,8 +111,44 @@ export const SubTaskRepository = {
 
   // Delete a subtask by subtask_id
   delete: async (subtask_id: string) => {
+    // ลบ progresses ทั้งหมดที่เกี่ยวข้องกับ subtask ก่อน
+    await prisma.progress.deleteMany({
+      where: { subtask_id: subtask_id }
+    });
+    
+    // จากนั้นจึงลบ subtask
     return await prisma.subtask.delete({
       where: { subtask_id: subtask_id },
     });
   },
+  
+  // Find subtasks with their latest progress
+  findWithLatestProgress: async () => {
+    return prisma.subtask.findMany({
+      include: {
+        progresses: {
+          orderBy: { date_recorded: 'desc' },
+          take: 1
+        },
+        task: true
+      },
+      orderBy: { created_at: 'desc' }
+    });
+  },
+  
+  // Find completed subtasks of a specific task
+  findCompletedByTaskId: async (task_id: string) => {
+    return prisma.subtask.findMany({
+      where: { 
+        task_id,
+        status: 'completed'
+      },
+      include: {
+        progresses: {
+          orderBy: { date_recorded: 'desc' },
+          take: 1
+        }
+      }
+    });
+  }
 };

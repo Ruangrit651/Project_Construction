@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { handleServiceResponse, validateRequest } from "@common/utils/httpHandlers";
 import { subtaskService } from "@modules/subtask/subtaskService";
-import { CreateSubTaskSchema, UpdateSubTaskSchema, DeleteSubTaskSchema } from "@modules/subtask/subtaskModel";
+import { CreateSubTaskSchema, UpdateSubTaskSchema, DeleteSubTaskSchema, RecordSubtaskProgressSchema } from "@modules/subtask/subtaskModel";
 import { authenticateJWT } from "@common/middleware/authMiddleware";
 import rolegrop5 from "@common/middleware/roleGroup5"; // สำหรับสิทธิ์การจัดการ
 
@@ -44,6 +44,21 @@ export const subtaskRouter = (() => {
         validateRequest(DeleteSubTaskSchema), async (req: Request, res: Response) => {
         const { subtask_id } = req.params;
         const ServiceResponse = await subtaskService.delete(subtask_id);
+        handleServiceResponse(ServiceResponse, res);
+    });
+    
+  // RECORD Progress for SubTask
+  router.post("/progress",
+        authenticateJWT,
+        validateRequest(RecordSubtaskProgressSchema), async (req: Request, res: Response) => {
+        const { subtask_id, progress_percent, description } = req.body;
+        const updated_by = req.user.userId;
+        const ServiceResponse = await subtaskService.recordProgress(
+            subtask_id, 
+            progress_percent, 
+            description, 
+            updated_by
+        );
         handleServiceResponse(ServiceResponse, res);
     });
 

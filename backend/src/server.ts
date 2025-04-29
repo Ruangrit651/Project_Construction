@@ -17,6 +17,7 @@ import { planRouter } from "@modules/plan/planRouter";
 import { authRouter } from "@modules/auth/authRouter";
 import { subtaskRouter } from "@modules/subtask/subtaskRouter";
 import { dashboardRouter } from "@modules/dashboard/dashboardRouter";
+import { progressRouter } from "@modules/progress/progressRouter";
 
 const logger = pino({ name: "server start" });
 const app = express();
@@ -40,6 +41,7 @@ app.use("/v1/plan", planRouter);
 app.use("/v1/auth", authRouter);
 app.use("/v1/subtask", subtaskRouter);
 app.use("/v1/dashboard", dashboardRouter);
+app.use("/v1/progress", progressRouter);
 
 // Error handlers
 app.use(errorHandler());

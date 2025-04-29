@@ -88,8 +88,8 @@ model user {
   createdTasks task[] @relation("TaskCreatedBy")
   updatedTasks task[] @relation("TaskUpdatedBy")
 
-  createdPlans plan[] @relation("PlanCreatedBy")
-  updatedPlans plan[] @relation("PlanUpdatedBy")
+  createdPlans Progress[] @relation("PlanCreatedBy")
+  updatedPlans Progress[] @relation("PlanUpdatedBy")
 
   createdResources resource[] @relation("ResourceCreatedBy")
   updatedResources resource[] @relation("ResourceUpdatedBy")
@@ -125,6 +125,7 @@ model task {
   resources    resource[]
   dependencies task_dependency[]
   subtasks     subtask[]
+  progresses   Progress[]
 }
 
 model subtask {
@@ -144,6 +145,8 @@ model subtask {
   // Relations
   task task? @relation(fields: [task_id], references: [task_id])
   resources    resource[]
+  progresses Progress[]
+  
 }
 
 model task_dependency {
@@ -158,18 +161,23 @@ model task_dependency {
 }
 
 // Plan Model
-model plan {
-  plan_id       String    @id @default(uuid()) @db.Uuid
-  description   String?
-  progress_task Int
+model Progress {
+  progress_id   String    @id @default(uuid()) @db.Uuid
+  task_id       String?   @db.Uuid
+  subtask_id    String?   @db.Uuid
+  percent       Int       @default(0)           // เปอร์เซ็นต์ความคืบหน้า (0-100)
+  description   String?                         // รายละเอียดความคืบหน้า
+  date_recorded DateTime  @default(now())       // วันที่บันทึกความคืบหน้า
   created_at    DateTime  @default(now())
   created_by    String?   @db.Uuid
   updated_at    DateTime? @updatedAt
   updated_by    String?   @db.Uuid
 
   // Relations
-  created user? @relation("PlanCreatedBy", fields: [created_by], references: [user_id])
-  updated user? @relation("PlanUpdatedBy", fields: [updated_by], references: [user_id])
+  task     task?    @relation(fields: [task_id], references: [task_id])
+  subtask  subtask? @relation(fields: [subtask_id], references: [subtask_id])
+  created  user?    @relation("PlanCreatedBy", fields: [created_by], references: [user_id])
+  updated  user?    @relation("PlanUpdatedBy", fields: [updated_by], references: [user_id])
 }
 
 // Resource Model

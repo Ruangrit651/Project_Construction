@@ -49,3 +49,9 @@ export const LOGOUT = "/v1/auth/logout";
 
 // dashboard
 export const GET_DASHBOARD = "/v1/dashboard/get";
+
+// progress
+export const GET_PROGRESS_ALL = "/v1/progress/get";
+export const CREATE_PROGRESS = "/v1/progress/create";
+export const UPDATE_PROGRESS = "/v1/progress/update";
+export const DELETE_PROGRESS = "/v1/progress/delete";

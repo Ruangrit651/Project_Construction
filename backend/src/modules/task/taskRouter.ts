@@ -80,7 +80,5 @@ export const taskRouter = (() => {
             handleServiceResponse(ServiceResponse, res);
         });
 
-
-
     return router;
 })();

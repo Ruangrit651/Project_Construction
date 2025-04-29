@@ -54,3 +54,12 @@ export const DeleteSubTaskSchema = z.object({
     subtask_id: z.string().uuid(),
   }),
 });
+
+// Schema สำหรับการบันทึกความคืบหน้าของ Subtask
+export const RecordSubtaskProgressSchema = z.object({
+  body: z.object({
+    subtask_id: z.string().uuid(),
+    progress_percent: z.number().min(0).max(100),
+    description: z.string().optional(),
+  }),
+});

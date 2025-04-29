@@ -36,7 +36,7 @@ export const CreateTaskSchema = z.object({
 export const UpdateTaskSchema = z.object({
   body: z.object({
     task_id: z.string().uuid(), // ต้องระบุ task_id เพื่อทำการอัปเดต
-    project_id: z.string().uuid() .nullable() .optional(),
+    project_id: z.string().uuid().nullable().optional(),
     task_name: z.string().max(255).optional(),
     description: z.string().optional(),
     budget: z.number().optional(),
@@ -54,7 +54,6 @@ export const UpdateStartDateSchema = z.object({
     start_date: z.string().optional(),
   }),
 });
-
 
 export const UpdateEndDateSchema = z.object({
   body: z.object({
