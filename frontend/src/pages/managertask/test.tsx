@@ -409,7 +409,7 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                   <Table.ColumnHeaderCell
                     key={index}
                     colSpan={month.days}
-                    className={`text-center bg-yellow-500 ${index < months.length - 1 ? "border-r border-gray-300" : ""}`}
+                    className={`text-center  ${index < months.length - 1 ? "border-r border-gray-300" : ""}`}
                   >
                     <Text size="2">{month.name}</Text>
                   </Table.ColumnHeaderCell>
@@ -420,7 +420,7 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                   Array.from({ length: month.days }, (_, dayIndex) => (
                     <Table.ColumnHeaderCell
                       key={`${index}-${dayIndex}`}
-                      className={`text-center bg-yellow-500 ${isWeekend(year, dayIndex + 1 + months.slice(0, index).reduce((acc, m) => acc + m.days, 0))
+                      className={`text-center  ${isWeekend(year, dayIndex + 1 + months.slice(0, index).reduce((acc, m) => acc + m.days, 0))
                         ? 'bg-gray-100'
                         : 'bg-gray-50'
                         } ${isToday(year, dayIndex + 1 + months.slice(0, index).reduce((acc, m) => acc + m.days, 0))
@@ -452,7 +452,7 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                         const isEnd = dayIndex + 1 === startCol + span - 1;
 
                         return (
-                            <Table.Cell key={dayIndex} className="relative group border-b border-r border-gray-300">
+                            <Table.Cell key={dayIndex} className="relative group border-b  border-gray-300">
                             {isStart && (
                               <div
                               className="absolute h-6 top-1/2 transform -translate-y-1/2 flex items-center"
