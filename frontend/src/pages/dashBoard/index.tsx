@@ -1,60 +1,99 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactApexChart from "react-apexcharts";
 import { getDashboard } from "@/services/dashboard.service";
-import { DashboardResponse } from "@/types/response/response.dashboard";
 import { TypeDashboard } from "@/types/response/response.dashboard"; // Ensure this path is correct
+// import { getCostBreakdownData } from "@/services/dashboard.service"; // Ensure this path is correct
 
-const BudgetVariance = () => {
-  const [state] = useState({
+
+const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[] | null }) => {
+  if (!filteredProjects || filteredProjects.length === 0) {
+    return <p>No data available</p>;
+  }
+
+  const categories = filteredProjects.map(project => project.project_name || "Unnamed Project");
+
+  const variances = filteredProjects.map(project => {
+    const totalBudget = Number(project.totalBudget || 0);
+    const totalSpent = Number(project.amountSpent || 0);
+    return totalBudget - totalSpent;
+  });
+
+  // กำหนดสีตามค่า: เขียว = กำไร, แดง = ขาดทุน
+  const barColors = variances.map(v => v >= 0 ? "#00E396" : "#FF4560");
+
+  const chartData = {
     series: [
       {
-        name: "Website Blog",
-        type: "column",
-        data: [440, 505, 414, 671, 227, 413, 201, 352, 752, 320, 257, 160],
-      },
-      {
-        name: "Social Media",
-        type: "line" as "line",
-        data: [23, 42, 35, 27, 43, 22, 17, 31, 22, 22, 12, 16],
+        name: "Budget Variance",
+        data: variances,
       },
     ],
     options: {
       chart: {
+        type: "bar",
         height: 350,
-        type: "line",
+        stacked: false,
       },
-      stroke: {
-        width: [0, 4],
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          columnWidth: "45%",
+        },
       },
-      title: {
-        text: "Budget Variance",
-      },
+      colors: barColors, // ✅ ใช้ array ของสีตรงนี้
       dataLabels: {
-        enabled: true,
-        enabledOnSeries: [1],
+        enabled: false,
       },
-      labels: [
-        "01 Jan 2001", "02 Jan 2001", "03 Jan 2001", "04 Jan 2001", "05 Jan 2001",
-        "06 Jan 2001", "07 Jan 2001", "08 Jan 2001", "09 Jan 2001", "10 Jan 2001",
-        "11 Jan 2001", "12 Jan 2001"
-      ],
-      yaxis: [
-        { title: { text: "Website Blog" } },
-        { opposite: true, title: { text: "Social Media" } },
-      ],
+      xaxis: {
+        categories,
+        title: {
+          text: "Projects",
+        },
+      },
+      yaxis: {
+        title: {
+          text: "Amount ($)",
+        },
+        labels: {
+          formatter: (value: number) =>
+            value.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }),
+        },
+      },
+      tooltip: {
+        y: {
+          formatter: (value: number) =>
+            `$${value.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`,
+        },
+      },
+      legend: {
+        show: false, // ซ่อน legend เพราะมีแค่ series เดียว
+      },
     },
-  });
+  };
 
   return (
     <div>
-      <ReactApexChart options={state.options} series={state.series} type="line" height={270} />
+      <ReactApexChart
+        options={chartData.options}
+        series={chartData.series}
+        type="bar"
+        height={350}
+      />
     </div>
   );
 };
 
-const ProjectCompletionRate = () => {
+
+
+const ProjectCompletionRate = ({ completionRate }: { completionRate: number }) => {
   const [state] = useState({
-    series: [70],
+    series: [completionRate],
     options: {
       chart: { height: 350, type: "radialBar" },
       plotOptions: {
@@ -63,10 +102,11 @@ const ProjectCompletionRate = () => {
           dataLabels: {
             name: {
               show: true,
-              fontSize: '12px', // Adjust the font size here
+              fontSize: '12px',
             },
             value: {
               show: true,
+              formatter: (val: number) => `${val.toFixed(2)}%`, // แสดงค่าเป็นเปอร์เซ็นต์
             },
           },
         },
@@ -82,9 +122,9 @@ const ProjectCompletionRate = () => {
   );
 };
 
-const UtilizedDuration = () => {
+const UtilizedDuration = ({ utilizedDays }: { utilizedDays: number }) => {
   const [state] = useState({
-    series: [952],
+    series: [utilizedDays],
     options: {
       chart: { height: 350, type: "radialBar" },
       plotOptions: {
@@ -94,7 +134,7 @@ const UtilizedDuration = () => {
             name: { show: true },
             value: {
               show: true,
-              formatter: () => "90 day(s)",
+              formatter: () => `${utilizedDays} day(s)`, // แสดงจำนวนวัน
             },
           },
         },
@@ -110,25 +150,129 @@ const UtilizedDuration = () => {
   );
 };
 
-const CostBreakdown = () => {
-  const [state] = useState({
-    series: [44, 55, 41, 17, 15],
+const CostBreakdown = ({ filteredProjects }: { filteredProjects: TypeDashboard[] | null }) => {
+  const [state, setState] = useState<{
+    series: number[];
+    options: {
+      chart: { type: string };
+      labels: string[];
+      responsive: { breakpoint: number; options: { chart: { width: number }; legend: { position: string } } }[];
+    };
+  }>({
+    series: [],
     options: {
       chart: { type: "donut" },
+      labels: [],
       responsive: [{ breakpoint: 480, options: { chart: { width: 200 }, legend: { position: "bottom" } } }],
     },
   });
 
+  useEffect(() => {
+    if (filteredProjects && filteredProjects.length > 0) {
+      const labels = filteredProjects.map((project) => project.project_name || "Unnamed Project");
+      const series = filteredProjects.map((project) => Number(project.amountSpent) || 0);
+
+      // ใช้ชุดสีแบบขยายเพื่อให้ไม่ซ้ำง่าย
+      const colorPalette = [
+        "#FF4560", "#008FFB", "#00E396", "#FEB019", "#775DD0",
+        "#3F51B5", "#F44336", "#4CAF50", "#9C27B0", "#FF9800",
+        "#607D8B", "#E91E63", "#00BCD4", "#CDDC39", "#8BC34A",
+        "#FF5722", "#795548", "#FFC107", "#03A9F4", "#673AB7"
+      ];
+
+      // ตัดเฉพาะจำนวนสีที่ตรงกับจำนวนโปรเจ็ก
+      const colors = colorPalette.slice(0, labels.length);
+
+      setState((prevState) => ({
+        ...prevState,
+        series,
+        options: {
+          ...prevState.options,
+          labels,
+          colors,
+          dataLabels: {
+            formatter: (val: number) => val.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }),
+          },
+          tooltip: {
+            y: {
+              formatter: (val: number) => val.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }),
+            },
+          },
+        },
+      }));
+    } else {
+      setState((prevState) => ({
+        ...prevState,
+        series: [],
+        options: {
+          ...prevState.options,
+          labels: [],
+          colors: [],
+        },
+      }));
+    }
+  }, [filteredProjects]);
+
   return (
     <div>
-      <ReactApexChart options={state.options} series={state.series} type="donut" />
+      {state.series.length > 0 && state.series.some((value) => value > 0) ? (
+        <ReactApexChart options={state.options} series={state.series} type="donut" />
+      ) : (
+        <p>No data available or all values are zero</p>
+      )}
     </div>
   );
 };
 
+
 export { BudgetVariance, ProjectCompletionRate, UtilizedDuration, CostBreakdown, };
 
 //--------------------------------------------------------------------------------------------------------------------------------------//
+
+const calculateEAC = (projects: TypeDashboard[] | null) => {
+  if (!projects || projects.length === 0) return null;
+
+  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0); // AC
+  const totalProgress = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0) / projects.length; // % Progress
+
+  const earnedValue = (totalProgress / 100) * totalBudget; // EV
+  const costPerformanceIndex = earnedValue / totalAmountSpent; // CPI
+
+  // ใช้สูตร EAC = BAC / CPI
+  const eac = costPerformanceIndex > 0 ? totalBudget / costPerformanceIndex : totalBudget;
+
+  return eac;
+};
+//========================================================================================
+const calculatePercentOfTarget = (projects: TypeDashboard[] | null): number => {
+  if (!projects || projects.length === 0) return 0;
+
+  const today = new Date();
+
+  const totalPercent = projects.reduce((sum, project) => {
+    const startDate = new Date(project.start_date);
+    const endDate = new Date(project.end_date);
+
+    const projectDuration = Math.max(0, (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)); // ระยะเวลาทั้งหมด (วัน)
+    const utilizedDuration = Math.max(0, (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)); // ระยะเวลาที่ใช้ไปแล้ว (วัน)
+
+    const percentTarget = projectDuration > 0 ? (utilizedDuration / projectDuration) * 100 : 0;
+
+    return sum + percentTarget;
+  }, 0);
+
+  return totalPercent / projects.length; // ค่าเฉลี่ย Percent of Target
+};
+//========================================================================================
+
+
 const CustomSelect = ({
   options,
   placeholder,
@@ -147,12 +291,10 @@ const CustomSelect = ({
     let updatedOptions: string[];
 
     if (option === "All") {
-      // ถ้าเลือก All ให้เลือกทุกตัวเลือก
       updatedOptions = selectedOptions.includes("All")
         ? [] // ยกเลิกการเลือกทั้งหมด
         : [...options]; // เลือกทั้งหมด
     } else {
-      // ถ้าเลือกตัวเลือกอื่นที่ไม่ใช่ All
       updatedOptions = selectedOptions.includes(option)
         ? selectedOptions.filter((item) => item !== option) // เอาออกถ้าเลือกซ้ำ
         : [...selectedOptions.filter((item) => item !== "All"), option]; // เพิ่มตัวเลือกใหม่และเอา All ออก
@@ -173,6 +315,7 @@ const CustomSelect = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
 
   return (
     <div ref={dropdownRef} className="relative w-full border rounded p-2 mb-2">
@@ -208,6 +351,23 @@ const CustomSelect = ({
   );
 };
 
+const calculateBudgetVariance = (projects: TypeDashboard[] | null) => { //ฟังก์ชันสำหรับคำนวณ Budget Variance
+  if (!projects || projects.length === 0) return { variance: 0, variancePercentage: 0 }; // ตรวจสอบว่า projects มีข้อมูลหรือไม่
+
+  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0);
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0);
+
+  if (totalBudget === 0) {
+    console.warn("Total budget is zero, cannot calculate variance percentage.");
+  }
+
+  const variance = totalBudget - totalAmountSpent;
+  const variancePercentage = totalBudget > 0 ? (variance / totalBudget) * 100 : 0;
+
+  return { variance, variancePercentage };
+};
+
+
 const calculateAggregatedValues = (projects: TypeDashboard[]) => {
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget), 0);
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent), 0);
@@ -221,6 +381,30 @@ const calculateAggregatedValues = (projects: TypeDashboard[]) => {
 };
 
 
+
+const calculateCompletionRate = (projects: TypeDashboard[] | null): number => {
+  if (!projects || projects.length === 0) return 0;
+
+  const totalCompletion = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0);
+  return totalCompletion / projects.length; // ค่าเฉลี่ยของ Completion Rate
+};
+
+// ฟังก์ชันสำหรับคำนวณ Utilized Duration
+const calculateUtilizedDuration = (projects: TypeDashboard[] | null): number => {
+  if (!projects || projects.length === 0) return 0;
+
+  const today = new Date();
+  const totalDays = projects.reduce((sum, project) => {
+    const startDate = new Date(project.start_date);
+    const duration = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))); // คำนวณจำนวนวัน
+    return sum + duration;
+  }, 0);
+
+  console.log("Utilized Duration (days):", totalDays); // Debugging
+  return totalDays;
+};
+
+
 const Dashboard = () => {
   const [projectDetails, setProjectDetails] = useState<TypeDashboard[] | null>(null);
   const [filteredProjects, setFilteredProjects] = useState<TypeDashboard[] | null>(null);
@@ -228,6 +412,21 @@ const Dashboard = () => {
   const [selectedProjects, setSelectedProjects] = useState<string[]>(["All"]); // เก็บโปรเจ็กต์ที่เลือก
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["All"]); // เก็บสถานะที่เลือก
   const [loading, setLoading] = useState(true);
+
+  // คำนวณ Budget Variance
+  const budgetVariance = calculateBudgetVariance(filteredProjects);
+
+  // คำนวณ Completion Rate
+  const completionRate = filteredProjects
+    ? calculateCompletionRate(filteredProjects)
+    : 0;
+
+  // คำนวณ Utilized Duration
+  const utilizedDays = calculateUtilizedDuration(filteredProjects);
+
+  const percentOfTarget = filteredProjects
+    ? calculatePercentOfTarget(filteredProjects)
+    : 0;
 
   // ฟังก์ชันสำหรับคำนวณค่าใช้จ่ายรวม
   const aggregatedValues = projectDetails
@@ -278,12 +477,15 @@ const Dashboard = () => {
           selectedProjects.includes("All") || selectedProjects.includes(project.project_name);
         const matchesStatus =
           selectedStatuses.includes("All") || selectedStatuses.includes(project.status);
-        return matchesProject && matchesStatus;
+
+        return matchesProject && matchesStatus; // กรองข้อมูลที่ตรงกับทั้ง Project และ Status
       });
-      console.log("Filtered Projects:", filtered); // ตรวจสอบค่าที่กรองได้
-      setFilteredProjects(filtered);
+
+      console.log("Filtered Projects:", filtered); // Debugging
+      setFilteredProjects(filtered.length > 0 ? filtered : null);
     }
-  }, [selectedProjects, selectedStatuses, projectDetails]); // เมื่อ selectedProjects หรือ selectedStatuses เปลี่ยนแปลง
+  }, [selectedProjects, selectedStatuses, projectDetails]);
+
 
   return (
     <div className="min-h-screen bg-gray-400 p-3">
@@ -361,11 +563,9 @@ const Dashboard = () => {
             </div>
 
 
-
-
             {/* Budget Summary */}
             <div className="mt-3 bg-white shadow-lg rounded-lg border border-gray-200">
-              <div className=" p-1">
+              <div className="p-1">
                 <div className="grid rounded-lg shadow-lg bg-blue-300">
                   <h2 className="text-center font-semibold text-l mt-6 mb-4">Estimate At Completion</h2>
                   <h2 className="text-center font-semibold text-4xl mt-2 mb-6">
@@ -419,7 +619,7 @@ const Dashboard = () => {
           {/* Cost Breakdown */}
           < div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200" >
             <h2 className="text-xl font-semibold mb-4">Cost Breakdown</h2>
-            <CostBreakdown />
+            <CostBreakdown filteredProjects={filteredProjects} />
             <div className="grid grid-cols-2 gap-2 p-2 mt-4 text-center ">
               <div className="border p-2">Equipment</div>
               <div className="border p-2 bg-green-300 ">$159,801</div>
@@ -439,23 +639,25 @@ const Dashboard = () => {
             <div className="grid gap-2 ">
               <div className="bg-white shadow-md rounded-lg border border-gray-200 ">
                 <div className="text-sm font-semibold p-1 mt-2 pl-4 ">Project Completion Rate</div>
-                <ProjectCompletionRate />
+                <ProjectCompletionRate completionRate={completionRate} />
               </div>
               <div className="bg-white shadow-md rounded-lg border border-gray-200 ">
                 <div className="text-sm font-semibold p-1 mt-2 pl-4">Utilized Duration</div>
-                <UtilizedDuration />
+                <UtilizedDuration utilizedDays={utilizedDays} />
               </div>
             </div>
           </div >
         </div >
         <div >
+
           {/* Budget Variance Chart */}
           <div className="bg-white shadow-lg rounded-lg p-6 mt-4 border border-gray-200">
             <h2 className="text-xl font-semibold mb-4">Budget Variance</h2>
             <div className=" mt-8">
-              <BudgetVariance />
+              <BudgetVariance filteredProjects={filteredProjects} />
             </div>
           </div>
+
         </div>
       </div >
     </div >
