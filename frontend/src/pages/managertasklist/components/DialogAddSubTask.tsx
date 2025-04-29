@@ -10,9 +10,9 @@ interface DialogAddSubTaskProps {
     updateTaskStatus?: (taskId: string) => void; // เพิ่ม function สำหรับอัปเดต task status
 }
 
-const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ 
-    getSubtaskData, 
-    taskId, 
+const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
+    getSubtaskData,
+    taskId,
     taskName,
     updateTaskStatus
 }) => {
@@ -105,7 +105,7 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
     return (
         <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger asChild>
-                <Button size="1" variant="soft" color="green">+ Add</Button>
+                <Button className="cursor-pointer" size="1" variant="soft" color="green">+ Add</Button>
             </Dialog.Trigger>
             <Dialog.Content style={{ maxWidth: "500px" }}>
                 <Dialog.Title>Add Subtask for {taskName}</Dialog.Title>
@@ -194,26 +194,36 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                         {/* เพิ่มส่วนสไลเดอร์สำหรับความคืบหน้า */}
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">
-                                Initial Progress: {progressPercent}%
+                                Initial Progress (%)
                             </Text>
-                            <Slider 
-                                value={[progressPercent]}
-                                onValueChange={(values) => {
-                                    setProgressPercent(values[0]);
-                                    // อัปเดต status ตาม progress
-                                    if (values[0] === 100) {
-                                        setStatus("completed");
-                                    } else if (values[0] > 0) {
-                                        setStatus("in progress");
-                                    } else {
-                                        setStatus("pending");
-                                    }
-                                }}
-                                min={0}
-                                max={100}
-                                step={5}
-                                className="w-full"
-                            />
+                            <Flex gap="2" align="center">
+                                <TextField.Root
+                                    type="number"
+                                    value={progressPercent}
+                                    onChange={(e) => {
+                                        // ตรวจสอบค่าอยู่ในช่วง 0-100
+                                        let value = parseInt(e.target.value);
+                                        if (isNaN(value)) value = 0;
+                                        if (value < 0) value = 0;
+                                        if (value > 100) value = 100;
+
+                                        setProgressPercent(value);
+
+                                        // อัปเดต status ตาม progress
+                                        if (value === 100) {
+                                            setStatus("completed");
+                                        } else if (value > 0) {
+                                            setStatus("in progress");
+                                        } else {
+                                            setStatus("pending");
+                                        }
+                                    }}
+                                    placeholder="0-100"
+                                    min={0}
+                                    max={100}
+                                />
+                                <Text>%</Text>
+                            </Flex>
                         </label>
 
                         {errorMessage && (
@@ -225,11 +235,11 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
 
                     <Flex gap="3" mt="4" justify="end">
                         <Dialog.Close>
-                            <Button variant="soft" color="gray">
+                            <Button className="cursor-pointer" variant="soft" color="gray">
                                 Cancel
                             </Button>
                         </Dialog.Close>
-                        <Button type="submit" onClick={handleAddSubtask}>
+                        <Button className="cursor-pointer" type="submit" onClick={handleAddSubtask}>
                             Add Subtask
                         </Button>
                     </Flex>

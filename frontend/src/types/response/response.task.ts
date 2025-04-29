@@ -5,7 +5,7 @@ export type TypeTaskAll = {
     budget?: number;
     start_date?: string;
     end_date?: string;
-    status: boolean;
+    status: string;
     created_at?: string;
     created_by?: string;
     updated_at?: string;
@@ -19,7 +19,7 @@ export type TypeTask = {
     budget?: number;
     start_date?: string;
     end_date?: string;
-    status: boolean;
+    status: string;
     created_at?: string;
     created_by?: string;
     updated_at?: string;

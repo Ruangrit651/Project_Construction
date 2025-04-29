@@ -3,6 +3,7 @@ export type PayloadCreateUser = {
     password : string;
     role : string;
     project_id?: string | null; // เพิ่ม null เพื่อรองรับ No Project
+    is_active?: boolean; // เพิ่มฟิลด์นี้เพื่อกำหนดสถานะเริ่มต้น
 };
 
 export type PayloadUpdateUser = {
@@ -11,6 +12,7 @@ export type PayloadUpdateUser = {
     password? : string;
     role? : string;
     project_id?: string | null;
+    is_active?: boolean; // เพิ่มฟิลด์นี้เพื่อกำหนดสถานะเริ่มต้น
 }
 
 export type PayloadDeleteUser = {

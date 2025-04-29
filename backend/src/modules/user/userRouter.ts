@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { handleServiceResponse, validateRequest } from "@common/utils/httpHandlers";
 import { userService } from "@modules/user/userService";
-import { CreateUserSchema, UpdateUserSchema, DeleteUserSchema } from "@modules/user/userModel";
+import { CreateUserSchema, UpdateUserSchema, DeleteUserSchema,ToggleUserStatusSchema } from "@modules/user/userModel";
 import { authenticateJWT } from "@common/middleware/authMiddleware";
 import rolegrop1 from "@common/middleware/roleGroup1";
 
@@ -52,6 +52,25 @@ export const userRouter = (() => {
         const serviceResponse = await userService.delete(user_id);
         handleServiceResponse(serviceResponse, res);
     });
+
+    router.patch("/toggle-status/:user_id", 
+        authenticateJWT,
+        rolegrop1,
+        validateRequest(ToggleUserStatusSchema), 
+        async (req: Request, res: Response) => {
+            const { user_id } = req.params;
+            const { is_active } = req.body;
+            const updated_by = req.user.userId;
+            
+            const serviceResponse = await userService.toggleUserStatus(
+                user_id, 
+                is_active, 
+                updated_by
+            );
+            
+            handleServiceResponse(serviceResponse, res);
+        }
+    );
 
     return router;
 

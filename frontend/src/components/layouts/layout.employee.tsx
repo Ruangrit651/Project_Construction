@@ -5,15 +5,16 @@ import SidebarMain from "./sidebars/sider.employee";
 const MainLayoutEmployee = () => {
   
   return (
-    <div className=" h-screen">
+    <div className="min-h-screen flex flex-col">
       <NavbarMain />
-      <div className="flex">
-        <SidebarMain />
-        <div className=" container p-4 ">
-        <Outlet />
+      <div className="flex flex-1 relative">
+        <div className="w-64 flex-shrink-0">
+          <SidebarMain />
+        </div>
+        <div className="flex-grow p-4 overflow-x-auto">
+          <Outlet />
         </div>
       </div>
-     
     </div>
   );
 };

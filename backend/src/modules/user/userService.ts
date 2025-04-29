@@ -148,6 +148,41 @@ export const userService = {
             );
         }
     },
+
+    toggleUserStatus: async (user_id: string, is_active: boolean, updated_by?: string) => {
+        try {
+            // ตรวจสอบว่าผู้ใช้มีอยู่จริง
+            const existingUser = await UserRepository.findById(user_id);
+            if (!existingUser) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "User not found",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            // เปลี่ยนสถานะผู้ใช้
+            const updatedUser = await UserRepository.toggleStatus(user_id, is_active, updated_by);
+            const statusMessage = is_active ? "User activated successfully" : "User suspended successfully";
+            
+            return new ServiceResponse<user>(
+                ResponseStatus.Success,
+                statusMessage,
+                updatedUser,
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            const actionText = is_active ? "activate" : "suspend";
+            const errorMessage = `Error ${actionText} user: ${(ex as Error).message}`;
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                errorMessage,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
     
 
 };

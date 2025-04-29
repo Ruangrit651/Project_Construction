@@ -19,6 +19,7 @@ export type TypeUserAll = {
     role: string;
     username: string;
     password: string;
+    is_active: boolean;  // เพิ่มฟิลด์นี้
     created_at: string;
     created_by: string | null;
     updated_at: string;

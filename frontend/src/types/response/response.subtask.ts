@@ -6,7 +6,7 @@ export type TypeSubTaskAll = {
     budget?: number;
     start_date?: string;
     end_date?: string;
-    status: boolean;
+    status: string;
     // created_at?: string;
     // created_by?: string;
     // updated_at?: string;
@@ -21,7 +21,7 @@ export type TypeSubTask = {
     budget?: number;
     start_date?: string;
     end_date?: string;
-    status: boolean;
+    status: string;
     // created_at?: string;
     // created_by?: string;
     // updated_at?: string;

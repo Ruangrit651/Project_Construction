@@ -1,37 +1,50 @@
 import { z } from "zod";
 
-// ประเภทข้อมูลสำหรับ payload ของ User
+// เพิ่ม is_active ในประเภทข้อมูลสำหรับ payload ของ User
 export type TypePayloadUser = {
-    project_id?: string | null; // UUID, optional
+    project_id?: string | null;
     project_name?: string | null; 
     role: string;    
-    username: string;    // ชื่อผู้ใช้ที่ต้องการ
-    password: string;    // รหัสผ่าน
-    created_by?: string; // UUID, optional
-    updated_by?: string; // UUID, optional
+    username: string;
+    password: string;
+    is_active?: boolean; // เพิ่มฟิลด์นี้
+    created_by?: string;
+    updated_by?: string;
 };
 
-// Schema สำหรับการสร้าง User ใหม่
+// เพิ่ม is_active ในสคีมาสำหรับการสร้างและอัปเดต User
 export const CreateUserSchema = z.object({
     body: z.object({
         project_id: z.string().uuid().nullable().optional(),
         username: z.string().max(255),
         password: z.string().max(255),
         role: z.string().max(255),
+        is_active: z.boolean().optional().default(true), // เพิ่มฟิลด์นี้
         created_by: z.string().uuid().optional(),
         updated_by: z.string().uuid().optional(),
     }),
 });
 
-// Schema สำหรับการอัปเดต User
 export const UpdateUserSchema = z.object({
     body: z.object({
-        user_id: z.string().uuid(), // ต้องระบุ user_id เพื่อทำการอัปเดต
-        project_id: z.string().uuid() .nullable() .optional(),
+        user_id: z.string().uuid(),
+        project_id: z.string().uuid().nullable().optional(),
         role: z.string().optional(),
-        username: z.string().max(255).optional(), // ถ้าไม่ต้องการให้เป็น required
-        password: z.string().max(255).optional(), // ถ้ารหัสผ่านไม่ถูกส่งมา จะไม่ทำการอัปเดต
-        updated_by: z.string().uuid().optional(), // ต้องระบุ updated_by เพื่อบันทึกว่าใครแก้ไข
+        username: z.string().max(255).optional(),
+        password: z.string().max(255).optional(),
+        is_active: z.boolean().optional(), // เพิ่มฟิลด์นี้
+        updated_by: z.string().uuid().optional(),
+    }),
+});
+
+// เพิ่ม Schema สำหรับการระงับ/คืนสิทธิ์ User
+export const ToggleUserStatusSchema = z.object({
+    params: z.object({
+        user_id: z.string().uuid(),
+    }),
+    body: z.object({
+        is_active: z.boolean(),
+        updated_by: z.string().uuid().optional(),
     }),
 });
 

@@ -65,6 +65,7 @@ model user {
   role       String   @db.VarChar(255)
   username   String   @unique @db.VarChar(255)
   password   String   @db.VarChar(255)
+  is_active Boolean @default(true)
   created_at DateTime @default(now())
   created_by String?  @db.Uuid
   updated_at DateTime @updatedAt

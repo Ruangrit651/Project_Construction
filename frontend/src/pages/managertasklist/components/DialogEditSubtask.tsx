@@ -8,13 +8,13 @@ interface DialogEditSubtaskProps {
     subtaskId: string;
     taskId: string; // เพิ่ม taskId
     trigger: React.ReactNode;
-    fetchSubTasks?: () => void;    
+    fetchSubTasks?: () => void;
     updateTaskStatus?: (taskId: string) => void; // เพิ่ม function สำหรับอัปเดต task status
 }
 
-const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({ 
-    getSubtaskData, 
-    subtaskId, 
+const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
+    getSubtaskData,
+    subtaskId,
     taskId,
     trigger,
     updateTaskStatus
@@ -39,16 +39,16 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
     const handleBudgetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // ลบเครื่องหมาย comma และอักขระที่ไม่ใช่ตัวเลขออก
         const rawValue = event.target.value.replace(/[^0-9]/g, '');
-        
+
         // แปลงเป็น number
         const numericValue = rawValue === '' ? 0 : parseInt(rawValue);
-        
+
         // เก็บ value เป็น number ลงใน state
         setBudget(numericValue);
-        
+
         // Format สำหรับการแสดงผล
         setFormattedBudget(formatNumber(numericValue));
-        
+
         console.log("Budget set to:", numericValue, "(type:", typeof numericValue, ")");
     };
 
@@ -57,45 +57,45 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
         try {
             setIsLoading(true);
             console.log("Fetching subtask data for ID:", subtaskId);
-            
+
             // ใช้ getSubtask แทน getSubtaskById
             const response = await getSubtask(taskId);
             console.log("Fetched subtask data:", response);
-            
+
             if (response.success && response.responseObject && response.responseObject.length > 0) {
                 // ค้นหา subtask ที่ตรงกับ subtaskId ที่ต้องการ
                 const subtask = response.responseObject.find(
                     (s: any) => s.subtask_id === subtaskId
                 );
-                
+
                 if (subtask) {
                     console.log("Setting form data from:", subtask);
-                    
+
                     setSubtaskName(subtask.subtask_name || "");
                     setDescription(subtask.description || "");
-                    
+
                     // แน่ใจว่า budget เป็น number
-                    const budgetValue = typeof subtask.budget === 'string' 
-                        ? parseFloat(subtask.budget) 
+                    const budgetValue = typeof subtask.budget === 'string'
+                        ? parseFloat(subtask.budget)
                         : Number(subtask.budget || 0);
-                    
+
                     setBudget(budgetValue);
                     setFormattedBudget(formatNumber(budgetValue));
                     console.log("Budget received:", budgetValue, "(type:", typeof budgetValue, ")");
-                    
+
                     // จัดการวันที่
                     if (subtask.start_date) {
                         const startDateOnly = subtask.start_date.split('T')[0];
                         setStartDate(startDateOnly);
                     }
-                    
+
                     if (subtask.end_date) {
                         const endDateOnly = subtask.end_date.split('T')[0];
                         setEndDate(endDateOnly);
                     }
-                    
+
                     setStatus(subtask.status || "pending");
-                    
+
                     // ดึงข้อมูลความคืบหน้า
                     try {
                         const progressResponse = await getSubtaskProgress(subtaskId);
@@ -136,10 +136,10 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
                 setErrorMessage("Please fill out all required fields properly.");
                 return;
             }
-            
+
             // แน่ใจว่า budget เป็น number จริง ๆ ก่อนส่งไปยัง API
             const budgetNumber = Number(budget);
-            
+
             // ตรวจสอบ payload ก่อนส่ง
             console.log("Updating subtask with payload:", {
                 subtask_id: subtaskId,
@@ -151,7 +151,7 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
                 end_date: endDate,
                 status
             });
-            
+
             const response = await patchSubtask({
                 subtask_id: subtaskId,
                 subtask_name: subtaskName,
@@ -178,12 +178,12 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
                         console.error("Failed to update progress:", progressError);
                     }
                 }
-                
+
                 // เรียก function อัปเดต task status หลังจากอัปเดต subtask สำเร็จ
                 if (updateTaskStatus && taskId) {
                     updateTaskStatus(taskId);
                 }
-                
+
                 console.log("Subtask updated successfully");
                 getSubtaskData();
                 setOpen(false);
@@ -292,26 +292,36 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
                             {/* เพิ่มส่วนสไลเดอร์สำหรับความคืบหน้า */}
                             <label>
                                 <Text as="div" size="2" mb="1" weight="bold">
-                                    Progress: {progressPercent}%
+                                    Progress (%)
                                 </Text>
-                                <Slider 
-                                    value={[progressPercent]}
-                                    onValueChange={(values) => {
-                                        setProgressPercent(values[0]);
-                                        // อัปเดต status ตาม progress
-                                        if (values[0] === 100) {
-                                            setStatus("completed");
-                                        } else if (values[0] > 0) {
-                                            setStatus("in progress");
-                                        } else {
-                                            setStatus("pending");
-                                        }
-                                    }}
-                                    min={0}
-                                    max={100}
-                                    step={5}
-                                    className="w-full"
-                                />
+                                <Flex gap="2" align="center">
+                                    <TextField.Root
+                                        type="number"
+                                        value={progressPercent}
+                                        onChange={(e) => {
+                                            // ตรวจสอบค่าอยู่ในช่วง 0-100
+                                            let value = parseInt(e.target.value);
+                                            if (isNaN(value)) value = 0;
+                                            if (value < 0) value = 0;
+                                            if (value > 100) value = 100;
+
+                                            setProgressPercent(value);
+
+                                            // อัปเดต status ตาม progress
+                                            if (value === 100) {
+                                                setStatus("completed");
+                                            } else if (value > 0) {
+                                                setStatus("in progress");
+                                            } else {
+                                                setStatus("pending");
+                                            }
+                                        }}
+                                        placeholder="0-100"
+                                        min={0}
+                                        max={100}
+                                    />
+                                    <Text>%</Text>
+                                </Flex>
                             </label>
 
                             {errorMessage && (
@@ -323,11 +333,11 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
 
                         <Flex gap="3" mt="4" justify="end">
                             <Dialog.Close>
-                                <Button variant="soft" color="gray">
+                                <Button className="cursor-pointer" variant="soft" color="gray">
                                     Cancel
                                 </Button>
                             </Dialog.Close>
-                            <Button type="submit" onClick={handleEditSubtask}>
+                            <Button className="cursor-pointer" type="submit" onClick={handleEditSubtask}>
                                 Update Subtask
                             </Button>
                         </Flex>

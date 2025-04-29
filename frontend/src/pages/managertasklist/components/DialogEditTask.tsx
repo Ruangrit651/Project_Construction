@@ -48,9 +48,9 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({
         return value.toLocaleString('en-US');
     };
 
-     const handleStatusChange = (value: string) => {
+    const handleStatusChange = (value: string) => {
         setTaskStatus(value);
-        
+
         // อัปเดต progress ตาม status ที่เลือก
         if (value === "completed") {
             setProgressPercent(100);
@@ -60,11 +60,11 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({
             setProgressPercent(0);
         }
     };
-    
+
     const handleProgressChange = (values: number[]) => {
         const newProgress = values[0];
         setProgressPercent(newProgress);
-        
+
         // อัปเดต status ตาม progress
         if (newProgress === 100) {
             setTaskStatus("completed");
@@ -305,26 +305,36 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({
                     {/* เพิ่มส่วนสไลเดอร์สำหรับความคืบหน้า */}
                     <label>
                         <Text as="div" size="2" mb="1" weight="bold">
-                            Progress: {progressPercent}%
+                            Progress (%)
                         </Text>
-                        <Slider
-                            value={[progressPercent]}
-                            onValueChange={(values) => {
-                                setProgressPercent(values[0]);
-                                // อัปเดต status ตาม progress
-                                if (values[0] === 100) {
-                                    setTaskStatus("completed");
-                                } else if (values[0] > 0) {
-                                    setTaskStatus("in progress");
-                                } else {
-                                    setTaskStatus("pending");
-                                }
-                            }}
-                            min={0}
-                            max={100}
-                            step={5}
-                            className="w-full"
-                        />
+                        <Flex gap="2" align="center">
+                            <TextField.Root
+                                type="number"
+                                value={progressPercent}
+                                onChange={(e) => {
+                                    // ตรวจสอบค่าอยู่ในช่วง 0-100
+                                    let value = parseInt(e.target.value);
+                                    if (isNaN(value)) value = 0;
+                                    if (value < 0) value = 0;
+                                    if (value > 100) value = 100;
+
+                                    setProgressPercent(value);
+
+                                    // อัปเดต status ตาม progress
+                                    if (value === 100) {
+                                        setTaskStatus("completed");
+                                    } else if (value > 0) {
+                                        setTaskStatus("in progress");
+                                    } else {
+                                        setTaskStatus("pending");
+                                    }
+                                }}
+                                placeholder="0-100"
+                                min={0}
+                                max={100}
+                            />
+                            <Text>%</Text>
+                        </Flex>
                     </label>
 
                     {errorMessage && (

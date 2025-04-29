@@ -7,7 +7,7 @@ const SidebarMain = () => {
   const [planningDropdownOpen, setPlanningDropdownOpen] = useState(false);
 
   return (
-    <NavigationMenu.Root className="w-64 h-screen bg-gray-800 text-white flex flex-col p-4">
+    <NavigationMenu.Root className="w-64 bg-gray-800 text-white flex flex-col p-4 h-full sticky top-0">
       <NavigationMenu.List className="flex flex-col gap-8">
         
         <NavigationMenu.Item>

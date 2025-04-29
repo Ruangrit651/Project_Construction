@@ -85,9 +85,9 @@ export default function TasklistPage() {
         return averageProgress;
     };
 
-    // อัปเดต status ของ Task ตามสถานะของ Subtasks
     const updateTaskStatusFromSubtasks = async (taskId: string) => {
         const taskSubtasks = subtasks[taskId] || [];
+        
     
         // ถ้าไม่มี subtask ให้ข้ามไป
         if (taskSubtasks.length === 0) return;
@@ -104,10 +104,10 @@ export default function TasklistPage() {
         const averageProgress = Math.round(totalProgress / taskSubtasks.length);
     
         // ตรวจสอบสถานะของ subtasks
-        const allCompleted = taskSubtasks.every(subtask => subtask.status === true);
-        const allCancelled = taskSubtasks.every(subtask => subtask.status === false);
-        const anyInProgress = taskSubtasks.some(subtask => subtask.status === true);
-        const anyNotCompleted = taskSubtasks.some(subtask => subtask.status !== true);
+        const allCompleted = taskSubtasks.every(subtask => subtask.status === "completed");
+        const allCancelled = taskSubtasks.every(subtask => subtask.status === "cancelled");
+        const anyInProgress = taskSubtasks.some(subtask => subtask.status === "in progress");
+        const anyNotCompleted = taskSubtasks.some(subtask => subtask.status !== "completed");
         const anyLessThan100Percent = taskSubtasks.some(subtask => 
             (subtaskProgress[subtask.subtask_id] || 0) < 100
         );
@@ -117,50 +117,44 @@ export default function TasklistPage() {
         let shouldUpdateProgress = false;
         let shouldUpdateStatus = false;
     
-        // กรณี 1: ถ้าทุก subtask เป็น completed ให้ task เป็น completed
-        if (allCompleted && currentTask.status !== true) {
-            newStatus = true;
+        // กรณี 1: ถ้าทุก subtask เป็น completed และ task ไม่ใช่ completed ให้อัพเดทเป็น completed
+        if (allCompleted && currentTask.status !== "completed") {
+            newStatus = "completed";
             newProgress = 100;
             shouldUpdateProgress = true;
             shouldUpdateStatus = true;
         }
-        // กรณี 2: ถ้าทุก subtask เป็น cancelled ให้ task เป็น cancelled
-        else if (allCancelled && currentTask.status !== false) {
-            newStatus = false; // Representing "cancelled" as false
+        // กรณี 2: ถ้าทุก subtask เป็น cancelled และ task ไม่ใช่ cancelled ให้อัพเดทเป็น cancelled
+        else if (allCancelled && currentTask.status !== "cancelled") {
+            newStatus = "cancelled";
             shouldUpdateStatus = true;
         }
-        // กรณี 3: ถ้ามีบาง subtask เป็น in progress ให้ task เป็น in progress
-        else if (anyInProgress && currentTask.status !== true && currentTask.status !== false) {
-            newStatus = "in progress" as any; // Explicitly cast to handle mixed types
+        // กรณี 3: ถ้ามีบาง subtask เป็น in progress และ task ไม่ใช่ in progress ให้อัพเดทเป็น in progress
+        else if (anyInProgress && currentTask.status !== "in progress") {
+            newStatus = "in progress"; 
             shouldUpdateStatus = true;
         }
         // กรณี 4: ถ้า task เป็น completed แล้ว แต่มีบาง subtask ไม่ใช่ completed หรือ progress น้อยกว่า 100%
-        else if (currentTask.status === true && (anyNotCompleted || anyLessThan100Percent)) {
-            newStatus = "in progress" as any; // Explicitly cast to handle mixed types
+        else if (currentTask.status === "completed" && (anyNotCompleted || anyLessThan100Percent)) {
+            newStatus = "in progress";
             shouldUpdateStatus = true;
             shouldUpdateProgress = true;
         }
-    
-        // อัปเดต progress เสมอถ้ามีการเปลี่ยนแปลง
-        if (averageProgress !== taskProgress[taskId]) {
-            shouldUpdateProgress = true;
-            newProgress = averageProgress;
-        }
-    
-        // ถ้าต้องอัปเดต status
+        
+        // ตรวจสอบและอัพเดต Task status ถ้าจำเป็น
         if (shouldUpdateStatus) {
             try {
                 console.log(`Updating task status from ${currentTask.status} to ${newStatus}`);
                 const response = await patchTask({
                     task_id: taskId,
-                    status: newStatus
+                    status: newStatus  // ส่งสถานะเป็น string
                 });
     
                 if (response.success) {
                     console.log(`Task status updated to ${newStatus}`);
-    
-                    // อัปเดต tasks ในหน้าจอ
-                    setTasks(prevTasks => prevTasks.map(task =>
+                    
+                    // อัพเดต tasks ในหน้าจอ
+                    setTasks(prevTasks => prevTasks.map(task => 
                         task.task_id === taskId ? { ...task, status: newStatus } : task
                     ));
                 }
@@ -169,22 +163,24 @@ export default function TasklistPage() {
             }
         }
     
-        // ถ้าต้องอัปเดต progress
-        if (shouldUpdateProgress) {
+        // อัพเดต progress ถ้าจำเป็น
+        if (shouldUpdateProgress || averageProgress !== taskProgress[taskId]) {
             try {
+                const progressToUpdate = shouldUpdateProgress ? newProgress : averageProgress;
+                
                 await createProgress({
                     task_id: taskId,
-                    percent: newProgress,
-                    description: `Auto-updated as subtask changed: ${newProgress}%`,
+                    percent: progressToUpdate,
+                    description: `Auto-updated from subtasks: ${progressToUpdate}%`,
                 });
-    
-                // อัปเดต state
+                
+                // อัพเดต state
                 setTaskProgress(prev => ({
                     ...prev,
-                    [taskId]: newProgress
+                    [taskId]: progressToUpdate
                 }));
-    
-                console.log(`Task progress updated to ${newProgress}%`);
+                
+                console.log(`Task progress updated to ${progressToUpdate}%`);
             } catch (progressError) {
                 console.error("Failed to update task progress:", progressError);
             }
@@ -467,7 +463,7 @@ export default function TasklistPage() {
                                                         }}
                                                         subtaskId={subtask.subtask_id}
                                                         taskId={task.task_id}
-                                                        trigger={<Button size="1" variant="soft" color="orange">Edit</Button>}
+                                                        trigger={<Button className="cursor-pointer" size="1" variant="soft" color="orange">Edit</Button>}
                                                         updateTaskStatus={updateTaskStatusFromSubtasks}
                                                     />
                                                     <AlertDialogDeleteSubtask

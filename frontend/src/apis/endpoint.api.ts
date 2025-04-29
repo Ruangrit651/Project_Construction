@@ -9,6 +9,7 @@ export const GET_USER_ALL = "/v1/user/get";
 export const CREATE_USER = "/v1/user/create";
 export const UPDATE_USER = "/v1/user/update";
 export const DELETE_USER = "/v1/user/delete";
+export const TOGGLE_USER_STATUS = "/v1/user/toggle-status";
 
 // project
 export const GET_PROJECT_ALL = "/v1/project/get";

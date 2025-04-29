@@ -20,6 +20,16 @@ export const authService = {
                     StatusCodes.NOT_FOUND
                 );
             }
+            
+            // ตรวจสอบสถานะการระงับใช้งานของผู้ใช้
+            if (checkUser.is_active === false) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "Your account has been suspended. Please contact administrator.",
+                    null,
+                    StatusCodes.FORBIDDEN
+                );
+            }
 
             // ตรวจสอบรหัสผ่านโดยใช้ bcrypt.compare
             const isPasswordValid = await bcrypt.compare(payload.password, checkUser.password);
