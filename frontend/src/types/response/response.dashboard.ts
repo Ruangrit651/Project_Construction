@@ -22,6 +22,7 @@ export type TypeDashboardAll = {
     variation: number;
     totalBudget: number;
     amountSpent: number;
+    completionRate?: number; // อัตราการทำงานของโปรเจ็กต์ (0-100)
   };
   
   export type DashboardResponse = {

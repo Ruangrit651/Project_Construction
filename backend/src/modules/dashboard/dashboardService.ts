@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { ResponseStatus, ServiceResponse } from "@common/models/serviceResponse";
 import { DashboardRepository } from "@modules/dashboard/dashboardReository";
+import axios from "axios";
 
 export const dashboardService = {
     findAll: async () => {
@@ -32,3 +33,8 @@ export const dashboardService = {
         );
     },
 };
+
+export const getCostBreakdownData = async () => {
+    const response = await axios.get("/api/cost-breakdown"); // แก้ไข URL ให้ตรงกับ API จริง
+    return response.data; // สมมติว่า API ส่งข้อมูลในรูปแบบ { series: [44, 55, 41, 17, 15] }
+  };
