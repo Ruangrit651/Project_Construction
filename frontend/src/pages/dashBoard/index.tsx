@@ -602,7 +602,7 @@ const Dashboard = () => { // ฟังก์ชันหลักของ Dashb
             {/* Budget Summary */}
             <div className="mt-3 bg-white shadow-lg rounded-lg border border-gray-200">
               <div className="p-1">
-                <div className="grid rounded-lg shadow-lg bg-blue-300">
+                <div className="grid rounded-lg shadow-lg bg-red-600">
                   <h2 className="text-center font-semibold text-l mt-6 mb-4">Estimate At Completion</h2>
                   <h2 className="text-center font-semibold text-4xl mt-2 mb-6">
                     {filteredProjects
@@ -649,15 +649,15 @@ const Dashboard = () => { // ฟังก์ชันหลักของ Dashb
             <CostBreakdown filteredProjects={filteredProjects} />
             <div className="grid grid-cols-2 gap-2 p-2 mt-12 text-center ">
               <div className="border p-2">Equipment</div>
-              <div className="border p-2 bg-green-300 ">$159,801</div>
+              <div className="border p-2 bg-red-600 ">$159,801</div>
               <div className="border p-2">Foreign Labor</div>
-              <div className="border p-2 bg-blue-400">$134,568</div>
+              <div className="border p-2 bg-red-600">$134,568</div>
               <div className="border p-2">Labor</div>
-              <div className="border p-2 bg-purple-500">$157,986</div>
+              <div className="border p-2 bg-red-600">$157,986</div>
               <div className="border p-2">Material</div>
-              <div className="border p-2 bg-red-500">$161,837</div>
+              <div className="border p-2 bg-red-600">$161,837</div>
               <div className="border p-2">Subcontractors</div>
-              <div className="border p-2 bg-orange-400">$151,775</div>
+              <div className="border p-2 bg-red-600">$151,775</div>
             </div>
           </div >
 
