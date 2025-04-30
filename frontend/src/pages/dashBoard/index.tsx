@@ -4,7 +4,7 @@ import { getDashboard } from "@/services/dashboard.service";
 import { TypeDashboard } from "@/types/response/response.dashboard"; // Ensure this path is correct
 // import { getCostBreakdownData } from "@/services/dashboard.service"; // Ensure this path is correct
 
-
+//ฟังก์ชันสำหรับคำนวณ Budget Variance
 const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[] | null }) => {
   if (!filteredProjects || filteredProjects.length === 0) {
     return <p>No data available</p>;
@@ -18,9 +18,6 @@ const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[
     return totalBudget - totalSpent;
   });
 
-  // กำหนดสีตามค่า: เขียว = กำไร, แดง = ขาดทุน
-  const barColors = variances.map(v => v >= 0 ? "#00E396" : "#FF4560");
-
   const chartData = {
     series: [
       {
@@ -30,7 +27,7 @@ const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[
     ],
     options: {
       chart: {
-        type: "bar",
+        type: "bar" as "bar",
         height: 350,
         stacked: false,
       },
@@ -38,11 +35,37 @@ const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[
         bar: {
           horizontal: false,
           columnWidth: "45%",
+          colors: {
+            ranges: [
+              {
+                from: Number.MIN_SAFE_INTEGER,
+                to: -0.01,
+                color: "#FF4560", // สีแดง = ขาดทุน
+              },
+              {
+                from: 0,
+                to: Number.MAX_SAFE_INTEGER,
+                color: "#00E396", // สีเขียว = กำไร
+              },
+            ],
+          },
+          dataLabels: {
+            position: "top", // ตำแหน่งข้อความบนหัวแท่ง
+          },
         },
       },
-      colors: barColors, // ✅ ใช้ array ของสีตรงนี้
       dataLabels: {
-        enabled: false,
+        enabled: true,
+        formatter: (val: number) =>
+          `$${val.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`,
+        offsetY: -20,
+        style: {
+          fontSize: "12px",
+          colors: ["#000"],
+        },
       },
       xaxis: {
         categories,
@@ -72,7 +95,7 @@ const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[
         },
       },
       legend: {
-        show: false, // ซ่อน legend เพราะมีแค่ series เดียว
+        show: false,
       },
     },
   };
@@ -88,9 +111,9 @@ const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[
     </div>
   );
 };
+//--------------------------------------------------------------------------------------------------------------------------------------//
 
-
-
+// ฟังก์ชันสำหรับคำนวณ Project Completion Rate
 const ProjectCompletionRate = ({ completionRate }: { completionRate: number }) => {
   const [state] = useState({
     series: [completionRate],
@@ -121,7 +144,9 @@ const ProjectCompletionRate = ({ completionRate }: { completionRate: number }) =
     </div>
   );
 };
+//--------------------------------------------------------------------------------------------------------------------------------------//
 
+// ฟังก์ชันสำหรับคำนวณ Utilized Duration
 const UtilizedDuration = ({ utilizedDays }: { utilizedDays: number }) => {
   const [state] = useState({
     series: [utilizedDays],
@@ -149,7 +174,9 @@ const UtilizedDuration = ({ utilizedDays }: { utilizedDays: number }) => {
     </div>
   );
 };
+//---------------------------------------------------------------------------------------------------------------------------------------//
 
+// ฟังก์ชันสำหรับคำนวณ Cost Breakdown
 const CostBreakdown = ({ filteredProjects }: { filteredProjects: TypeDashboard[] | null }) => {
   const [state, setState] = useState<{
     series: number[];
@@ -229,51 +256,52 @@ const CostBreakdown = ({ filteredProjects }: { filteredProjects: TypeDashboard[]
     </div>
   );
 };
-
-
+//--------------------------------------------------------------------------------------------------------------------------------------//
 export { BudgetVariance, ProjectCompletionRate, UtilizedDuration, CostBreakdown, };
-
 //--------------------------------------------------------------------------------------------------------------------------------------//
 
-const calculateEAC = (projects: TypeDashboard[] | null) => {
-  if (!projects || projects.length === 0) return null;
+// ฟังก์ชันสำหรับคำนวณ Estimate At Completion (EAC)
+const calculateEAC = (projects: TypeDashboard[] | null) => { // ฟังก์ชันสำหรับคำนวณ EAC
+  if (!projects || projects.length === 0) return null; // ตรวจสอบว่า projects มีข้อมูลหรือไม่
 
-  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
+  // คำนวณค่าใช้จ่ายรวม (AC) และค่าใช้จ่ายที่คาดการณ์ (BAC)
+  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC 
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0); // AC
   const totalProgress = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0) / projects.length; // % Progress
 
   const earnedValue = (totalProgress / 100) * totalBudget; // EV
-  const costPerformanceIndex = earnedValue / totalAmountSpent; // CPI
 
-  // ใช้สูตร EAC = BAC / CPI
-  const eac = costPerformanceIndex > 0 ? totalBudget / costPerformanceIndex : totalBudget;
+  // ใช้สูตร EAC = AC + (BAC - EV)
+  const eac = totalAmountSpent + (totalBudget - earnedValue);
 
   return eac;
 };
+
 //========================================================================================
-const calculatePercentOfTarget = (projects: TypeDashboard[] | null): number => {
+// ฟังก์ชันสำหรับคำนวณ Percent of Target
+const calculatePercentOfTarget = (projects: TypeDashboard[] | null): { percent: number; isOverBudget: boolean; overBudgetPercent: number } => {
+  if (!projects || projects.length === 0) return { percent: 0, isOverBudget: false, overBudgetPercent: 0 };
+
+  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0);
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0);
+
+  const percent = totalBudget > 0 ? (totalAmountSpent / totalBudget) * 100 : 0;
+  const isOverBudget = totalAmountSpent > totalBudget; // ตรวจสอบว่าติดลบหรือไม่
+  const overBudgetPercent = isOverBudget ? ((totalAmountSpent - totalBudget) / totalBudget) * 100 : 0;
+
+  return { percent, isOverBudget, overBudgetPercent };
+};
+
+//========================================================================================
+// ฟังก์ชันสำหรับคำนวณ Total Amount Spent
+const calculateTotalAmountSpent = (projects: TypeDashboard[] | null): number => {
   if (!projects || projects.length === 0) return 0;
 
-  const today = new Date();
-
-  const totalPercent = projects.reduce((sum, project) => {
-    const startDate = new Date(project.start_date);
-    const endDate = new Date(project.end_date);
-
-    const projectDuration = Math.max(0, (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)); // ระยะเวลาทั้งหมด (วัน)
-    const utilizedDuration = Math.max(0, (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)); // ระยะเวลาที่ใช้ไปแล้ว (วัน)
-
-    const percentTarget = projectDuration > 0 ? (utilizedDuration / projectDuration) * 100 : 0;
-
-    return sum + percentTarget;
-  }, 0);
-
-  return totalPercent / projects.length; // ค่าเฉลี่ย Percent of Target
+  return projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0);
 };
+
 //========================================================================================
-
-
-const CustomSelect = ({
+const CustomSelect = ({ //ฟังก์ชันสำหรับสร้าง Select Dropdown
   options,
   placeholder,
   onChange,
@@ -316,7 +344,6 @@ const CustomSelect = ({
     };
   }, []);
 
-
   return (
     <div ref={dropdownRef} className="relative w-full border rounded p-2 mb-2">
       <div
@@ -350,7 +377,8 @@ const CustomSelect = ({
     </div>
   );
 };
-
+//=========================================================================================
+// ฟังก์ชันสำหรับคำนวณ Budget Variance
 const calculateBudgetVariance = (projects: TypeDashboard[] | null) => { //ฟังก์ชันสำหรับคำนวณ Budget Variance
   if (!projects || projects.length === 0) return { variance: 0, variancePercentage: 0 }; // ตรวจสอบว่า projects มีข้อมูลหรือไม่
 
@@ -367,11 +395,12 @@ const calculateBudgetVariance = (projects: TypeDashboard[] | null) => { //ฟั
   return { variance, variancePercentage };
 };
 
+//=========================================================================================
 
-const calculateAggregatedValues = (projects: TypeDashboard[]) => {
-  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget), 0);
-  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent), 0);
-  const percentTarget = totalBudget > 0 ? (totalAmountSpent / totalBudget) * 100 : 0;
+const calculateAggregatedValues = (projects: TypeDashboard[]): { totalBudget: number; totalAmountSpent: number; percentTarget: number } => {
+  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget), 0); // รวม Total Budget
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent), 0); // รวม Amount Spent
+  const percentTarget = totalBudget > 0 ? (totalAmountSpent / totalBudget) * 100 : 0; // คำนวณ Percent of Target
 
   return {
     totalBudget,
@@ -381,12 +410,12 @@ const calculateAggregatedValues = (projects: TypeDashboard[]) => {
 };
 
 
-
+// ฟังก์ชันสำหรับคำนวณ Completion Rate
 const calculateCompletionRate = (projects: TypeDashboard[] | null): number => {
   if (!projects || projects.length === 0) return 0;
 
   const totalCompletion = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0);
-  return totalCompletion / projects.length; // ค่าเฉลี่ยของ Completion Rate
+  return (totalCompletion / projects.length) * 100; // คูณด้วย 100 เพื่อแสดงเป็นเปอร์เซ็นต์
 };
 
 // ฟังก์ชันสำหรับคำนวณ Utilized Duration
@@ -404,29 +433,36 @@ const calculateUtilizedDuration = (projects: TypeDashboard[] | null): number => 
   return totalDays;
 };
 
-
-const Dashboard = () => {
-  const [projectDetails, setProjectDetails] = useState<TypeDashboard[] | null>(null);
-  const [filteredProjects, setFilteredProjects] = useState<TypeDashboard[] | null>(null);
-  const [projectOptions, setProjectOptions] = useState<string[]>(["All"]);
+// =========================================================================================
+const Dashboard = () => { // ฟังก์ชันหลักของ Dashboard
+  // สร้าง State สำหรับเก็บข้อมูลโปรเจ็กต์
+  const [projectDetails, setProjectDetails] = useState<TypeDashboard[] | null>(null); // เก็บข้อมูลโปรเจ็กต์ทั้งหมด
+  const [filteredProjects, setFilteredProjects] = useState<TypeDashboard[] | null>(null); // เก็บข้อมูลโปรเจ็กต์ที่กรองแล้ว
+  const [projectOptions, setProjectOptions] = useState<string[]>(["All"]); // เก็บตัวเลือกโปรเจ็กต์ 
   const [selectedProjects, setSelectedProjects] = useState<string[]>(["All"]); // เก็บโปรเจ็กต์ที่เลือก
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["All"]); // เก็บสถานะที่เลือก
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // สถานะการโหลดข้อมูล
+
+  // คำนวณ Total Amount Spent
+  const totalAmountSpent = calculateTotalAmountSpent(filteredProjects); 
 
   // คำนวณ Budget Variance
-  const budgetVariance = calculateBudgetVariance(filteredProjects);
+  // const budgetVariance = calculateBudgetVariance(filteredProjects); 
 
   // คำนวณ Completion Rate
-  const completionRate = filteredProjects
-    ? calculateCompletionRate(filteredProjects)
+  const completionRate = filteredProjects 
+    ? calculateCompletionRate(filteredProjects) 
     : 0;
 
   // คำนวณ Utilized Duration
   const utilizedDays = calculateUtilizedDuration(filteredProjects);
 
-  const percentOfTarget = filteredProjects
-    ? calculatePercentOfTarget(filteredProjects)
-    : 0;
+  // คำนวณ Estimate At Completion (EAC)
+  const percentOfTarget = filteredProjects // คำนวณ Percent of Target
+    ? calculatePercentOfTarget(filteredProjects) 
+    : { percent: 0, isOverBudget: false, overBudgetPercent: 0 }; 
+
+  const { percent, isOverBudget, overBudgetPercent } = percentOfTarget; // ค่าที่คำนวณได้
 
   // ฟังก์ชันสำหรับคำนวณค่าใช้จ่ายรวม
   const aggregatedValues = projectDetails
@@ -569,41 +605,35 @@ const Dashboard = () => {
                 <div className="grid rounded-lg shadow-lg bg-blue-300">
                   <h2 className="text-center font-semibold text-l mt-6 mb-4">Estimate At Completion</h2>
                   <h2 className="text-center font-semibold text-4xl mt-2 mb-6">
-                    {aggregatedValues
-                      ? `$${aggregatedValues.totalBudget.toLocaleString()}`
-                      : filteredProjects && filteredProjects.length > 0
-                        ? `$${filteredProjects[0].budget.toLocaleString()}`
-                        : "Loading..."}
+                    {filteredProjects
+                      ? `$${calculateEAC(filteredProjects)?.toLocaleString() || "N/A"}`
+                      : "Loading..."}
                   </h2>
                 </div>
               </div>
               <div className=" p-1 mt-1">
                 <div className="grid p-4 rounded-lg shadow-lg bg-indigo-400">
                   <h2 className="text-center font-semibold text-4xl mt-2">
-                    {aggregatedValues
-                      ? `$${aggregatedValues.totalAmountSpent.toLocaleString()}`
-                      : filteredProjects && filteredProjects.length > 0
-                        ? `$${filteredProjects[0].amountSpent.toLocaleString()}`
-                        : "Loading..."}
+                    {percent.toFixed(2)}%
                   </h2>
                   <h2 className="text-center font-semibold text-l mt-4">Percent Of Target</h2>
+                  {isOverBudget && (
+                    <h2 className="text-center text-red-700 font-semibold mt-2">
+                      Over Budget by {overBudgetPercent.toFixed(2)}%
+                    </h2>
+                  )}
                   <div className="flex justify-between w-full text-center mt-5">
                     <div className="w-1/2 pr-2">
-                      {aggregatedValues
-                        ? `${aggregatedValues.percentTarget.toFixed(2)}%`
-                        : filteredProjects && filteredProjects.length > 0
-                          ? `${(
-                            (filteredProjects[0].amountSpent / filteredProjects[0].totalBudget) *
-                            100
-                          ).toFixed(2)}%`
-                          : "Loading..."}
+                      {filteredProjects
+                        ? `$${totalAmountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "Loading..."}
                       <h2 className="text-center font-semibold mt-1">Amount Spent</h2>
                     </div>
                     <div className="w-1/2 border-l-2 border-black pl-2">
                       {aggregatedValues
-                        ? `$${aggregatedValues.totalBudget.toLocaleString()}`
+                        ? `$${aggregatedValues.totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : filteredProjects && filteredProjects.length > 0
-                          ? `$${filteredProjects[0].totalBudget.toLocaleString()}`
+                          ? `$${filteredProjects[0].totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                           : "Loading..."}
                       <h2 className="text-center font-semibold mt-1">Total Budget</h2>
                     </div>
@@ -613,14 +643,11 @@ const Dashboard = () => {
             </div>
           </div >
 
-
-
-
           {/* Cost Breakdown */}
           < div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200" >
-            <h2 className="text-xl font-semibold mb-4">Cost Breakdown</h2>
+            <h2 className="text-xl font-semibold mb-12">Cost Breakdown</h2>
             <CostBreakdown filteredProjects={filteredProjects} />
-            <div className="grid grid-cols-2 gap-2 p-2 mt-4 text-center ">
+            <div className="grid grid-cols-2 gap-2 p-2 mt-12 text-center ">
               <div className="border p-2">Equipment</div>
               <div className="border p-2 bg-green-300 ">$159,801</div>
               <div className="border p-2">Foreign Labor</div>
