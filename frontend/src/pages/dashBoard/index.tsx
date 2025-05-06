@@ -57,10 +57,10 @@ const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[
       dataLabels: {
         enabled: true,
         formatter: (val: number) =>
-          `$${val.toLocaleString(undefined, {
+          `${val.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          })}`,
+          })}THB`,
         offsetY: -20,
         style: {
           fontSize: "12px",
@@ -88,10 +88,10 @@ const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[
       tooltip: {
         y: {
           formatter: (value: number) =>
-            `$${value.toLocaleString(undefined, {
+            `${value.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
-            })}`,
+            })}THB`,
         },
       },
       legend: {
@@ -444,14 +444,14 @@ const Dashboard = () => { // ฟังก์ชันหลักของ Dashb
   const [loading, setLoading] = useState(true); // สถานะการโหลดข้อมูล
 
   // คำนวณ Total Amount Spent
-  const totalAmountSpent = calculateTotalAmountSpent(filteredProjects); 
+  const totalAmountSpent = calculateTotalAmountSpent(filteredProjects);
 
   // คำนวณ Budget Variance
   // const budgetVariance = calculateBudgetVariance(filteredProjects); 
 
   // คำนวณ Completion Rate
-  const completionRate = filteredProjects 
-    ? calculateCompletionRate(filteredProjects) 
+  const completionRate = filteredProjects
+    ? calculateCompletionRate(filteredProjects)
     : 0;
 
   // คำนวณ Utilized Duration
@@ -459,8 +459,8 @@ const Dashboard = () => { // ฟังก์ชันหลักของ Dashb
 
   // คำนวณ Estimate At Completion (EAC)
   const percentOfTarget = filteredProjects // คำนวณ Percent of Target
-    ? calculatePercentOfTarget(filteredProjects) 
-    : { percent: 0, isOverBudget: false, overBudgetPercent: 0 }; 
+    ? calculatePercentOfTarget(filteredProjects)
+    : { percent: 0, isOverBudget: false, overBudgetPercent: 0 };
 
   const { percent, isOverBudget, overBudgetPercent } = percentOfTarget; // ค่าที่คำนวณได้
 
@@ -585,10 +585,12 @@ const Dashboard = () => { // ฟังก์ชันหลักของ Dashb
                         <strong>Status:</strong> {project.status}
                       </p>
                       <p className="text-lg">
-                        <strong>Actual Cost:</strong> ${Number(project.actual).toLocaleString()}
+                        <strong>Actual Cost:</strong> {Number(project.actual).toLocaleString()}
+                        <span className="text-sm">THB</span>
                       </p>
                       <p className="text-lg">
-                        <strong>Budget:</strong> ${Number(project.budget).toLocaleString()}
+                        <strong>Budget:</strong> {Number(project.budget).toLocaleString()}
+                        <span className="text-sm">THB</span>
                       </p>
                     </div>
                   ))
@@ -605,9 +607,14 @@ const Dashboard = () => { // ฟังก์ชันหลักของ Dashb
                 <div className="grid rounded-lg shadow-lg bg-red-600">
                   <h2 className="text-center font-semibold text-l mt-6 mb-4">Estimate At Completion</h2>
                   <h2 className="text-center font-semibold text-4xl mt-2 mb-6">
-                    {filteredProjects
-                      ? `$${calculateEAC(filteredProjects)?.toLocaleString() || "N/A"}`
-                      : "Loading..."}
+                    {filteredProjects ? (
+                      <>
+                        {calculateEAC(filteredProjects)?.toLocaleString() || "N/A"}{" "}
+                        <span className="text-lg">THB</span>
+                      </>
+                    ) : (
+                      "Loading..."
+                    )}
                   </h2>
                 </div>
               </div>
@@ -624,17 +631,30 @@ const Dashboard = () => { // ฟังก์ชันหลักของ Dashb
                   )}
                   <div className="flex justify-between w-full text-center mt-5">
                     <div className="w-1/2 pr-2">
-                      {filteredProjects
-                        ? `$${totalAmountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : "Loading..."}
+                      {filteredProjects ? (
+                        <>
+                          {totalAmountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                          <span className="text-xs">THB</span>
+                        </>
+                      ) : (
+                        "Loading..."
+                      )}
                       <h2 className="text-center font-semibold mt-1">Amount Spent</h2>
                     </div>
                     <div className="w-1/2 border-l-2 border-black pl-2">
-                      {aggregatedValues
-                        ? `$${aggregatedValues.totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : filteredProjects && filteredProjects.length > 0
-                          ? `$${filteredProjects[0].totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                          : "Loading..."}
+                      {aggregatedValues ? (
+                        <>
+                          {aggregatedValues.totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                          <span className="text-xs">THB</span>
+                        </>
+                      ) : filteredProjects && filteredProjects.length > 0 ? (
+                        <>
+                          {filteredProjects[0].totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+                          <span className="text-xs">THB</span>
+                        </>
+                      ) : (
+                        "Loading..."
+                      )}
                       <h2 className="text-center font-semibold mt-1">Total Budget</h2>
                     </div>
                   </div>
@@ -649,15 +669,25 @@ const Dashboard = () => { // ฟังก์ชันหลักของ Dashb
             <CostBreakdown filteredProjects={filteredProjects} />
             <div className="grid grid-cols-2 gap-2 p-2 mt-12 text-center ">
               <div className="border p-2">Equipment</div>
-              <div className="border p-2 bg-red-600 ">$159,801</div>
+              <div className="border p-2 bg-red-600">
+                159,801 <span className="text-xs">THB</span>
+              </div>
               <div className="border p-2">Foreign Labor</div>
-              <div className="border p-2 bg-red-600">$134,568</div>
+              <div className="border p-2 bg-red-600">
+                134,568 <span className="text-xs">THB</span>
+              </div>
               <div className="border p-2">Labor</div>
-              <div className="border p-2 bg-red-600">$157,986</div>
+              <div className="border p-2 bg-red-600">
+                157,986 <span className="text-xs">THB</span>
+              </div>
               <div className="border p-2">Material</div>
-              <div className="border p-2 bg-red-600">$161,837</div>
+              <div className="border p-2 bg-red-600">
+                161,837 <span className="text-xs">THB</span>
+              </div>
               <div className="border p-2">Subcontractors</div>
-              <div className="border p-2 bg-red-600">$151,775</div>
+              <div className="border p-2 bg-red-600">
+                151,775 <span className="text-xs">THB</span>
+              </div>
             </div>
           </div >
 
