@@ -17,6 +17,25 @@ export const projectService = {
         );
     },
 
+    findByManagerId: async (managerId: string) => {
+        try {
+            const projects = await ProjectRepository.findByManagerId(managerId);
+            return new ServiceResponse(
+                ResponseStatus.Success,
+                "Projects retrieved successfully",
+                projects,
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                "Error retrieving manager projects: " + (ex as Error).message,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
+
     // สร้างโปรเจกต์ใหม่
     create: async (payload: TypePayloadProject) => {
         try {
@@ -122,5 +141,43 @@ export const projectService = {
                 StatusCodes.INTERNAL_SERVER_ERROR
             );
         }
-    }
+    },
+
+    checkManagerOwnership: async (projectId: string, managerId: string) => {
+        try {
+            const project = await projectRepository.findById(projectId);
+
+            if (!project) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "ไม่พบโปรเจกต์",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            if (project.created_by !== managerId) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "คุณไม่ใช่เจ้าของโปรเจกต์นี้",
+                    null,
+                    StatusCodes.FORBIDDEN
+                );
+            }
+
+            return new ServiceResponse(
+                ResponseStatus.Success,
+                "ตรวจสอบสิทธิ์สำเร็จ",
+                true,
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                "เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์: " + (ex as Error).message,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
 };

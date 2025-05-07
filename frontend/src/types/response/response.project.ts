@@ -3,7 +3,7 @@ export type TypeProjectAll = {
     project_name : string;
     actual : number;
     budget : number;
-    status : boolean;
+    status : string;
     start_date : string;
     end_date : string;
     created_at : string;

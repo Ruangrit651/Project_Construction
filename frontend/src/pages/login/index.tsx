@@ -22,12 +22,34 @@ const Login: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
+  
     try {
       const response = await loginUser({ username, password });
-
+  
       if (response.success) {
-        navigate('/admin'); // Redirect ไปที่ /admin
+        // Redirect based on user role
+        if (response.user) {
+          switch (response.user.role) {
+            case 'RootAdmin':
+            case 'Admin':
+              navigate('/admin');
+              break;
+            case 'CEO':
+              navigate('/CEODashBoard');
+              break;
+            case 'Manager':
+              navigate('/ManagerDash');
+              break;
+            case 'Employee':
+              navigate('/employeePlan');
+              break;
+            default:
+              navigate('/admin'); // Fallback route
+          }
+        } else {
+          // If user object isn't available, redirect to a default page
+          navigate('/admin');
+        }
       } else {
         setError(response.message || 'Invalid login credentials');
       }

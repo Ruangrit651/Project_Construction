@@ -6,6 +6,7 @@ import { UpdateProjectSchema, DeleteProjectSchema } from "@modules/project/proje
 import { authenticateJWT } from "@common/middleware/authMiddleware";
 import rolegrop1 from "@common/middleware/roleGroup1";
 import rolegrop2 from "@common/middleware/roleGroup2";
+import rolegrop5 from "@common/middleware/roleGroup5";
 
 export const projectRouter = (() => {
     const router = express.Router();
@@ -52,6 +53,17 @@ export const projectRouter = (() => {
         const ServiceResponse = await projectService.delete(project_id);
         handleServiceResponse(ServiceResponse, res);
     });
+
+    router.get(
+        "/manager",
+        authenticateJWT,
+        rolegrop5,
+        async (req: Request, res: Response) => {
+          const managerId = req.user.userId;
+          const serviceResponse = await projectService.findByManagerId(managerId);
+          handleServiceResponse(serviceResponse, res);
+        }
+      );
 
 
     return router;

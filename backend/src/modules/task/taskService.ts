@@ -182,6 +182,25 @@ export const taskService = {
         }
     },
 
+    findByProjectId: async (projectId: string) => {
+        try {
+          const tasks = await TaskRepository.findByProjectId(projectId);
+          return new ServiceResponse(
+            ResponseStatus.Success, 
+            "Tasks retrieved successfully", 
+            tasks, 
+            StatusCodes.OK
+          );
+        } catch (ex) {
+          return new ServiceResponse(
+            ResponseStatus.Failed, 
+            "Error retrieving tasks: " + (ex as Error).message, 
+            null, 
+            StatusCodes.INTERNAL_SERVER_ERROR
+          );
+        }
+      },
+
     // ลบ task
     delete: async (task_id: string) => {
         try {

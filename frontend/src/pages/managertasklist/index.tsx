@@ -6,12 +6,14 @@ import { TypeTaskAll } from "@/types/response/response.task";
 import { getSubtask, patchSubtask } from "@/services/subtask.service";
 import { TypeSubTaskAll } from "@/types/response/response.subtask";
 import { getTaskProgress, getSubtaskProgress, createProgress } from "@/services/progress.service";
+import { calculateProgress } from "@/pages/managertasklist/Function/CalProgress"; // นำเข้า calculateProgress จาก utils
 import DialogAddTask from "./components/DialogAddTask";
 import DialogEditTask from "./components/DialogEditTask";
 import AlertDialogDeleteTask from "./components/alertDialogDeleteTask";
 import DialogAddSubTask from "./components/DialogAddSubTask";
 import DialogEditSubtask from "./components/DialogEditSubtask";
 import AlertDialogDeleteSubtask from "./components/alertDialogDeleteSubtask";
+import ProjectProgress from "./components/ProjectProgress";
 
 // สร้าง component ProgressBar อย่างง่าย
 const ProgressBar = ({ percent }: { percent: number }) => {
@@ -23,9 +25,12 @@ const ProgressBar = ({ percent }: { percent: number }) => {
         return "#22c55e"; // เขียว
     };
 
+    // แสดงค่าเปอร์เซ็นต์เป็นทศนิยม 2 ตำแหน่ง
+    const formattedPercent = percent.toFixed(2);
+
     return (
         <div>
-            <div style={{ fontSize: "12px", marginBottom: "2px" }}>{percent}%</div>
+            <div style={{ fontSize: "12px", marginBottom: "2px" }}>{formattedPercent}%</div>
             <div
                 style={{
                     width: "100%",
@@ -36,7 +41,7 @@ const ProgressBar = ({ percent }: { percent: number }) => {
             >
                 <div
                     style={{
-                        width: `${percent}%`,
+                        width: `${percent}%`, // ยังคงใช้ค่าดั้งเดิมสำหรับความกว้างของแถบ
                         backgroundColor: getColor(),
                         height: "100%",
                         borderRadius: "4px",
@@ -57,66 +62,54 @@ export default function TasklistPage() {
     const [taskProgress, setTaskProgress] = useState<Record<string, number>>({});
     const [subtaskProgress, setSubtaskProgress] = useState<Record<string, number>>({});
 
-    // คำนวณความคืบหน้า Task จาก Subtasks
+    // สำหรับการคงความเข้ากันได้กับโค้ดเดิม
     const calculateTaskProgress = (taskId: string) => {
-        const taskSubtasks = subtasks[taskId] || [];
-
-        // ถ้าไม่มี subtask ใช้ความคืบหน้าของ task ที่บันทึกไว้โดยตรง
-        if (taskSubtasks.length === 0) {
-            return taskProgress[taskId] || 0;
-        }
-
-        // คำนวณความคืบหน้าเฉลี่ยของ subtasks ทั้งหมด
-        let totalProgress = 0;
-        for (const subtask of taskSubtasks) {
-            totalProgress += subtaskProgress[subtask.subtask_id] || 0;
-        }
-
-        const averageProgress = Math.round(totalProgress / taskSubtasks.length);
-
-        // อัปเดตความคืบหน้าของ task ใน state
-        if (averageProgress !== taskProgress[taskId]) {
-            setTaskProgress(prev => ({
-                ...prev,
-                [taskId]: averageProgress
-            }));
-        }
-
-        return averageProgress;
+        return calculateProgress(taskId, 'task', {
+            tasks,
+            subtasks,
+            taskProgress,
+            subtaskProgress,
+            useWeightedAverage: true,
+            weightBy: 'duration',
+            setTaskProgress
+        });
     };
 
     const updateTaskStatusFromSubtasks = async (taskId: string) => {
         const taskSubtasks = subtasks[taskId] || [];
-        
-    
+
         // ถ้าไม่มี subtask ให้ข้ามไป
         if (taskSubtasks.length === 0) return;
-    
+
         // ค้นหา task ปัจจุบัน
         const currentTask = tasks.find(task => task.task_id === taskId);
         if (!currentTask) return;
-    
-        // คำนวณความคืบหน้าเฉลี่ยของ subtasks
-        let totalProgress = 0;
-        for (const subtask of taskSubtasks) {
-            totalProgress += subtaskProgress[subtask.subtask_id] || 0;
-        }
-        const averageProgress = Math.round(totalProgress / taskSubtasks.length);
-    
+
+        // คำนวณความคืบหน้าโดยใช้ฟังก์ชันที่ปรับปรุงใหม่
+        const averageProgress = calculateProgress(taskId, 'task', {
+            tasks,
+            subtasks,
+            taskProgress,
+            subtaskProgress,
+            useWeightedAverage: true,
+            weightBy: 'duration',
+            updateState: false
+        });
+
         // ตรวจสอบสถานะของ subtasks
         const allCompleted = taskSubtasks.every(subtask => subtask.status === "completed");
         const allCancelled = taskSubtasks.every(subtask => subtask.status === "cancelled");
         const anyInProgress = taskSubtasks.some(subtask => subtask.status === "in progress");
         const anyNotCompleted = taskSubtasks.some(subtask => subtask.status !== "completed");
-        const anyLessThan100Percent = taskSubtasks.some(subtask => 
+        const anyLessThan100Percent = taskSubtasks.some(subtask =>
             (subtaskProgress[subtask.subtask_id] || 0) < 100
         );
-    
+
         let newStatus = currentTask.status;
         let newProgress = averageProgress;
         let shouldUpdateProgress = false;
         let shouldUpdateStatus = false;
-    
+
         // กรณี 1: ถ้าทุก subtask เป็น completed และ task ไม่ใช่ completed ให้อัพเดทเป็น completed
         if (allCompleted && currentTask.status !== "completed") {
             newStatus = "completed";
@@ -131,7 +124,7 @@ export default function TasklistPage() {
         }
         // กรณี 3: ถ้ามีบาง subtask เป็น in progress และ task ไม่ใช่ in progress ให้อัพเดทเป็น in progress
         else if (anyInProgress && currentTask.status !== "in progress") {
-            newStatus = "in progress"; 
+            newStatus = "in progress";
             shouldUpdateStatus = true;
         }
         // กรณี 4: ถ้า task เป็น completed แล้ว แต่มีบาง subtask ไม่ใช่ completed หรือ progress น้อยกว่า 100%
@@ -140,7 +133,7 @@ export default function TasklistPage() {
             shouldUpdateStatus = true;
             shouldUpdateProgress = true;
         }
-        
+
         // ตรวจสอบและอัพเดต Task status ถ้าจำเป็น
         if (shouldUpdateStatus) {
             try {
@@ -149,12 +142,12 @@ export default function TasklistPage() {
                     task_id: taskId,
                     status: newStatus  // ส่งสถานะเป็น string
                 });
-    
+
                 if (response.success) {
                     console.log(`Task status updated to ${newStatus}`);
-                    
+
                     // อัพเดต tasks ในหน้าจอ
-                    setTasks(prevTasks => prevTasks.map(task => 
+                    setTasks(prevTasks => prevTasks.map(task =>
                         task.task_id === taskId ? { ...task, status: newStatus } : task
                     ));
                 }
@@ -162,24 +155,24 @@ export default function TasklistPage() {
                 console.error("Failed to update task status:", error);
             }
         }
-    
+
         // อัพเดต progress ถ้าจำเป็น
         if (shouldUpdateProgress || averageProgress !== taskProgress[taskId]) {
             try {
                 const progressToUpdate = shouldUpdateProgress ? newProgress : averageProgress;
-                
+
                 await createProgress({
                     task_id: taskId,
                     percent: progressToUpdate,
                     description: `Auto-updated from subtasks: ${progressToUpdate}%`,
                 });
-                
+
                 // อัพเดต state
                 setTaskProgress(prev => ({
                     ...prev,
                     [taskId]: progressToUpdate
                 }));
-                
+
                 console.log(`Task progress updated to ${progressToUpdate}%`);
             } catch (progressError) {
                 console.error("Failed to update task progress:", progressError);
@@ -259,14 +252,34 @@ export default function TasklistPage() {
     // ดึงความคืบหน้าของ Task
     const fetchTaskProgress = async (taskId: string) => {
         try {
-            const response = await getTaskProgress(taskId);
-            if (response.success && response.responseObject.length > 0) {
-                // Progress จะถูกเรียงตาม date_recorded ล่าสุดมาก่อน
-                const latestProgress = response.responseObject[0];
+            // ตรวจสอบว่ามี subtasks หรือไม่
+            if (subtasks[taskId] && subtasks[taskId].length > 0) {
+                // คำนวณใหม่จาก subtasks ที่มีอยู่
+                const calculatedProgress = calculateProgress(taskId, 'task', {
+                    tasks,
+                    subtasks,
+                    taskProgress,
+                    subtaskProgress,
+                    updateState: false
+                });
+
+                // อัพเดต state ด้วยค่าที่คำนวณได้
                 setTaskProgress(prev => ({
                     ...prev,
-                    [taskId]: latestProgress.percent
+                    [taskId]: calculatedProgress
                 }));
+
+                console.log(`Updated task ${taskId} progress to calculated value: ${calculatedProgress}%`);
+            } else {
+                // ถ้าไม่มี subtasks ดึงจากฐานข้อมูล
+                const response = await getTaskProgress(taskId);
+                if (response.success && response.responseObject.length > 0) {
+                    const latestProgress = response.responseObject[0];
+                    setTaskProgress(prev => ({
+                        ...prev,
+                        [taskId]: latestProgress.percent
+                    }));
+                }
             }
         } catch (error) {
             console.error(`Error fetching progress for task ${taskId}:`, error);
@@ -293,17 +306,30 @@ export default function TasklistPage() {
     // toggle การแสดง/ซ่อน subtasks
     const toggleExpandTask = (taskId: string) => {
         setExpandedTasks(prev => {
-            // ถ้า taskId มีอยู่แล้วในรายการ ให้ลบออก (ปิด) ไม่เช่นนั้นให้เพิ่มเข้าไป (เปิด)
             const isExpanded = prev.includes(taskId);
 
             if (isExpanded) {
-                return prev.filter(id => id !== taskId); // ลบ taskId ออก (ปิด)
+                return prev.filter(id => id !== taskId);
             } else {
-                // ถ้ากำลังจะเปิดและยังไม่มีข้อมูล subtask ให้ดึงข้อมูล
+                // ถ้ากำลังจะเปิด ให้ดึงข้อมูลและคำนวณความคืบหน้าใหม่
                 if (!subtasks[taskId] || subtasks[taskId]?.length === 0) {
-                    fetchSubtasks(taskId);
+                    fetchSubtasks(taskId).then(() => {
+                        // หลังจากดึงข้อมูล subtasks แล้ว คำนวณและอัพเดตค่าความคืบหน้า
+                        const calculatedProgress = calculateProgress(taskId, 'task', {
+                            tasks,
+                            subtasks,
+                            taskProgress,
+                            subtaskProgress
+                        });
+
+                        // บันทึกค่าไว้ใน state เพื่อให้ใช้ค่าเดียวกันไม่ว่าจะกด dropdown หรือไม่
+                        setTaskProgress(prev => ({
+                            ...prev,
+                            [taskId]: calculatedProgress
+                        }));
+                    });
                 }
-                return [...prev, taskId]; // เพิ่ม taskId (เปิด)
+                return [...prev, taskId];
             }
         });
     };
@@ -339,161 +365,184 @@ export default function TasklistPage() {
     };
 
     return (
-        <Card variant="surface">
-            <Flex className="w-full" direction="row" gap="2" justify="between">
-                <Text as="div" size="4" weight="bold">
-                    Tasks
-                </Text>
-                <DialogAddTask getTaskData={getTaskData} />
-            </Flex>
-            <div className="w-full mt-2">
-                {isLoading ? (
-                    <Flex align="center" justify="center" py="4">
-                        <Text>Loading tasks...</Text>
-                    </Flex>
-                ) : (
-                    <Table.Root variant="surface">
-                        <Table.Header>
-                            <Table.Row>
-                                <Table.ColumnHeaderCell width="40px"></Table.ColumnHeaderCell>
-                                <Table.ColumnHeaderCell>Task Name</Table.ColumnHeaderCell>
-                                <Table.ColumnHeaderCell>Budget</Table.ColumnHeaderCell>
-                                <Table.ColumnHeaderCell>Start Date</Table.ColumnHeaderCell>
-                                <Table.ColumnHeaderCell>End Date</Table.ColumnHeaderCell>
-                                <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
-                                <Table.ColumnHeaderCell>Progress</Table.ColumnHeaderCell>
-                                <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
-                            </Table.Row>
-                        </Table.Header>
-                        <Table.Body>
-                            {tasks.map((task: TypeTaskAll) => (
-                                <React.Fragment key={`fragment-${task.task_id}`}>
-                                    <Table.Row key={`task-${task.task_id}`}>
-                                        <Table.Cell>
-                                            <Button
-                                                variant="ghost"
-                                                size="1"
-                                                onClick={() => toggleExpandTask(task.task_id)}
-                                            >
-                                                {expandedTasks.includes(task.task_id) ?
-                                                    <ChevronDownIcon /> :
-                                                    <ChevronRightIcon />}
-                                            </Button>
-                                        </Table.Cell>
-                                        <Table.Cell>
-                                            <Text>{task.task_name}</Text>
-                                        </Table.Cell>
-                                        <Table.Cell>{formatBudget(task.budget)}</Table.Cell>
-                                        <Table.Cell>{formatDate(task.start_date)}</Table.Cell>
-                                        <Table.Cell>{formatDate(task.end_date)}</Table.Cell>
-                                        <Table.Cell>{task.status}</Table.Cell>
-                                        <Table.Cell>
-                                            <Tooltip content={`${taskProgress[task.task_id] || 0}%`}>
-                                                <div style={{ width: '100px' }}>
-                                                    <ProgressBar
-                                                        percent={expandedTasks.includes(task.task_id)
-                                                            ? calculateTaskProgress(task.task_id)
-                                                            : (taskProgress[task.task_id] || 0)
-                                                        }
-                                                    />
-                                                </div>
-                                            </Tooltip>
-                                        </Table.Cell>
-                                        <Table.Cell>
-                                            <Flex gap="2">
-                                                <DialogAddSubTask
-                                                    getSubtaskData={() => fetchSubtasks(task.task_id)}
-                                                    taskId={task.task_id}
-                                                    taskName={task.task_name}
-                                                    updateTaskStatus={updateTaskStatusFromSubtasks}
-                                                />
-                                                <DialogEditTask
-                                                    getTaskData={getTaskData}
-                                                    task_id={task.task_id}
-                                                    task_name={task.task_name}
-                                                    description={task.description}
-                                                    budget={task.budget}
-                                                    start_date={task.start_date}
-                                                    end_date={task.end_date}
-                                                    status={task.status}
-                                                    updateSubtasksOnComplete={true}
-                                                    updateTaskStatusFromSubtasks={updateTaskStatusFromSubtasks} // เพิ่มบรรทัดนี้
-                                                />
-                                                <AlertDialogDeleteTask
-                                                    getTaskData={getTaskData}
-                                                    task_id={task.task_id}
-                                                    task_name={task.task_name}
-                                                />
-                                            </Flex>
-                                        </Table.Cell>
-                                    </Table.Row>
+        <div>
+            {/* เพิ่ม ProjectProgress Component ตรงนี้ */}
+            <ProjectProgress
+                tasks={tasks}
+                subtasks={subtasks}
+                taskProgress={taskProgress}
+            />
 
-                                    {/* SubTasks Section */}
-                                    {expandedTasks.includes(task.task_id) && subtasks[task.task_id]?.map((subtask) => (
-                                        <Table.Row key={`subtask-${subtask.subtask_id}-${task.task_id}`} className="bg-gray-50">
+            <Card variant="surface">
+                <Flex className="w-full" direction="row" gap="2" justify="between">
+                    <Text as="div" size="4" weight="bold">
+                        Tasks
+                    </Text>
+                    <DialogAddTask getTaskData={getTaskData} />
+                </Flex>
+                <div className="w-full mt-2">
+                    {isLoading ? (
+                        <Flex align="center" justify="center" py="4">
+                            <Text>Loading tasks...</Text>
+                        </Flex>
+                    ) : (
+                        <Table.Root variant="surface">
+                            <Table.Header>
+                                <Table.Row>
+                                    <Table.ColumnHeaderCell width="40px"></Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell>Task Name</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell>Budget</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell>Start Date</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell>End Date</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell>Progress</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
+                                </Table.Row>
+                            </Table.Header>
+                            <Table.Body>
+                                {tasks.map((task: TypeTaskAll) => (
+                                    <React.Fragment key={`fragment-${task.task_id}`}>
+                                        <Table.Row key={`task-${task.task_id}`}>
                                             <Table.Cell>
-                                                <div className="pl-6"></div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="1"
+                                                    onClick={() => toggleExpandTask(task.task_id)}
+                                                >
+                                                    {expandedTasks.includes(task.task_id) ?
+                                                        <ChevronDownIcon /> :
+                                                        <ChevronRightIcon />}
+                                                </Button>
                                             </Table.Cell>
                                             <Table.Cell>
-                                                <Text size="2" className="pl-4">{subtask.subtask_name}</Text>
+                                                <Text>{task.task_name}</Text>
                                             </Table.Cell>
-                                            <Table.Cell>{formatBudget(subtask.budget)}</Table.Cell>
-                                            <Table.Cell>{formatDate(subtask.start_date)}</Table.Cell>
-                                            <Table.Cell>{formatDate(subtask.end_date)}</Table.Cell>
+                                            <Table.Cell>{formatBudget(task.budget)}</Table.Cell>
+                                            <Table.Cell>{formatDate(task.start_date)}</Table.Cell>
+                                            <Table.Cell>{formatDate(task.end_date)}</Table.Cell>
+                                            <Table.Cell>{task.status}</Table.Cell>
                                             <Table.Cell>
-                                                <Text size="2">{subtask.status}</Text>
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                <Tooltip content={`${subtaskProgress[subtask.subtask_id] || 0}%`}>
+                                                <Tooltip content={`${(expandedTasks.includes(task.task_id)
+                                                    ? calculateProgress(task.task_id, 'task', {
+                                                        tasks,
+                                                        subtasks,
+                                                        taskProgress,
+                                                        subtaskProgress,
+                                                        updateState: false
+                                                    })
+                                                    : taskProgress[task.task_id] || 0).toFixed(2)}%`}>
                                                     <div style={{ width: '100px' }}>
                                                         <ProgressBar
-                                                            percent={subtaskProgress[subtask.subtask_id] || 0}
+                                                            percent={expandedTasks.includes(task.task_id)
+                                                                ? calculateProgress(task.task_id, 'task', {
+                                                                    tasks,
+                                                                    subtasks,
+                                                                    taskProgress,
+                                                                    subtaskProgress,
+                                                                    setTaskProgress
+                                                                })
+                                                                : (taskProgress[task.task_id] || 0)
+                                                            }
                                                         />
                                                     </div>
                                                 </Tooltip>
                                             </Table.Cell>
                                             <Table.Cell>
                                                 <Flex gap="2">
-                                                    <div style={{ width: "51px" }}></div>
-                                                    <DialogEditSubtask
-                                                        getSubtaskData={() => {
-                                                            fetchSubtasks(task.task_id);
-                                                            fetchTaskProgress(task.task_id);
-                                                            updateTaskStatusFromSubtasks(task.task_id);
-                                                        }}
-                                                        subtaskId={subtask.subtask_id}
+                                                    <DialogAddSubTask
+                                                        getSubtaskData={() => fetchSubtasks(task.task_id)}
                                                         taskId={task.task_id}
-                                                        trigger={<Button className="cursor-pointer" size="1" variant="soft" color="orange">Edit</Button>}
+                                                        taskName={task.task_name}
                                                         updateTaskStatus={updateTaskStatusFromSubtasks}
                                                     />
-                                                    <AlertDialogDeleteSubtask
-                                                        getSubtaskData={() => {
-                                                            fetchSubtasks(task.task_id);
-                                                            fetchTaskProgress(task.task_id);
-                                                            updateTaskStatusFromSubtasks(task.task_id);
-                                                        }}
-                                                        subtask_id={subtask.subtask_id}
-                                                        subtask_name={subtask.subtask_name}
+                                                    <DialogEditTask
+                                                        getTaskData={getTaskData}
+                                                        task_id={task.task_id}
+                                                        task_name={task.task_name}
+                                                        description={task.description}
+                                                        budget={task.budget}
+                                                        start_date={task.start_date}
+                                                        end_date={task.end_date}
+                                                        status={task.status}
+                                                        updateSubtasksOnComplete={true}
+                                                        updateTaskStatusFromSubtasks={updateTaskStatusFromSubtasks}
+                                                    />
+                                                    <AlertDialogDeleteTask
+                                                        getTaskData={getTaskData}
+                                                        task_id={task.task_id}
+                                                        task_name={task.task_name}
                                                     />
                                                 </Flex>
                                             </Table.Cell>
                                         </Table.Row>
-                                    ))}
 
-                                    {expandedTasks.includes(task.task_id) && (!subtasks[task.task_id] || subtasks[task.task_id]?.length === 0) && (
-                                        <Table.Row key={`empty-${task.task_id}`}>
-                                            <Table.Cell></Table.Cell>
-                                            <Table.Cell colSpan={7}>
-                                                <Text size="2" color="gray">No subtasks found</Text>
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    )}
-                                </React.Fragment>
-                            ))}
-                        </Table.Body>
-                    </Table.Root>
-                )}
-            </div>
-        </Card>
+                                        {/* SubTasks Section */}
+                                        {expandedTasks.includes(task.task_id) && subtasks[task.task_id]?.map((subtask) => (
+                                            <Table.Row key={`subtask-${subtask.subtask_id}-${task.task_id}`} className="bg-gray-50">
+                                                <Table.Cell>
+                                                    <div className="pl-6"></div>
+                                                </Table.Cell>
+                                                <Table.Cell>
+                                                    <Text size="2" className="pl-4">{subtask.subtask_name}</Text>
+                                                </Table.Cell>
+                                                <Table.Cell>{formatBudget(subtask.budget)}</Table.Cell>
+                                                <Table.Cell>{formatDate(subtask.start_date)}</Table.Cell>
+                                                <Table.Cell>{formatDate(subtask.end_date)}</Table.Cell>
+                                                <Table.Cell>
+                                                    <Text size="2">{subtask.status}</Text>
+                                                </Table.Cell>
+                                                <Table.Cell>
+                                                    <Tooltip content={`${subtaskProgress[subtask.subtask_id] || 0}%`}>
+                                                        <div style={{ width: '100px' }}>
+                                                            <ProgressBar
+                                                                percent={subtaskProgress[subtask.subtask_id] || 0}
+                                                            />
+                                                        </div>
+                                                    </Tooltip>
+                                                </Table.Cell>
+                                                <Table.Cell>
+                                                    <Flex gap="2">
+                                                        <div style={{ width: "51px" }}></div>
+                                                        <DialogEditSubtask
+                                                            getSubtaskData={() => {
+                                                                fetchSubtasks(task.task_id);
+                                                                fetchTaskProgress(task.task_id);
+                                                                updateTaskStatusFromSubtasks(task.task_id);
+                                                            }}
+                                                            subtaskId={subtask.subtask_id}
+                                                            taskId={task.task_id}
+                                                            trigger={<Button className="cursor-pointer" size="1" variant="soft" color="orange">Edit</Button>}
+                                                            updateTaskStatus={updateTaskStatusFromSubtasks}
+                                                        />
+                                                        <AlertDialogDeleteSubtask
+                                                            getSubtaskData={() => {
+                                                                fetchSubtasks(task.task_id);
+                                                                fetchTaskProgress(task.task_id);
+                                                                updateTaskStatusFromSubtasks(task.task_id);
+                                                            }}
+                                                            subtask_id={subtask.subtask_id}
+                                                            subtask_name={subtask.subtask_name}
+                                                        />
+                                                    </Flex>
+                                                </Table.Cell>
+                                            </Table.Row>
+                                        ))}
+
+                                        {expandedTasks.includes(task.task_id) && (!subtasks[task.task_id] || subtasks[task.task_id]?.length === 0) && (
+                                            <Table.Row key={`empty-${task.task_id}`}>
+                                                <Table.Cell></Table.Cell>
+                                                <Table.Cell colSpan={7}>
+                                                    <Text size="2" color="gray">No subtasks found</Text>
+                                                </Table.Cell>
+                                            </Table.Row>
+                                        )}
+                                    </React.Fragment>
+                                ))}
+                            </Table.Body>
+                        </Table.Root>
+                    )}
+                </div>
+            </Card>
+        </div>
     );
 }

@@ -13,6 +13,7 @@ export const taskRouter = (() => {
     router.get("/get",
         authenticateJWT,
         rolegrop4,
+        rolegrop5,
         async (req: Request, res: Response) => {
             const ServiceResponse = await taskService.findAll();
             handleServiceResponse(ServiceResponse, res);
@@ -79,6 +80,16 @@ export const taskRouter = (() => {
             const ServiceResponse = await taskService.updateEndDate(task_id, payload);
             handleServiceResponse(ServiceResponse, res);
         });
+
+        router.get(
+            "/project/:projectId",
+            authenticateJWT,
+            async (req: Request, res: Response) => {
+              const { projectId } = req.params;
+              const serviceResponse = await taskService.findByProjectId(projectId);
+              handleServiceResponse(serviceResponse, res);
+            }
+          );
 
     return router;
 })();
