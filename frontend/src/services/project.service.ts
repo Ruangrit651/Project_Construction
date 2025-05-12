@@ -1,4 +1,4 @@
-import { CREATE_PROJECT, GET_PROJECT_ALL , UPDATE_PROJECT ,DELETE_PROJECT} from "@/apis/endpoint.api";
+import { CREATE_PROJECT, GET_PROJECT_ALL , UPDATE_PROJECT ,DELETE_PROJECT,GET_MANAGER_PROJECTS} from "@/apis/endpoint.api";
 import mainApi from "@/apis/main.api";
 import { PayloadCreateProject , PayloadDeleteProject ,PayloadUpdateProject} from "@/types/requests/request.project";
 import { ProjectResponse } from "@/types/response/response.project";
@@ -30,6 +30,13 @@ export const patchProject = async (data: PayloadUpdateProject) => {
 export const deleteProject = async (data: PayloadDeleteProject) => {
     const { data: response } = await mainApi.delete<ProjectResponse>(
         DELETE_PROJECT + "/" + data.project_id
+    );
+    return response;
+}
+
+export const getManagerProjects = async (managerId: string) => {
+    const { data: response } = await mainApi.get<ProjectResponse>(
+        GET_MANAGER_PROJECTS + "/" + managerId
     );
     return response;
 }

@@ -1,5 +1,6 @@
 export type PayloadCreateProject = {
     project_name : string;
+    user_id? : string; // UUID ของผู้ใช้ที่สร้างโปรเจกต์
     actual : number;
     budget : number;
     status : string;
@@ -10,6 +11,7 @@ export type PayloadCreateProject = {
 export type PayloadUpdateProject = {
     project_id : string;
     project_name : string;
+    user_id? : string; // UUID ของผู้ใช้ที่สร้างโปรเจกต์
     actual : number;
     budget : number;
     status : string;

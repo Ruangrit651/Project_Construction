@@ -17,10 +17,12 @@ export type TypePayloadProject = {
     updated_by?: string;
 };
 
+
 // Schema สำหรับการสร้างโปรเจกต์ใหม่
 export const CreateProjectSchema = z.object({
     body: z.object({
         project_name: z.string().max(50),
+        user_id: z.string().uuid().optional(), // UUID ของผู้ใช้ที่สร้างโปรเจกต์
         budget: z.number().optional(),       
         actual: z.number().optional(),  
         start_date: z.string().optional(),
@@ -40,6 +42,7 @@ export const UpdateProjectSchema = z.object({
     body: z.object({
         project_id: z.string().uuid(),
         project_name: z.string().max(50).optional(),
+        user_id: z.string().uuid().nullable().optional(), // UUID ของผู้ใช้ที่สร้างโปรเจกต์
         actual: z.number().optional(),  
         budget: z.number().optional(),
         start_date: z.string().optional(),

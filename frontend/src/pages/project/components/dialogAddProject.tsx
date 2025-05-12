@@ -1,9 +1,15 @@
 import { Text, Dialog, Button, Flex, TextField, Select } from "@radix-ui/themes";
 import { postProject } from "@/services/project.service";
-import { useState } from "react";
+import { useState,useEffect } from "react";
+import { getUser } from "@/services/user.service";
 
 type DialogProjectProps = {
     getProjectData: Function;
+};
+
+type User = {
+    user_id: string;
+    username: string;
 };
 
 const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
@@ -15,6 +21,21 @@ const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
     const [status, setStatus] = useState("In progress"); // Default status
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+
+    const [users, setUsers] = useState<User[]>([]); // State to hold user data
+    const [selectedUserId, setSelectedUserId] = useState<string>("");
+
+    // ดึงข้อมูลผู้ใช้เมื่อคอมโพเนนต์โหลด
+    useEffect(() => {
+        // เรียกใช้ API เพื่อดึงรายการผู้ใช้
+        getUser().then(response => {
+            if (response.success) {
+                setUsers(response.responseObject);
+            }
+        }).catch(error => {
+            console.error("ไม่สามารถดึงข้อมูลผู้ใช้ได้", error);
+        });
+    }, []);
 
     const formatNumber = (value: number) => {
         return new Intl.NumberFormat("en-US").format(value);
@@ -35,12 +56,12 @@ const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
     };
 
     const handleCreateProject = async () => {
-        if (!projectName || !budget || !startDate || !endDate) {
+        if (!projectName || !budget || !startDate || !endDate || !selectedUserId) {
             alert("Please enter all required fields (project name, budget, start date, and end date).");
             return;
         }
 
-        postProject({ project_name: projectName, actual, budget, status, start_date: startDate, end_date: endDate })
+        postProject({ project_name: projectName, actual, budget, status, start_date: startDate, end_date: endDate, user_id: selectedUserId })
             .then((response) => {
                 if (response.statusCode === 200) {
                     // Clear form fields
@@ -82,6 +103,28 @@ const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
                             placeholder="Enter project name"
                             onChange={(event) => setProjectName(event.target.value)}
                         />
+                    </label>
+                    <label>
+                        <Text as="div" size="2" mb="1" weight="bold">
+                            เจ้าของโปรเจกต์
+                        </Text>
+                        <Select.Root
+                            defaultValue=""
+                            onValueChange={(userId: string) => setSelectedUserId(userId)}
+                        >
+                            <Select.Trigger className="select-trigger" placeholder="เลือกเจ้าของโปรเจกต์">
+                                {selectedUserId ? 
+                                    users.find(user => user.user_id === selectedUserId)?.username : 
+                                    "เลือกเจ้าของโปรเจกต์"}
+                            </Select.Trigger>
+                            <Select.Content>
+                                {users.map(user => (
+                                    <Select.Item key={user.user_id} value={user.user_id}>
+                                        {user.username}
+                                    </Select.Item>
+                                ))}
+                            </Select.Content>
+                        </Select.Root>
                     </label>
                     <label>
                         <Text as="div" size="2" mb="1" weight="bold">

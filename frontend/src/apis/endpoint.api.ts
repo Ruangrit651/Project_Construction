@@ -16,6 +16,7 @@ export const GET_PROJECT_ALL = "/v1/project/get";
 export const CREATE_PROJECT = "/v1/project/create";
 export const UPDATE_PROJECT = "/v1/project/update";
 export const DELETE_PROJECT = "/v1/project/delete";
+export const GET_MANAGER_PROJECTS = "/v1/project/manager";
 
 // roles
 export const GET_ROLE_ALL = "/v1/role/get";
@@ -30,6 +31,7 @@ export const UPDATE_TASK = "/v1/task/update";
 export const DELETE_TASK = "/v1/task/delete";
 export const UPDATE_START_DATE_TASK = "/v1/task/updatestartdate";
 export const UPDATE_END_DATE_TASK = "/v1/task/updateenddate";
+export const GET_TASK_PROJECT = "/v1/task/project";
 
 
 //subtask

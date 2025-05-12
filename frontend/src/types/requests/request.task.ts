@@ -1,4 +1,5 @@
 export type PayloadCreateTask = {
+    project_id: string; // ID ของ Project ที่ Task นี้เกี่ยวข้อง
     task_name: string;
     description?: string;
     budget?: number;

@@ -1,6 +1,7 @@
 import { Text, Dialog, Button, Flex, TextField, Select } from "@radix-ui/themes";
 import { patchProject } from "@/services/project.service";
-import { useState } from "react";
+import { getUser } from "@/services/user.service";
+import { useState, useEffect } from "react";
 
 type DialogProjectProps = {
     getProjectData: Function;
@@ -10,6 +11,12 @@ type DialogProjectProps = {
     status: string;
     start_date: string;
     end_date: string;
+    user_id?: string;
+};
+
+type User = {
+    user_id: string;
+    username: string;
 };
 
 const DialogEdit = ({
@@ -20,6 +27,7 @@ const DialogEdit = ({
     status,
     start_date,
     end_date,
+    user_id: currentUserId
 }: DialogProjectProps) => {
     const [patchProjectName, setPatchProjectName] = useState(project_name);
     const [patchBudget, setPatchBudget] = useState(budget);
@@ -29,6 +37,9 @@ const DialogEdit = ({
     const [patchStatus, setPatchStatus] = useState(status);
     const [patchStartDate, setPatchStartDate] = useState(start_date);
     const [patchEndDate, setPatchEndDate] = useState(end_date);
+    const [patchUserId, setPatchUserId] = useState(currentUserId || ""); // For user_id
+
+    const [users, setUsers] = useState<User[]>([]); // State to hold user data
 
     const handleBudgetChange = (event: any) => {
         const value = event.target.value.replace(/,/g, ""); // Remove commas
@@ -47,9 +58,11 @@ const DialogEdit = ({
             project_id,
             project_name: patchProjectName,
             budget: patchBudget,
+            actual: budget, // Add the actual field to satisfy the type requirement
             status: patchStatus,
             start_date: patchStartDate,
             end_date: patchEndDate,
+            user_id: patchUserId || undefined, // Include user_id if needed
         })
             .then((response) => {
                 if (response.statusCode === 200) {
@@ -66,6 +79,16 @@ const DialogEdit = ({
                 alert("Failed to update project. Please try again.");
             });
     };
+
+    useEffect(() => {
+        getUser().then(response => {
+            if (response.success) {
+                setUsers(response.responseObject);
+            }
+        }).catch(error => {
+            console.error("ไม่สามารถดึงข้อมูลผู้ใช้ได้", error);
+        });
+    }, []);
 
     return (
         <Dialog.Root>
@@ -92,6 +115,29 @@ const DialogEdit = ({
                             placeholder="Enter project name"
                             onChange={(event) => setPatchProjectName(event.target.value)}
                         />
+                    </label>
+                    <label>
+                        <Text as="div" size="2" mb="1" weight="bold">
+                            Owner
+                        </Text>
+                        <Select.Root
+                            value={patchUserId}
+                            onValueChange={(value: string) => setPatchUserId(value)}
+                        >
+                            <Select.Trigger className="select-trigger">
+                                {patchUserId 
+                                    ? users.find(user => user.user_id === patchUserId)?.username || "Select owner" 
+                                    : "No owner"}
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Item value="null">No owner</Select.Item>
+                                {users.map(user => (
+                                    <Select.Item key={user.user_id} value={user.user_id}>
+                                        {user.username}
+                                    </Select.Item>
+                                ))}
+                            </Select.Content>
+                        </Select.Root>
                     </label>
                     <label>
                         <Text as="div" size="2" mb="1" weight="bold">

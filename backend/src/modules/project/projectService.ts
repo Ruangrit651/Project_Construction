@@ -3,6 +3,8 @@ import { ResponseStatus, ServiceResponse } from "@common/models/serviceResponse"
 import { ProjectRepository } from "@modules/project/projectRepository";
 import { TypePayloadProject } from "@modules/project/projectModel";
 import { project } from "@prisma/client";
+import { RelationRepository } from "@modules/relation/relationRepository";
+import { UserRepository } from "@modules/user/userRepository";
 
 
 export const projectService = {
@@ -36,6 +38,152 @@ export const projectService = {
         }
     },
 
+    // เพิ่มฟังก์ชันเพื่อดึงข้อมูลผู้ใช้ทั้งหมดในโปรเจค
+    getProjectUsers: async (project_id: string) => {
+        try {
+            // ตรวจสอบว่าโปรเจคมีอยู่จริง
+            const project = await ProjectRepository.findById(project_id);
+            if (!project) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "Project not found",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            // ดึงข้อมูลความสัมพันธ์ทั้งหมดของโปรเจค
+            const relations = await RelationRepository.findByProjectId(project_id);
+
+            return new ServiceResponse(
+                ResponseStatus.Success,
+                "Project users retrieved successfully",
+                relations,
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                "Error retrieving project users: " + (ex as Error).message,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
+
+    // เพิ่มฟังก์ชันเพื่อเพิ่มผู้ใช้เข้าโปรเจค
+    addUserToProject: async (project_id: string, user_id: string, requestUserId: string) => {
+        try {
+            // ตรวจสอบว่าโปรเจคมีอยู่จริง
+            const project = await ProjectRepository.findById(project_id);
+            if (!project) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "Project not found",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            // ตรวจสอบว่าผู้ใช้มีอยู่จริง
+            const user = await UserRepository.findById(user_id);
+            if (!user) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "User not found",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            // ตรวจสอบว่าความสัมพันธ์นี้มีอยู่แล้วหรือไม่
+            const existingRelation = await RelationRepository.findByProjectAndUser(project_id, user_id);
+            if (existingRelation) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "User is already in this project",
+                    null,
+                    StatusCodes.BAD_REQUEST
+                );
+            }
+
+            // สร้างความสัมพันธ์ใหม่
+            const relation = await RelationRepository.create({
+                project_id,
+                user_id
+            });
+
+            return new ServiceResponse(
+                ResponseStatus.Success,
+                "User added to project successfully",
+                relation,
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                "Error adding user to project: " + (ex as Error).message,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
+
+    // เพิ่มฟังก์ชันเพื่อลบผู้ใช้ออกจากโปรเจค
+    removeUserFromProject: async (project_id: string, user_id: string, requestUserId: string) => {
+        try {
+            // ตรวจสอบว่าโปรเจคมีอยู่จริง
+            const project = await ProjectRepository.findById(project_id);
+            if (!project) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "Project not found",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            // ตรวจสอบว่าผู้ใช้มีอยู่จริง
+            const user = await UserRepository.findById(user_id);
+            if (!user) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "User not found",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            // ตรวจสอบว่าผู้ใช้อยู่ในโปรเจคหรือไม่
+            const existingRelation = await RelationRepository.findByProjectAndUser(project_id, user_id);
+            if (!existingRelation) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "User is not in this project",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            // ลบความสัมพันธ์
+            await RelationRepository.deleteByProjectAndUser(project_id, user_id);
+
+            return new ServiceResponse(
+                ResponseStatus.Success,
+                "User removed from project successfully",
+                null,
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                "Error removing user from project: " + (ex as Error).message,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
+
     // สร้างโปรเจกต์ใหม่
     create: async (payload: TypePayloadProject) => {
         try {
@@ -48,7 +196,23 @@ export const projectService = {
                     StatusCodes.BAD_REQUEST
                 );
             }
+
+            // ตรวจสอบว่ามี user_id มาหรือไม่
+            if (!payload.user_id && payload.created_by) {
+                payload.user_id = payload.created_by;
+            }
+
             const project = await ProjectRepository.create(payload);
+
+            // อัปเดต project_id ใน User ถ้ามี user_id
+            if (payload.user_id) {
+                const prisma = ProjectRepository.getPrismaClient();
+                await prisma.user.update({
+                    where: { user_id: payload.user_id },
+                    data: { project_id: project.project_id }
+                });
+            }
+
             return new ServiceResponse<project>(
                 ResponseStatus.Success,
                 "Create project success",
@@ -93,6 +257,28 @@ export const projectService = {
                 }
             }
 
+            // ถ้ามีการเปลี่ยนแปลง user_id
+            if (payload.user_id && existingProject.user_id !== payload.user_id) {
+                const prisma = ProjectRepository.getPrismaClient();
+
+                // อัปเดต project_id ของ user เก่าให้เป็น null (ถ้ามี)
+                if (existingProject.user_id) {
+                    await prisma.user.updateMany({
+                        where: {
+                            user_id: existingProject.user_id,
+                            project_id: project_id
+                        },
+                        data: { project_id: null }
+                    });
+                }
+
+                // อัปเดต project_id ของ user ใหม่
+                await prisma.user.update({
+                    where: { user_id: payload.user_id },
+                    data: { project_id: project_id }
+                });
+            }
+
             const updatedProject = await ProjectRepository.update(project_id, payload);
             return new ServiceResponse<project>(
                 ResponseStatus.Success,
@@ -111,7 +297,7 @@ export const projectService = {
         }
     },
 
-    // ลบโปรเจกต์
+    // แก้ไขฟังก์ชัน delete เพื่อลบความสัมพันธ์ทั้งหมดเมื่อลบโปรเจค
     delete: async (project_id: string) => {
         try {
             // ตรวจสอบว่าโปรเจกต์มีอยู่จริง
@@ -125,6 +311,21 @@ export const projectService = {
                 );
             }
 
+            // อัปเดต project_id ของ users ที่เกี่ยวข้องเป็น null
+            if (existingProject.user_id) {
+                const prisma = ProjectRepository.getPrismaClient();
+                await prisma.user.updateMany({
+                    where: {
+                        project_id: project_id
+                    },
+                    data: { project_id: null }
+                });
+            }
+
+            // ลบความสัมพันธ์ทั้งหมดของโปรเจค
+            await RelationRepository.deleteAllByProject(project_id);
+
+            // ลบโปรเจค
             await ProjectRepository.delete(project_id);
             return new ServiceResponse(
                 ResponseStatus.Success,
@@ -145,7 +346,7 @@ export const projectService = {
 
     checkManagerOwnership: async (projectId: string, managerId: string) => {
         try {
-            const project = await projectRepository.findById(projectId);
+            const project = await ProjectRepository.findById(projectId);
 
             if (!project) {
                 return new ServiceResponse(

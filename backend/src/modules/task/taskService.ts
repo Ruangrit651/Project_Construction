@@ -20,20 +20,78 @@ export const taskService = {
 
     create: async (payload: TypePayloadTask) => {
         try {
-            // ตรวจสอบว่าโปรเจกต์มีอยู่หรือไม่
-            if (payload.project_id) {
-                const projectExists = await ProjectRepository.findById(payload.project_id);
-                if (!projectExists) {
+            // ตรวจสอบว่า Project ID ถูกระบุหรือไม่
+            if (!payload.project_id) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "Project ID is required for creating a task",
+                    null,
+                    StatusCodes.BAD_REQUEST
+                );
+            }
+    
+            // ตรวจสอบว่าโปรเจกต์มีอยู่จริงหรือไม่
+            const parentProject = await ProjectRepository.findById(payload.project_id);
+            if (!parentProject) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "Parent project not found",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+    
+            // ตรวจสอบว่า task dates อยู่ภายในช่วงเวลาของ project
+            if (payload.start_date && parentProject.start_date) {
+                const taskStartDate = new Date(payload.start_date);
+                const projectStartDate = new Date(parentProject.start_date);
+    
+                if (taskStartDate < projectStartDate) {
                     return new ServiceResponse(
                         ResponseStatus.Failed,
-                        "Project not found",
+                        "Task start date cannot be earlier than the parent project start date",
                         null,
-                        StatusCodes.NOT_FOUND
+                        StatusCodes.BAD_REQUEST
                     );
                 }
             }
-
+    
+            if (payload.end_date && parentProject.end_date) {
+                const taskEndDate = new Date(payload.end_date);
+                const projectEndDate = new Date(parentProject.end_date);
+    
+                if (taskEndDate > projectEndDate) {
+                    return new ServiceResponse(
+                        ResponseStatus.Failed,
+                        "Task end date cannot be later than the parent project end date",
+                        null,
+                        StatusCodes.BAD_REQUEST
+                    );
+                }
+            }
+    
+            // ตรวจสอบว่า task end_date ไม่เกิดก่อน start_date
+            if (payload.start_date && payload.end_date) {
+                const startDate = new Date(payload.start_date);
+                const endDate = new Date(payload.end_date);
+    
+                if (endDate < startDate) {
+                    return new ServiceResponse(
+                        ResponseStatus.Failed,
+                        "Task end date cannot be earlier than start date",
+                        null,
+                        StatusCodes.BAD_REQUEST
+                    );
+                }
+            }
+    
+            // สร้าง task
             const task = await TaskRepository.create(payload);
+            
+            // อัปเดต progress ของ project หลังจากสร้าง task (ถ้ามีฟังก์ชันนี้)
+            // ถ้ามีฟังก์ชัน updateProjectProgress เหมือนใน subtask
+            // await updateProjectProgress(payload.project_id, payload.created_by || "system");
+            
             return new ServiceResponse<task>(
                 ResponseStatus.Success,
                 "Create task success",
@@ -116,71 +174,71 @@ export const taskService = {
         }
     },
 
-    // อัปเดตวันที่เริ่มต้น
-    updateStartDate: async (task_id: string, payload: { start_date: string, updated_by: string }) => {
-        try {
-            // Check if the task exists
-            const existingTask = await TaskRepository.findById(task_id);
-            if (!existingTask) {
-                return new ServiceResponse(
-                    ResponseStatus.Failed,
-                    "Not found task",
-                    null,
-                    StatusCodes.NOT_FOUND
-                );
-            }
+    // // อัปเดตวันที่เริ่มต้น
+    // updateStartDate: async (task_id: string, payload: { start_date: string, updated_by: string }) => {
+    //     try {
+    //         // Check if the task exists
+    //         const existingTask = await TaskRepository.findById(task_id);
+    //         if (!existingTask) {
+    //             return new ServiceResponse(
+    //                 ResponseStatus.Failed,
+    //                 "Not found task",
+    //                 null,
+    //                 StatusCodes.NOT_FOUND
+    //             );
+    //         }
 
-            // Update the start date
-            const updatedTask = await TaskRepository.updateStartDate(task_id, payload.start_date, payload.updated_by);
-            return new ServiceResponse<task>(
-                ResponseStatus.Success,
-                "Update task start date success",
-                updatedTask,
-                StatusCodes.OK
-            );
-        } catch (ex) {
-            const errorMessage = "Error updating task start date: " + (ex as Error).message;
-            return new ServiceResponse(
-                ResponseStatus.Failed,
-                errorMessage,
-                null,
-                StatusCodes.INTERNAL_SERVER_ERROR
-            );
-        }
-    },
+    //         // Update the start date
+    //         const updatedTask = await TaskRepository.updateStartDate(task_id, payload.start_date, payload.updated_by);
+    //         return new ServiceResponse<task>(
+    //             ResponseStatus.Success,
+    //             "Update task start date success",
+    //             updatedTask,
+    //             StatusCodes.OK
+    //         );
+    //     } catch (ex) {
+    //         const errorMessage = "Error updating task start date: " + (ex as Error).message;
+    //         return new ServiceResponse(
+    //             ResponseStatus.Failed,
+    //             errorMessage,
+    //             null,
+    //             StatusCodes.INTERNAL_SERVER_ERROR
+    //         );
+    //     }
+    // },
 
-    // อัปเดตวันที่สิ้นสุด
-    updateEndDate: async (task_id: string, payload: { end_date: string, updated_by: string }) => {
-        try {
-            // Check if the task exists
-            const existingTask = await TaskRepository.findById(task_id);
-            if (!existingTask) {
-                return new ServiceResponse(
-                    ResponseStatus.Failed,
-                    "Not found task",
-                    null,
-                    StatusCodes.NOT_FOUND
-                );
-            }
+    // // อัปเดตวันที่สิ้นสุด
+    // updateEndDate: async (task_id: string, payload: { end_date: string, updated_by: string }) => {
+    //     try {
+    //         // Check if the task exists
+    //         const existingTask = await TaskRepository.findById(task_id);
+    //         if (!existingTask) {
+    //             return new ServiceResponse(
+    //                 ResponseStatus.Failed,
+    //                 "Not found task",
+    //                 null,
+    //                 StatusCodes.NOT_FOUND
+    //             );
+    //         }
 
-            // Update the end date
-            const updatedTask = await TaskRepository.updateEndDate(task_id, payload.end_date, payload.updated_by);
-            return new ServiceResponse<task>(
-                ResponseStatus.Success,
-                "Update task end date success",
-                updatedTask,
-                StatusCodes.OK
-            );
-        } catch (ex) {
-            const errorMessage = "Error updating task end date: " + (ex as Error).message;
-            return new ServiceResponse(
-                ResponseStatus.Failed,
-                errorMessage,
-                null,
-                StatusCodes.INTERNAL_SERVER_ERROR
-            );
-        }
-    },
+    //         // Update the end date
+    //         const updatedTask = await TaskRepository.updateEndDate(task_id, payload.end_date, payload.updated_by);
+    //         return new ServiceResponse<task>(
+    //             ResponseStatus.Success,
+    //             "Update task end date success",
+    //             updatedTask,
+    //             StatusCodes.OK
+    //         );
+    //     } catch (ex) {
+    //         const errorMessage = "Error updating task end date: " + (ex as Error).message;
+    //         return new ServiceResponse(
+    //             ResponseStatus.Failed,
+    //             errorMessage,
+    //             null,
+    //             StatusCodes.INTERNAL_SERVER_ERROR
+    //         );
+    //     }
+    // },
 
     findByProjectId: async (projectId: string) => {
         try {

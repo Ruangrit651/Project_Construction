@@ -1,4 +1,4 @@
-import { CREATE_TASK, GET_TASK_ALL , UPDATE_TASK ,DELETE_TASK, UPDATE_START_DATE_TASK, UPDATE_END_DATE_TASK} from "@/apis/endpoint.api";
+import { CREATE_TASK, GET_TASK_ALL , UPDATE_TASK ,DELETE_TASK, UPDATE_START_DATE_TASK, UPDATE_END_DATE_TASK, GET_TASK_PROJECT } from "@/apis/endpoint.api";
 import mainApi from "@/apis/main.api";
 import { PayloadCreateTask , PayloadDeleteTask ,PayloadUpdateTask, PayloadUpdateStartDate ,PayloadUpdateEndDate} from "@/types/requests/request.task";
 import { TaskResponse } from "@/types/response/response.task";
@@ -50,4 +50,11 @@ export const deleteTask = async (data: PayloadDeleteTask) => {
   );
   return response;
 
+}
+
+export const getTaskProject = async (projectId: string) => {
+  const { data: response } = await mainApi.get<TaskResponse>(
+      GET_TASK_PROJECT + "/" + projectId
+  );
+  return response;
 }

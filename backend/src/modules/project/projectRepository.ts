@@ -33,8 +33,18 @@ export const ProjectRepository = {
                 // created_by: true,
                 // updated_at: true,
                 // updated_by: true
+                owner: {
+                    select: {
+                        user_id: true,
+                        username: true,
+                    }
+                }
             }
         });
+    },
+
+    getPrismaClient: () => {
+        return prisma;
     },
 
     // src/modules/project/project.repository.ts
@@ -65,7 +75,14 @@ export const ProjectRepository = {
                 created_at: true,
                 created_by: true,
                 updated_at: true,
-                updated_by: true
+                updated_by: true,
+                user_id: true,
+                owner: {
+                    select: {
+                        user_id: true,
+                        username: true,
+                    }
+                }
             }
         });
     },
@@ -89,6 +106,7 @@ export const ProjectRepository = {
         const startDate = payload.start_date;
         const setPayload: any = {
             project_name: project_name,
+            user_id: payload.user_id,
             actual: payload.actual,
             budget: payload.budget,
             start_date: startDate,
