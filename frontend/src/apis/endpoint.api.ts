@@ -58,3 +58,19 @@ export const GET_PROGRESS_ALL = "/v1/progress/get";
 export const CREATE_PROGRESS = "/v1/progress/create";
 export const UPDATE_PROGRESS = "/v1/progress/update";
 export const DELETE_PROGRESS = "/v1/progress/delete";
+
+// relations
+export const GET_ALL_RELATIONS = "/v1/relations/get";
+export const GET_PROJECT_RELATIONS = "/v1/relations/project";
+export const GET_USER_RELATIONS = "/v1/relations/user";
+export const CREATE_RELATION = "/v1/relations/create";
+export const DELETE_RELATION = "/v1/relations/delete";
+export const DELETE_RELATION_BY_PROJECT_USER = "/v1/relations/remove";
+
+// project users management (alternative API for relation management)
+export const GET_PROJECT_USERS = "/v1/project/users";
+export const ADD_USER_TO_PROJECT = "/v1/project/users";
+export const REMOVE_USER_FROM_PROJECT = "/v1/project/users";
+
+// user projects management
+export const GET_USER_PROJECTS = "/v1/user/projects";

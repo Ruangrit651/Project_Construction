@@ -1,6 +1,7 @@
 import { Text, Dialog, Button, Flex, TextField, Select } from "@radix-ui/themes";
 import { postProject } from "@/services/project.service";
-import { useState,useEffect } from "react";
+import { createRelation } from "@/services/relation.service";
+import { useState, useEffect } from "react";
 import { getUser } from "@/services/user.service";
 
 type DialogProjectProps = {
@@ -30,6 +31,7 @@ const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
         // เรียกใช้ API เพื่อดึงรายการผู้ใช้
         getUser().then(response => {
             if (response.success) {
+                console.log("Loaded users:", response.responseObject);
                 setUsers(response.responseObject);
             }
         }).catch(error => {
@@ -55,35 +57,74 @@ const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
         setFormattedBudget(formatNumber(numericValue));
     };
 
+    // ฟังก์ชันสำหรับสร้างโปรเจกต์
     const handleCreateProject = async () => {
-        if (!projectName || !budget || !startDate || !endDate || !selectedUserId) {
+        if (!projectName || !budget || !startDate || !endDate) {
             alert("Please enter all required fields (project name, budget, start date, and end date).");
             return;
         }
 
-        postProject({ project_name: projectName, actual, budget, status, start_date: startDate, end_date: endDate, user_id: selectedUserId })
-            .then((response) => {
-                if (response.statusCode === 200) {
-                    // Clear form fields
-                    setProjectName("");
-                    setActual(0);
-                    setBudget(0);
-                    setFormattedBudget("0");
-                    setStatus("In progress");
-                    setStartDate("");
-                    setEndDate("");
-                    // Refresh project data
-                    getProjectData();
-                } else if (response.statusCode === 400) {
-                    alert(response.message);
-                } else {
-                    alert("Unexpected error: " + response.message);
+        try {
+            // สร้างข้อมูลโปรเจกต์
+            const projectData: any = {
+                project_name: projectName,
+                actual,
+                budget,
+                status,
+                start_date: startDate,
+                end_date: endDate
+            };
+
+            // ถ้าเลือก user ให้เพิ่ม user_id เข้าไปในข้อมูลโปรเจกต์
+            if (selectedUserId) {
+                projectData.user_id = selectedUserId;
+            }
+
+            console.log("Project data to be sent:", projectData);
+
+            // สร้างโปรเจกต์
+            const projectResponse = await postProject(projectData);
+
+            console.log("Project response:", projectResponse);
+
+            if (projectResponse.statusCode === 200) {
+                // กรณีส่งผ่าน user_id แต่ backend ไม่ได้สร้างความสัมพันธ์ให้ เราสามารถใช้ createRelation ได้
+                if (selectedUserId) {
+                    try {
+                        await createRelation({
+                            project_id: projectResponse.responseObject.project_id,
+                            user_id: selectedUserId
+                        });
+                        // หมายเหตุ: ถ้า backend ของคุณสร้างความสัมพันธ์อัตโนมัติ คำสั่งนี้อาจทำให้เกิดการซ้ำซ้อน
+                        // ควรตรวจสอบการทำงานของ backend
+                    } catch (relationError) {
+                        console.error("Failed to create relation:", relationError);
+                        // ไม่จำเป็นต้องแจ้งผู้ใช้ เพราะโปรเจกต์ถูกสร้างสำเร็จแล้ว
+                    }
                 }
-            })
-            .catch((error) => {
-                console.error("Error creating project", error.response?.data || error.message);
-                alert("Failed to create project. Please try again.");
-            });
+
+                // Clear form fields
+                setProjectName("");
+                setActual(0);
+                setFormattedActual("0");
+                setBudget(0);
+                setFormattedBudget("0");
+                setStatus("In progress");
+                setStartDate("");
+                setEndDate("");
+                setSelectedUserId("");
+
+                // Refresh project data
+                getProjectData();
+            } else if (projectResponse.statusCode === 400) {
+                alert(projectResponse.message);
+            } else {
+                alert("Unexpected error: " + projectResponse.message);
+            }
+        } catch (error: any) {
+            console.error("Error creating project", error.response?.data || error.message);
+            alert("Failed to create project. Please try again.");
+        }
     };
 
     return (
@@ -109,12 +150,15 @@ const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
                             เจ้าของโปรเจกต์
                         </Text>
                         <Select.Root
-                            defaultValue=""
-                            onValueChange={(userId: string) => setSelectedUserId(userId)}
+                            value={selectedUserId}
+                            onValueChange={(userId: string) => {
+                                console.log("Selected user changed to:", userId);
+                                setSelectedUserId(userId);
+                            }}
                         >
                             <Select.Trigger className="select-trigger" placeholder="เลือกเจ้าของโปรเจกต์">
-                                {selectedUserId ? 
-                                    users.find(user => user.user_id === selectedUserId)?.username : 
+                                {selectedUserId ?
+                                    users.find(user => user.user_id === selectedUserId)?.username :
                                     "เลือกเจ้าของโปรเจกต์"}
                             </Select.Trigger>
                             <Select.Content>
@@ -199,7 +243,10 @@ const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
                         </Button>
                     </Dialog.Close>
                     <Dialog.Close asChild>
-                        <Button className="cursor-pointer" onClick={handleCreateProject}>Save</Button>
+                        <Button className="cursor-pointer" onClick={() => {
+                            console.log("Before save - Selected user ID:", selectedUserId);
+                            handleCreateProject();
+                        }}>Save</Button>
                     </Dialog.Close>
                 </Flex>
             </Dialog.Content>
