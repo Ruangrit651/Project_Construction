@@ -86,25 +86,25 @@ const NavbarMain = () => {
           <h2 className="text-xl font-bold">CITE Construction</h2>
           <NavigationMenu.List className="flex gap-6">
             <NavigationMenu.Item>
-              <Link to="/ManagerDash" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
+              <Link to="/dashboard" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
                 <HomeIcon />
                 Dashboard
               </Link>
             </NavigationMenu.Item>
             <NavigationMenu.Item>
-              <Link to="/ManagerTask" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
+              <Link to="/tasklist" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
                 <ListBulletIcon />
                 Tasklist
               </Link>
             </NavigationMenu.Item>
             <NavigationMenu.Item>
-              <Link to="/ManagerPlan" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
+              <Link to="/timeline" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
                 <CalendarIcon />
                 Timeline
               </Link>
             </NavigationMenu.Item>
             <NavigationMenu.Item>
-              <Link to="/ManagerResource" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
+              <Link to="/resources" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
                 <BarChartIcon />
                 Resource/Budget
               </Link>
