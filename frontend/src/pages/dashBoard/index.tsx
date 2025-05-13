@@ -13,14 +13,17 @@ import BudgetSummaryEAC from "./BudgetSummaryEAC"; // Ensure this path is correc
 const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
   if (!projects || projects.length === 0) return null;
 
-  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC (Budget At Completion)
-  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0); // AC (Actual Cost)
-  const totalProgress = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0) / projects.length; // ความก้าวหน้าเฉลี่ย (%)
+  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0); // AC
 
-  const earnedValue = (totalProgress / 100) * totalBudget; // EV (Earned Value)
+  // คำนวณ EV (Earned Value) แยกสำหรับแต่ละโปรเจกต์
+  const earnedValue = projects.reduce(
+    (sum, project) =>
+      sum + ((project.completionRate || 0) / 100) * Number(project.totalBudget || 0),
+    0
+  ); // EV
+
   const eac = totalAmountSpent + (totalBudget - earnedValue); // สูตรคำนวณ EAC
-
-
   return eac;
 };
 
@@ -76,7 +79,7 @@ const calculateCompletionRate = (projects: TypeDashboard[] | null): number => {
   if (!projects || projects.length === 0) return 0;
 
   const totalCompletion = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0);
-  return (totalCompletion / projects.length) * 100; // เฉลี่ยเปอร์เซ็นต์ของ completion rate
+  return projects.length > 0 ? totalCompletion / projects.length : 0; // ตรวจสอบจำนวนโปรเจกต์ก่อนหาร
 };
 
 // ฟังก์ชันคำนวณจำนวนวันรวมที่ใช้งานไปแล้ว (นับจากวันที่เริ่มจนถึงวันนี้)
@@ -99,92 +102,73 @@ const calculateUtilizedDuration = (projects: TypeDashboard[] | null): number => 
 const Dashboard = () => {
   // ตัวแปร state สำหรับเก็บข้อมูลโปรเจกต์ทั้งหมด
   const [projectDetails, setProjectDetails] = useState<TypeDashboard[] | null>(null);
-  // ตัวแปร state สำหรับเก็บโปรเจกต์ที่ผ่านการกรองแล้ว
   const [filteredProjects, setFilteredProjects] = useState<TypeDashboard[] | null>(null);
-  // ตัวเลือกชื่อโปรเจกต์ทั้งหมด (ใช้สำหรับ dropdown filter)
   const [projectOptions, setProjectOptions] = useState<string[]>(["All"]);
-  // รายชื่อโปรเจกต์ที่ผู้ใช้เลือก (ค่าเริ่มต้นเป็น "All")
   const [selectedProjects, setSelectedProjects] = useState<string[]>(["All"]);
-  // รายการสถานะโปรเจกต์ที่เลือก (ค่าเริ่มต้นเป็น "All")
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["All"]);
-  // สถานะโหลดข้อมูล
   const [loading, setLoading] = useState(true);
-  // State สำหรับสลับการแสดงผล
   const [showAsPercent, setShowAsPercent] = useState(true);
 
-  // คำนวณค่า actualBudget และ estimatedEAC
+  const aggregatedValues = filteredProjects ? calculateAggregatedValues(filteredProjects) : null;
+  const completionRate = filteredProjects ? calculateCompletionRate(filteredProjects) : 0;
+  const totalAmountSpent = filteredProjects ? calculateTotalAmountSpent(filteredProjects) : 0;
+  const utilizedDays = filteredProjects ? calculateUtilizedDuration(filteredProjects) : 0;
+
   const actualBudget = filteredProjects
     ? filteredProjects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0)
     : 0;
 
   const estimatedEAC = calculateLocalEAC(filteredProjects) || 0;
 
-  // คำนวณค่า Budget Variance 
+  const { percent, isOverBudget, overBudgetPercent } = calculatePercentOfTarget(filteredProjects);
+
   const [showDetails, setShowDetails] = useState(true);
 
-  // ค่าที่คำนวณได้จากโปรเจกต์ที่กรองแล้ว
-  const totalAmountSpent = calculateTotalAmountSpent(filteredProjects); // ยอดที่ใช้ไปทั้งหมด
-  const completionRate = filteredProjects ? calculateCompletionRate(filteredProjects) : 0; // อัตราการดำเนินการเสร็จสิ้น
-  const utilizedDays = calculateUtilizedDuration(filteredProjects); // จำนวนวันที่ใช้ไปแล้ว
-  const percentOfTarget = filteredProjects
-    ? calculatePercentOfTarget(filteredProjects) // เปอร์เซ็นต์การใช้งบประมาณ
-    : { percent: 0, isOverBudget: false, overBudgetPercent: 0 };
-  const { percent, isOverBudget, overBudgetPercent } = percentOfTarget;
-
-  // ค่ารวมทั้งหมดจากโปรเจกต์ที่เลือก
-  const aggregatedValues = projectDetails
-    ? calculateAggregatedValues(
-      selectedProjects.includes("All")
-        ? projectDetails
-        : projectDetails.filter((project) => selectedProjects.includes(project.project_name))
-    )
-    : null;
-
-  // โหลดข้อมูลโปรเจกต์จาก API เมื่อ component ถูก mount ครั้งแรก
   useEffect(() => {
     const fetchProjectDetails = async () => {
       try {
-        const data = await getDashboard(); // ดึงข้อมูลจาก API
+        const data = await getDashboard();
         if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
-          // ถ้าข้อมูลถูกต้อง
-          setProjectDetails(data.responseObject); // เก็บข้อมูลทั้งหมด
-          setFilteredProjects(data.responseObject); // ตั้งค่าข้อมูลเริ่มต้นให้เหมือนกับทั้งหมด
+          setProjectDetails(data.responseObject);
+          setFilteredProjects(data.responseObject);
 
-          // สร้างรายการชื่อโปรเจกต์ (รวม "All" ไว้ที่หัว)
           const options = ["All", ...data.responseObject.map((project) => project.project_name)];
           setProjectOptions(options);
-          setSelectedProjects(["All"]); // เลือก All เป็นค่าเริ่มต้น
+          setSelectedProjects(["All"]);
         } else {
           console.error("responseObject is not an array or is empty");
+          setProjectDetails([]); // ตั้งค่าเป็น [] หากไม่มีข้อมูล
         }
       } catch (error) {
         console.error("Error fetching project details:", error);
+        setProjectDetails([]); // ตั้งค่าเป็น [] หากเกิดข้อผิดพลาด
       } finally {
-        setLoading(false); // ปิดสถานะกำลังโหลดไม่ว่าจะสำเร็จหรือเกิดข้อผิดพลาด
+        setLoading(false);
       }
     };
 
-    fetchProjectDetails(); // เรียกใช้ฟังก์ชันดึงข้อมูล
+    fetchProjectDetails();
   }, []);
 
-  // กรองข้อมูลโปรเจกต์ใหม่ทุกครั้งที่ผู้ใช้เลือกโปรเจกต์หรือสถานะใหม่
   useEffect(() => {
     if (projectDetails) {
       const filtered = projectDetails.filter((project) => {
-        // ตรวจสอบว่าโปรเจกต์นี้อยู่ในรายการที่เลือกหรือไม่
         const matchesProject =
           selectedProjects.includes("All") || selectedProjects.includes(project.project_name);
-        // ตรวจสอบว่าสถานะของโปรเจกต์ตรงกับที่เลือกหรือไม่
         const matchesStatus =
           selectedStatuses.includes("All") || selectedStatuses.includes(project.status);
 
-        return matchesProject && matchesStatus; // เฉพาะโปรเจกต์ที่ผ่านทั้งสองเงื่อนไข
+        return matchesProject && matchesStatus;
       });
 
-      // อัปเดต filteredProjects ถ้ามีรายการตรงกับเงื่อนไข
-      setFilteredProjects(filtered.length > 0 ? filtered : null);
+      setFilteredProjects(filtered);
     }
-  }, [selectedProjects, selectedStatuses, projectDetails]); // ทำงานใหม่เมื่อ state เหล่านี้เปลี่ยน
+  }, [selectedProjects, selectedStatuses, projectDetails]);
+
+  // ตรวจสอบว่ามีข้อมูลโปรเจกต์หรือไม่
+  if (!projectDetails || projectDetails.length === 0) {
+    return <p className="text-center text-gray-500">No project data available.</p>;
+  }
 
 
   // Render the Dashboard
@@ -365,7 +349,8 @@ const Dashboard = () => {
                   <p className="text-gray-500 text-center">Loading...</p>
                 ) : filteredProjects && filteredProjects.length > 0 ? (
                   filteredProjects.map((project) => {
-                    const progressPercent = (project.actual / project.budget) * 100;
+                    const progressPercent =
+                      project.budget > 0 ? (project.actual / project.budget) * 100 : 0;
                     const progressColor =
                       progressPercent < 80
                         ? "bg-green-400"
@@ -441,13 +426,13 @@ const Dashboard = () => {
                   <div className="border-t border-sky-200 my-2 w-3/4 mx-auto"></div>
 
                   <p className="text-4xl font-extrabold text-sky-900 tracking-wide">
-                    {filteredProjects ? (
+                    {filteredProjects && filteredProjects.length > 0 ? (
                       <>
-                        {calculateLocalEAC(filteredProjects)?.toLocaleString() || "N/A"}{" "}
+                        {calculateLocalEAC(filteredProjects)?.toLocaleString() || "No Data Available"}{" "}
                         <span className="text-xl font-medium">THB</span>
                       </>
                     ) : (
-                      <span className="text-gray-400 text-lg">Loading...</span>
+                      <span className="text-gray-400 text-lg">No Data Available</span>
                     )}
                   </p>
                 </div>
