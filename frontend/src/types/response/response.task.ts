@@ -1,4 +1,5 @@
 export type TypeTaskAll = {
+    project_id?: string;
     task_id: string;
     task_name: string;
     description?: string;

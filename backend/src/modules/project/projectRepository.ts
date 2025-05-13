@@ -1,5 +1,5 @@
-import prisma from "@src/db"; 
-import { project } from "@prisma/client";  
+import prisma from "@src/db";
+import { project } from "@prisma/client";
 import { TypePayloadProject } from "@modules/project/projectModel";
 
 export const Keys = [
@@ -25,7 +25,7 @@ export const ProjectRepository = {
                 project_id: true,
                 project_name: true,
                 actual: true,
-                budget: true,  
+                budget: true,
                 start_date: true,
                 end_date: true,
                 status: true,
@@ -33,6 +33,28 @@ export const ProjectRepository = {
                 // created_by: true,
                 // updated_at: true,
                 // updated_by: true
+                owner: {
+                    select: {
+                        user_id: true,
+                        username: true,
+                    }
+                }
+            }
+        });
+    },
+
+    getPrismaClient: () => {
+        return prisma;
+    },
+
+    // src/modules/project/project.repository.ts
+    findByManagerId: async (managerId: string) => {
+        return prisma.project.findMany({
+            where: {
+                created_by: managerId
+            },
+            orderBy: {
+                created_at: 'desc'
             }
         });
     },
@@ -53,12 +75,19 @@ export const ProjectRepository = {
                 created_at: true,
                 created_by: true,
                 updated_at: true,
-                updated_by: true
+                updated_by: true,
+                user_id: true,
+                owner: {
+                    select: {
+                        user_id: true,
+                        username: true,
+                    }
+                }
             }
         });
     },
-    
-    
+
+
     // ค้นหาโปรเจกต์ตามชื่อ
     findByName: async <Key extends keyof project>(
         project_name: string,
@@ -70,13 +99,14 @@ export const ProjectRepository = {
         }) as Promise<Pick<project, Key> | null>;
     },
 
-    
+
     // สร้างโปรเจกต์ใหม่
     create: async (payload: TypePayloadProject) => {
         const project_name = payload.project_name.trim();
         const startDate = payload.start_date;
         const setPayload: any = {
             project_name: project_name,
+            user_id: payload.user_id,
             actual: payload.actual,
             budget: payload.budget,
             start_date: startDate,

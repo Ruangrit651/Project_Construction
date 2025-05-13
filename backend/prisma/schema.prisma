@@ -40,6 +40,7 @@ model product {
 model project {
   project_id    String    @id @default(uuid()) @db.Uuid
   project_name  String    @unique
+  user_id      String?   @db.Uuid
   budget        Decimal?  @db.Decimal(15, 2)
   actual        Decimal?  @db.Decimal(15, 2)
   start_date    String
@@ -54,8 +55,11 @@ model project {
   // Relations
   created user?  @relation("ProjectCreatedBy", fields: [created_by], references: [user_id])
   updated user?  @relation("ProjectUpdatedBy", fields: [updated_by], references: [user_id])
+  owner   user?  @relation("ProjectOwner", fields: [user_id], references: [user_id])
+
   users   user[]
   tasks   task[]
+  relations relation[]
 }
 
 // User Model
@@ -94,6 +98,23 @@ model user {
 
   createdResources resource[] @relation("ResourceCreatedBy")
   updatedResources resource[] @relation("ResourceUpdatedBy")
+
+  ownedProjects project[] @relation("ProjectOwner")
+  relations relation[]
+}
+
+model relation {
+  relation_id String @id @default(uuid()) @db.Uuid
+  project_id  String @db.Uuid
+  user_id     String @db.Uuid
+  created_at  DateTime @default(now())
+  
+  // Relations
+  project project @relation(fields: [project_id], references: [project_id])
+  user    user    @relation(fields: [user_id], references: [user_id])
+  
+  // สร้าง unique constraint เพื่อป้องกันการซ้ำซ้อนของความสัมพันธ์
+  @@unique([project_id, user_id])
 }
 
 // Permissions Model

@@ -2,6 +2,7 @@ import { Text, Dialog, Button, Flex, TextField, Strong, Select } from "@radix-ui
 import { patchUser } from "@/services/user.service";
 import { getRole } from "@/services/role.service";
 import { getProject } from "@/services/project.service";
+import { createRelation, deleteRelationByProjectUser } from "@/services/relation.service";
 import { useState, useEffect } from "react";
 
 type DialogUserProps = {
@@ -17,10 +18,12 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
   const [patchPassword, setPatchPassword] = useState("");
   const [patchRole, setPatchRole] = useState(role);
   const [patchProject, setPatchProject] = useState(project);
+  const [originalProject, setOriginalProject] = useState(project); // เก็บค่าโปรเจกต์เดิม
   const [roles, setRoles] = useState<{ role_id: string; name: string }[]>([]);
   const [projects, setProjects] = useState<{ project_id: string; project_name: string }[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   // Fetch roles on component load
   useEffect(() => {
@@ -67,21 +70,46 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
   }, []);
 
   const handleUpdateUser = async () => {
-    if (!patchUserName || !patchRole || !patchProject) {
+    if (!patchUserName || !patchRole) {
       alert("Please fill out all required fields.");
       return;
     }
 
+    setProcessing(true);
+
     try {
+      // 1. อัพเดตข้อมูลผู้ใช้
       const response = await patchUser({
         user_id,
         username: patchUserName,
-        password: patchPassword || undefined, // Only update password if provided
+        password: patchPassword || undefined,
         role: patchRole || undefined,
-        project_id: patchProject || undefined ,
       });
+
       if (response.statusCode === 200) {
-        getUserData(); // Refresh user data
+        // 2. จัดการความสัมพันธ์ระหว่างผู้ใช้กับโปรเจกต์
+
+        // เพิ่มความสัมพันธ์ใหม่ (ถ้ามีการเลือก project และเป็น project ที่แตกต่างจากเดิม)
+        if (patchProject && patchProject !== originalProject) {
+          console.log("Adding user to new project:", patchProject);
+
+          try {
+            await createRelation({
+              project_id: patchProject,
+              user_id: user_id
+            });
+            console.log("Successfully added user to project");
+          } catch (relationError) {
+            console.error("Error adding user to new project:", relationError);
+            alert("User information updated but there was an error adding to the new project.");
+          }
+        }
+
+        // Update original project value for next edit
+        setOriginalProject(patchProject);
+
+        // Refresh user data
+        getUserData();
         alert("User updated successfully!");
       } else {
         alert(response.message);
@@ -89,6 +117,8 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
     } catch (error) {
       console.error("Error updating user:", error);
       alert("Failed to update user. Please try again.");
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -199,7 +229,7 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
               Cancel
             </Button>
           </Dialog.Close>
-          <Button className="cursor-pointer" variant="soft" color="orange" onClick={handleUpdateUser}>Update</Button>
+          <Button className="cursor-pointer" variant="soft" color="orange" onClick={handleUpdateUser}>{processing ? "Updating..." : "Update"}</Button>
         </Flex>
       </Dialog.Content>
     </Dialog.Root>
@@ -207,178 +237,3 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
 };
 
 export default DialogEdit;
-
-// import { Text, Dialog, Button, Flex, TextField, Strong, Select } from "@radix-ui/themes";
-// import { patchUser } from "@/services/user.service";
-// import { getRole } from "@/services/role.service";
-// import { getProject } from "@/services/project.service";
-// import { useState, useEffect } from "react";
-
-// type DialogUserProps = {
-//   getUserData: Function;
-//   user_id: string;
-//   username: string;
-//   role: string;
-//   project: string | null;
-// };
-
-// const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUserProps) => {
-//   const [patchUserName, setPatchUserName] = useState(username);
-//   const [patchPassword, setPatchPassword] = useState("");
-//   const [patchRole, setPatchRole] = useState(role);
-//   const [patchProject, setPatchProject] = useState(project || null);
-//   const [roles, setRoles] = useState<{ role_id: string; name: string }[]>([]);
-//   const [projects, setProjects] = useState<{ project_id: string; project_name: string }[]>([]);
-//   const [loadingRoles, setLoadingRoles] = useState(false);
-//   const [loadingProjects, setLoadingProjects] = useState(false);
-//   const [saving, setSaving] = useState(false);
-
-//   // Fetch roles
-//   useEffect(() => {
-//     const fetchRoles = async () => {
-//       setLoadingRoles(true);
-//       try {
-//         const response = await getRole();
-//         if (response.success) setRoles(response.responseObject);
-//       } catch (error) {
-//         console.error("Error fetching roles:", error);
-//       } finally {
-//         setLoadingRoles(false);
-//       }
-//     };
-//     fetchRoles();
-//   }, []);
-
-//   // Fetch projects
-//   useEffect(() => {
-//     const fetchProjects = async () => {
-//       setLoadingProjects(true);
-//       try {
-//         const response = await getProject();
-//         if (response.success) setProjects(response.responseObject);
-//       } catch (error) {
-//         console.error("Error fetching projects:", error);
-//       } finally {
-//         setLoadingProjects(false);
-//       }
-//     };
-//     fetchProjects();
-//   }, []);
-
-//   const handleUpdateUser = async () => {
-//     if (!patchUserName || !patchRole) {
-//       alert("Username and Role are required.");
-//       return;
-//     }
-  
-//     try {
-//       const response = await patchUser({
-//         user_id,
-//         username: patchUserName,
-//         password: patchPassword || undefined,
-//         role: patchRole, // Ensure this is `role_id`
-//         project_id: patchProject || undefined,
-//       });
-//       if (response.success) {
-//         alert("User updated successfully!");
-//         getUserData();
-//       } else {
-//         alert(response.message);
-//       }
-//     } catch (error) {
-//       console.error("Error updating user:", error);
-//       alert("Failed to update user. Please try again.");
-//     }
-//   };
-
-//   return (
-//     <Dialog.Root>
-//       <Dialog.Trigger>
-//         <Button size="1" color="orange" variant="soft">
-//           Edit
-//         </Button>
-//       </Dialog.Trigger>
-//       <Dialog.Content maxWidth="450px">
-//         <Dialog.Title>Edit User</Dialog.Title>
-//         <Flex direction="column" gap="3">
-//           <Text size="2">
-//             <Strong>ID: </Strong>
-//             {user_id}
-//           </Text>
-//           <label>
-//             <Text size="2" weight="bold">New Username</Text>
-//             <TextField.Root
-//               value={patchUserName}
-//               placeholder="Enter new username"
-//               onChange={(e) => setPatchUserName(e.target.value)}
-//             />
-//           </label>
-//           <label>
-//             <Text size="2" weight="bold">Password</Text>
-//             <TextField.Root
-//               value={patchPassword}
-//               type="password"
-//               placeholder="Optional: Enter new password"
-//               onChange={(e) => setPatchPassword(e.target.value)}
-//             />
-//           </label>
-//           <label>
-//             <Text size="2" weight="bold">Role</Text>
-//             {loadingRoles ? (
-//               <Text>Loading roles...</Text>
-//             ) : (
-//               <Select.Root
-//                 value={patchRole}
-//                 onValueChange={setPatchRole}
-//               >
-//                 <Select.Trigger>{roles.find(r => r.role_id === patchRole)?.name || "Select Role"}</Select.Trigger>
-//                 <Select.Content>
-//                   {roles.map((role) => (
-//                     <Select.Item key={role.role_id} value={role.role_id}>
-//                       {role.name}
-//                     </Select.Item>
-//                   ))}
-//                 </Select.Content>
-//               </Select.Root>
-//             )}
-//           </label>
-//           <label>
-//             <Text size="2" weight="bold">Project</Text>
-//             {loadingProjects ? (
-//               <Text>Loading projects...</Text>
-//             ) : (
-//               <Select.Root
-//                 value={patchProject || "none"}
-//                 onValueChange={(value) => setPatchProject(value === "none" ? null : value)}
-//               >
-//                 <Select.Trigger>
-//                   {patchProject
-//                     ? projects.find((proj) => proj.project_id === patchProject)?.project_name || "Select Project"
-//                     : "No Project"}
-//                 </Select.Trigger>
-//                 <Select.Content>
-//                   <Select.Item value="none">No Project</Select.Item>
-//                   {projects.map((proj) => (
-//                     <Select.Item key={proj.project_id} value={proj.project_id}>
-//                       {proj.project_name}
-//                     </Select.Item>
-//                   ))}
-//                 </Select.Content>
-//               </Select.Root>
-//             )}
-//           </label>
-//         </Flex>
-//         <Flex gap="3" justify="end" mt="4">
-//           <Dialog.Close>
-//             <Button variant="soft" color="gray">Cancel</Button>
-//           </Dialog.Close>
-//           <Button onClick={handleUpdateUser} disabled={saving}>
-//             {saving ? "Saving..." : "Save"}
-//           </Button>
-//         </Flex>
-//       </Dialog.Content>
-//     </Dialog.Root>
-//   );
-// };
-
-// export default DialogEdit;

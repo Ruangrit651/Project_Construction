@@ -4,7 +4,7 @@ import { SubTaskRepository } from "@modules/subtask/subtaskRepository";
 import { TaskRepository } from "@modules/task/taskRepository";
 import { TypePayloadSubTask } from "@modules/subtask/subtaskModel";
 import { subtask } from "@prisma/client";
-import { ProgressRepository } from "@modules/progress/progressREpository";
+import { ProgressRepository } from "@modules/progress/progressRepository";
 
 // เพิ่มฟังก์ชันสำหรับคำนวณและอัปเดต progress ของ task จาก subtasks
 async function updateTaskProgress(task_id: string, updater_id: string) {

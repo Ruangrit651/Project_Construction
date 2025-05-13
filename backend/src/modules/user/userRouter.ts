@@ -4,6 +4,7 @@ import { userService } from "@modules/user/userService";
 import { CreateUserSchema, UpdateUserSchema, DeleteUserSchema,ToggleUserStatusSchema } from "@modules/user/userModel";
 import { authenticateJWT } from "@common/middleware/authMiddleware";
 import rolegrop1 from "@common/middleware/roleGroup1";
+import { z } from "zod";
 
 export const userRouter = (() => {
     const router = express.Router();
@@ -16,6 +17,22 @@ export const userRouter = (() => {
         const serviceResponse = await userService.findAll();
         handleServiceResponse(serviceResponse, res);
     });
+
+     // GET projects associated with user
+     router.get("/projects/:user_id", 
+        authenticateJWT,
+        rolegrop1,
+        validateRequest(z.object({
+            params: z.object({
+                user_id: z.string().uuid(),
+            })
+        })), 
+        async (req: Request, res: Response) => {
+            const { user_id } = req.params;
+            const serviceResponse = await userService.getUserProjects(user_id);
+            handleServiceResponse(serviceResponse, res);
+        }
+    );
 
     //test updatr
 

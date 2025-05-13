@@ -33,6 +33,17 @@ export const TaskRepository = {
     });
   },
 
+  findByProjectId: async (projectId: string) => {
+    return prisma.task.findMany({
+      where: {
+        project_id: projectId
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+  },
+
 
   // Find task by name (or any other unique key)
   findByName: async <Key extends keyof task>(

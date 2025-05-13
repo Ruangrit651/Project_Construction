@@ -1,18 +1,3 @@
-// export type TypeUserAll = {
-//     user_id : string;
-//     role : string;
-//     username : string;
-//     password : string;
-//     created_at : string;
-//     created_by : string;
-//     updated_at : string;
-//     updated_by : string;
-//     projects : {
-//         project_name : string;
-//     }
-
-// }
-
 export type TypeUserAll = {
     user_id: string;
     project_id: string;
@@ -30,7 +15,7 @@ export type TypeUserAll = {
         budget: string;
         start_date: string;
         end_date: string;
-        status: boolean;
+        status: string;
         project_image: string | null;
         created_at: string;
         created_by: string | null;

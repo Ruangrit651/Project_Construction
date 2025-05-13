@@ -38,6 +38,7 @@ export const UserRepository = { //Object
             where: { user_id: user_id },
             select: {
                 user_id: true,
+                project_id: true,
                 username: true,
                 role: true,
                 created_at: true,
