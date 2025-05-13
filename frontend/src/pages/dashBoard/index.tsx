@@ -1,718 +1,552 @@
-import React, { useState, useEffect, useRef } from "react";
-import ReactApexChart from "react-apexcharts";
-import { getDashboard } from "@/services/dashboard.service";
+import React, { useState, useEffect } from "react";
+import CustomSelect from "./CustomSelect"; // Ensure this path is correct
 import { TypeDashboard } from "@/types/response/response.dashboard"; // Ensure this path is correct
-// import { getCostBreakdownData } from "@/services/dashboard.service"; // Ensure this path is correct
+import { getDashboard } from "@/services/dashboard.service";
+import BudgetVariance from "./BudgetVariance";
+import ProjectCompletionRate from "./ProjectCompletionRate";
+import UtilizedDuration from "./UtilizedDuration";
+import CostBreakdown from "./CostBreakdown";
+import BudgetSummaryEAC from "./BudgetSummaryEAC"; // Ensure this path is correct
 
-//ฟังก์ชันสำหรับคำนวณ Budget Variance
-const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[] | null }) => {
-  if (!filteredProjects || filteredProjects.length === 0) {
-    return <p>No data available</p>;
-  }
+// ฟังก์ชันคำนวณ Estimate At Completion (EAC)
+// EAC = AC + (BAC - EV)
+const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
+  if (!projects || projects.length === 0) return null;
 
-  const categories = filteredProjects.map(project => project.project_name || "Unnamed Project");
+  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC (Budget At Completion)
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0); // AC (Actual Cost)
+  const totalProgress = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0) / projects.length; // ความก้าวหน้าเฉลี่ย (%)
 
-  const variances = filteredProjects.map(project => {
-    const totalBudget = Number(project.totalBudget || 0);
-    const totalSpent = Number(project.amountSpent || 0);
-    return totalBudget - totalSpent;
-  });
+  const earnedValue = (totalProgress / 100) * totalBudget; // EV (Earned Value)
+  const eac = totalAmountSpent + (totalBudget - earnedValue); // สูตรคำนวณ EAC
 
-  const chartData = {
-    series: [
-      {
-        name: "Budget Variance",
-        data: variances,
-      },
-    ],
-    options: {
-      chart: {
-        type: "bar" as "bar",
-        height: 350,
-        stacked: false,
-      },
-      plotOptions: {
-        bar: {
-          horizontal: false,
-          columnWidth: "45%",
-          colors: {
-            ranges: [
-              {
-                from: Number.MIN_SAFE_INTEGER,
-                to: -0.01,
-                color: "#FF4560", // สีแดง = ขาดทุน
-              },
-              {
-                from: 0,
-                to: Number.MAX_SAFE_INTEGER,
-                color: "#00E396", // สีเขียว = กำไร
-              },
-            ],
-          },
-          dataLabels: {
-            position: "top", // ตำแหน่งข้อความบนหัวแท่ง
-          },
-        },
-      },
-      dataLabels: {
-        enabled: true,
-        formatter: (val: number) =>
-          `${val.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}THB`,
-        offsetY: -20,
-        style: {
-          fontSize: "12px",
-          colors: ["#000"],
-        },
-      },
-      xaxis: {
-        categories,
-        title: {
-          text: "Projects",
-        },
-      },
-      yaxis: {
-        title: {
-          text: "Amount ($)",
-        },
-        labels: {
-          formatter: (value: number) =>
-            value.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            }),
-        },
-      },
-      tooltip: {
-        y: {
-          formatter: (value: number) =>
-            `${value.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}THB`,
-        },
-      },
-      legend: {
-        show: false,
-      },
-    },
-  };
-
-  return (
-    <div>
-      <ReactApexChart
-        options={chartData.options}
-        series={chartData.series}
-        type="bar"
-        height={350}
-      />
-    </div>
-  );
-};
-//--------------------------------------------------------------------------------------------------------------------------------------//
-
-// ฟังก์ชันสำหรับคำนวณ Project Completion Rate
-const ProjectCompletionRate = ({ completionRate }: { completionRate: number }) => {
-  const [state] = useState({
-    series: [completionRate],
-    options: {
-      chart: { height: 350, type: "radialBar" },
-      plotOptions: {
-        radialBar: {
-          hollow: { size: "70%" },
-          dataLabels: {
-            name: {
-              show: true,
-              fontSize: '12px',
-            },
-            value: {
-              show: true,
-              formatter: (val: number) => `${val.toFixed(2)}%`, // แสดงค่าเป็นเปอร์เซ็นต์
-            },
-          },
-        },
-      },
-      labels: ["Project Completion Rate"],
-    },
-  });
-
-  return (
-    <div>
-      <ReactApexChart options={state.options} series={state.series} type="radialBar" height={230} />
-    </div>
-  );
-};
-//--------------------------------------------------------------------------------------------------------------------------------------//
-
-// ฟังก์ชันสำหรับคำนวณ Utilized Duration
-const UtilizedDuration = ({ utilizedDays }: { utilizedDays: number }) => {
-  const [state] = useState({
-    series: [utilizedDays],
-    options: {
-      chart: { height: 350, type: "radialBar" },
-      plotOptions: {
-        radialBar: {
-          hollow: { size: "70%" },
-          dataLabels: {
-            name: { show: true },
-            value: {
-              show: true,
-              formatter: () => `${utilizedDays} day(s)`, // แสดงจำนวนวัน
-            },
-          },
-        },
-      },
-      labels: ["Utilized Duration"],
-    },
-  });
-
-  return (
-    <div>
-      <ReactApexChart options={state.options} series={state.series} type="radialBar" height={230} />
-    </div>
-  );
-};
-//---------------------------------------------------------------------------------------------------------------------------------------//
-
-// ฟังก์ชันสำหรับคำนวณ Cost Breakdown
-const CostBreakdown = ({ filteredProjects }: { filteredProjects: TypeDashboard[] | null }) => {
-  const [state, setState] = useState<{
-    series: number[];
-    options: {
-      chart: { type: string };
-      labels: string[];
-      responsive: { breakpoint: number; options: { chart: { width: number }; legend: { position: string } } }[];
-    };
-  }>({
-    series: [],
-    options: {
-      chart: { type: "donut" },
-      labels: [],
-      responsive: [{ breakpoint: 480, options: { chart: { width: 200 }, legend: { position: "bottom" } } }],
-    },
-  });
-
-  useEffect(() => {
-    if (filteredProjects && filteredProjects.length > 0) {
-      const labels = filteredProjects.map((project) => project.project_name || "Unnamed Project");
-      const series = filteredProjects.map((project) => Number(project.amountSpent) || 0);
-
-      // ใช้ชุดสีแบบขยายเพื่อให้ไม่ซ้ำง่าย
-      const colorPalette = [
-        "#FF4560", "#008FFB", "#00E396", "#FEB019", "#775DD0",
-        "#3F51B5", "#F44336", "#4CAF50", "#9C27B0", "#FF9800",
-        "#607D8B", "#E91E63", "#00BCD4", "#CDDC39", "#8BC34A",
-        "#FF5722", "#795548", "#FFC107", "#03A9F4", "#673AB7"
-      ];
-
-      // ตัดเฉพาะจำนวนสีที่ตรงกับจำนวนโปรเจ็ก
-      const colors = colorPalette.slice(0, labels.length);
-
-      setState((prevState) => ({
-        ...prevState,
-        series,
-        options: {
-          ...prevState.options,
-          labels,
-          colors,
-          dataLabels: {
-            formatter: (val: number) => val.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            }),
-          },
-          tooltip: {
-            y: {
-              formatter: (val: number) => val.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              }),
-            },
-          },
-        },
-      }));
-    } else {
-      setState((prevState) => ({
-        ...prevState,
-        series: [],
-        options: {
-          ...prevState.options,
-          labels: [],
-          colors: [],
-        },
-      }));
-    }
-  }, [filteredProjects]);
-
-  return (
-    <div>
-      {state.series.length > 0 && state.series.some((value) => value > 0) ? (
-        <ReactApexChart options={state.options} series={state.series} type="donut" />
-      ) : (
-        <p>No data available or all values are zero</p>
-      )}
-    </div>
-  );
-};
-//--------------------------------------------------------------------------------------------------------------------------------------//
-export { BudgetVariance, ProjectCompletionRate, UtilizedDuration, CostBreakdown, };
-//--------------------------------------------------------------------------------------------------------------------------------------//
-
-// ฟังก์ชันสำหรับคำนวณ Estimate At Completion (EAC)
-const calculateEAC = (projects: TypeDashboard[] | null) => { // ฟังก์ชันสำหรับคำนวณ EAC
-  if (!projects || projects.length === 0) return null; // ตรวจสอบว่า projects มีข้อมูลหรือไม่
-
-  // คำนวณค่าใช้จ่ายรวม (AC) และค่าใช้จ่ายที่คาดการณ์ (BAC)
-  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC 
-  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0); // AC
-  const totalProgress = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0) / projects.length; // % Progress
-
-  const earnedValue = (totalProgress / 100) * totalBudget; // EV
-
-  // ใช้สูตร EAC = AC + (BAC - EV)
-  const eac = totalAmountSpent + (totalBudget - earnedValue);
 
   return eac;
 };
 
-//========================================================================================
-// ฟังก์ชันสำหรับคำนวณ Percent of Target
-const calculatePercentOfTarget = (projects: TypeDashboard[] | null): { percent: number; isOverBudget: boolean; overBudgetPercent: number } => {
-  if (!projects || projects.length === 0) return { percent: 0, isOverBudget: false, overBudgetPercent: 0 };
+// ฟังก์ชันคำนวณเปอร์เซ็นต์การใช้จ่ายเทียบกับงบประมาณ
+const calculatePercentOfTarget = (projects: TypeDashboard[] | null) => {
+  if (!projects || projects.length === 0) {
+    return { percent: 0, isOverBudget: false, overBudgetPercent: 0 };
+  }
 
-  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0);
-  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0);
+  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // รวมงบประมาณทั้งหมด
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0); // รวมค่าใช้จ่ายจริง
 
-  const percent = totalBudget > 0 ? (totalAmountSpent / totalBudget) * 100 : 0;
-  const isOverBudget = totalAmountSpent > totalBudget; // ตรวจสอบว่าติดลบหรือไม่
-  const overBudgetPercent = isOverBudget ? ((totalAmountSpent - totalBudget) / totalBudget) * 100 : 0;
+  const percent = totalBudget > 0 ? (totalAmountSpent / totalBudget) * 100 : 0; // เปอร์เซ็นต์การใช้งบ
+  const isOverBudget = totalAmountSpent > totalBudget; // ตรวจสอบว่าเกินงบหรือไม่
+  const overBudgetPercent = isOverBudget ? ((totalAmountSpent - totalBudget) / totalBudget) * 100 : 0; // คำนวณ % ที่เกินงบ
 
   return { percent, isOverBudget, overBudgetPercent };
 };
 
-//========================================================================================
-// ฟังก์ชันสำหรับคำนวณ Total Amount Spent
+// ฟังก์ชันคำนวณยอดรวมของค่าใช้จ่ายจริงทั้งหมด
 const calculateTotalAmountSpent = (projects: TypeDashboard[] | null): number => {
   if (!projects || projects.length === 0) return 0;
-
   return projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0);
 };
 
-//========================================================================================
-const CustomSelect = ({ //ฟังก์ชันสำหรับสร้าง Select Dropdown
-  options,
-  placeholder,
-  onChange,
-  selectedOptions,
-}: {
-  options: string[];
-  placeholder: string;
-  onChange: (value: string[]) => void;
-  selectedOptions: string[];
-}) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const handleCheckboxChange = (option: string) => {
-    let updatedOptions: string[];
-
-    if (option === "All") {
-      updatedOptions = selectedOptions.includes("All")
-        ? [] // ยกเลิกการเลือกทั้งหมด
-        : [...options]; // เลือกทั้งหมด
-    } else {
-      updatedOptions = selectedOptions.includes(option)
-        ? selectedOptions.filter((item) => item !== option) // เอาออกถ้าเลือกซ้ำ
-        : [...selectedOptions.filter((item) => item !== "All"), option]; // เพิ่มตัวเลือกใหม่และเอา All ออก
-    }
-
-    onChange(updatedOptions); // ส่งค่าที่เลือกกลับไปยัง Dashboard
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  return (
-    <div ref={dropdownRef} className="relative w-full border rounded p-2 mb-2">
-      <div
-        className="cursor-pointer"
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-      >
-        {selectedOptions.length > 0
-          ? selectedOptions.join(", ") // แสดงตัวเลือกที่เลือก
-          : placeholder}
-      </div>
-      {isDropdownOpen && (
-        <div className="absolute bg-white border rounded mt-2 w-full z-10">
-          {options.map((option) => (
-            <div key={option} className="flex items-center mb-2 p-2 hover:bg-teal-100 cursor-pointer">
-              <input
-                type="checkbox"
-                id={option}
-                name={option}
-                value={option}
-                checked={selectedOptions.includes(option)} // แสดงสถานะติ๊กถูก
-                onChange={() => handleCheckboxChange(option)}
-                className="mr-2"
-              />
-              <label htmlFor={option} className="text-lg">
-                {option}
-              </label>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-//=========================================================================================
-// ฟังก์ชันสำหรับคำนวณ Budget Variance
-const calculateBudgetVariance = (projects: TypeDashboard[] | null) => { //ฟังก์ชันสำหรับคำนวณ Budget Variance
-  if (!projects || projects.length === 0) return { variance: 0, variancePercentage: 0 }; // ตรวจสอบว่า projects มีข้อมูลหรือไม่
+// ฟังก์ชันคำนวณงบประมาณที่เหลือ (Budget Variance)
+// BV = BAC - AC
+const calculateBudgetVariance = (projects: TypeDashboard[] | null) => {
+  if (!projects || projects.length === 0) {
+    return { variance: 0, variancePercentage: 0 };
+  }
 
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0);
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0);
 
-  if (totalBudget === 0) {
-    console.warn("Total budget is zero, cannot calculate variance percentage.");
-  }
-
-  const variance = totalBudget - totalAmountSpent;
-  const variancePercentage = totalBudget > 0 ? (variance / totalBudget) * 100 : 0;
+  const variance = totalBudget - totalAmountSpent; // ค่าความคลาดเคลื่อนของงบ
+  const variancePercentage = totalBudget > 0 ? (variance / totalBudget) * 100 : 0; // เปอร์เซ็นต์ของค่าความคลาดเคลื่อน
 
   return { variance, variancePercentage };
 };
 
-//=========================================================================================
+// ฟังก์ชันคำนวณค่าสรุปรวม (รวมงบประมาณ, ค่าใช้จ่าย, เปอร์เซ็นต์เป้าหมาย)
+const calculateAggregatedValues = (projects: TypeDashboard[]) => {
+  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget), 0);
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent), 0);
+  const percentTarget = totalBudget > 0 ? (totalAmountSpent / totalBudget) * 100 : 0;
 
-const calculateAggregatedValues = (projects: TypeDashboard[]): { totalBudget: number; totalAmountSpent: number; percentTarget: number } => {
-  const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget), 0); // รวม Total Budget
-  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent), 0); // รวม Amount Spent
-  const percentTarget = totalBudget > 0 ? (totalAmountSpent / totalBudget) * 100 : 0; // คำนวณ Percent of Target
-
-  return {
-    totalBudget,
-    totalAmountSpent,
-    percentTarget,
-  };
+  return { totalBudget, totalAmountSpent, percentTarget };
 };
 
-
-// ฟังก์ชันสำหรับคำนวณ Completion Rate
+// ฟังก์ชันคำนวณอัตราความสำเร็จเฉลี่ย (Completion Rate)
 const calculateCompletionRate = (projects: TypeDashboard[] | null): number => {
   if (!projects || projects.length === 0) return 0;
 
   const totalCompletion = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0);
-  return (totalCompletion / projects.length) * 100; // คูณด้วย 100 เพื่อแสดงเป็นเปอร์เซ็นต์
+  return (totalCompletion / projects.length) * 100; // เฉลี่ยเปอร์เซ็นต์ของ completion rate
 };
 
-// ฟังก์ชันสำหรับคำนวณ Utilized Duration
+// ฟังก์ชันคำนวณจำนวนวันรวมที่ใช้งานไปแล้ว (นับจากวันที่เริ่มจนถึงวันนี้)
 const calculateUtilizedDuration = (projects: TypeDashboard[] | null): number => {
   if (!projects || projects.length === 0) return 0;
 
   const today = new Date();
   const totalDays = projects.reduce((sum, project) => {
-    const startDate = new Date(project.start_date);
-    const duration = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))); // คำนวณจำนวนวัน
+    const startDate = new Date(project.start_date); // วันที่เริ่มต้นของโปรเจกต์
+    const duration = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))); // จำนวนวันตั้งแต่เริ่มจนถึงวันนี้
     return sum + duration;
   }, 0);
 
-  console.log("Utilized Duration (days):", totalDays); // Debugging
   return totalDays;
 };
 
+
 // =========================================================================================
-const Dashboard = () => { // ฟังก์ชันหลักของ Dashboard
-  // สร้าง State สำหรับเก็บข้อมูลโปรเจ็กต์
-  const [projectDetails, setProjectDetails] = useState<TypeDashboard[] | null>(null); // เก็บข้อมูลโปรเจ็กต์ทั้งหมด
-  const [filteredProjects, setFilteredProjects] = useState<TypeDashboard[] | null>(null); // เก็บข้อมูลโปรเจ็กต์ที่กรองแล้ว
-  const [projectOptions, setProjectOptions] = useState<string[]>(["All"]); // เก็บตัวเลือกโปรเจ็กต์ 
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(["All"]); // เก็บโปรเจ็กต์ที่เลือก
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["All"]); // เก็บสถานะที่เลือก
-  const [loading, setLoading] = useState(true); // สถานะการโหลดข้อมูล
 
-  // คำนวณ Total Amount Spent
-  const totalAmountSpent = calculateTotalAmountSpent(filteredProjects);
+const Dashboard = () => {
+  // ตัวแปร state สำหรับเก็บข้อมูลโปรเจกต์ทั้งหมด
+  const [projectDetails, setProjectDetails] = useState<TypeDashboard[] | null>(null);
+  // ตัวแปร state สำหรับเก็บโปรเจกต์ที่ผ่านการกรองแล้ว
+  const [filteredProjects, setFilteredProjects] = useState<TypeDashboard[] | null>(null);
+  // ตัวเลือกชื่อโปรเจกต์ทั้งหมด (ใช้สำหรับ dropdown filter)
+  const [projectOptions, setProjectOptions] = useState<string[]>(["All"]);
+  // รายชื่อโปรเจกต์ที่ผู้ใช้เลือก (ค่าเริ่มต้นเป็น "All")
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(["All"]);
+  // รายการสถานะโปรเจกต์ที่เลือก (ค่าเริ่มต้นเป็น "All")
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["All"]);
+  // สถานะโหลดข้อมูล
+  const [loading, setLoading] = useState(true);
+  // State สำหรับสลับการแสดงผล
+  const [showAsPercent, setShowAsPercent] = useState(true);
 
-  // คำนวณ Budget Variance
-  // const budgetVariance = calculateBudgetVariance(filteredProjects); 
-
-  // คำนวณ Completion Rate
-  const completionRate = filteredProjects
-    ? calculateCompletionRate(filteredProjects)
+  // คำนวณค่า actualBudget และ estimatedEAC
+  const actualBudget = filteredProjects
+    ? filteredProjects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0)
     : 0;
 
-  // คำนวณ Utilized Duration
-  const utilizedDays = calculateUtilizedDuration(filteredProjects);
+  const estimatedEAC = calculateLocalEAC(filteredProjects) || 0;
 
-  // คำนวณ Estimate At Completion (EAC)
-  const percentOfTarget = filteredProjects // คำนวณ Percent of Target
-    ? calculatePercentOfTarget(filteredProjects)
+  // คำนวณค่า Budget Variance 
+  const [showDetails, setShowDetails] = useState(true);
+
+  // ค่าที่คำนวณได้จากโปรเจกต์ที่กรองแล้ว
+  const totalAmountSpent = calculateTotalAmountSpent(filteredProjects); // ยอดที่ใช้ไปทั้งหมด
+  const completionRate = filteredProjects ? calculateCompletionRate(filteredProjects) : 0; // อัตราการดำเนินการเสร็จสิ้น
+  const utilizedDays = calculateUtilizedDuration(filteredProjects); // จำนวนวันที่ใช้ไปแล้ว
+  const percentOfTarget = filteredProjects
+    ? calculatePercentOfTarget(filteredProjects) // เปอร์เซ็นต์การใช้งบประมาณ
     : { percent: 0, isOverBudget: false, overBudgetPercent: 0 };
+  const { percent, isOverBudget, overBudgetPercent } = percentOfTarget;
 
-  const { percent, isOverBudget, overBudgetPercent } = percentOfTarget; // ค่าที่คำนวณได้
-
-  // ฟังก์ชันสำหรับคำนวณค่าใช้จ่ายรวม
+  // ค่ารวมทั้งหมดจากโปรเจกต์ที่เลือก
   const aggregatedValues = projectDetails
     ? calculateAggregatedValues(
       selectedProjects.includes("All")
         ? projectDetails
-        : projectDetails.filter((project) =>
-          selectedProjects.includes(project.project_name)
-        )
+        : projectDetails.filter((project) => selectedProjects.includes(project.project_name))
     )
     : null;
 
-  // ดึงข้อมูลจาก API เมื่อ Component ถูกโหลด
+  // โหลดข้อมูลโปรเจกต์จาก API เมื่อ component ถูก mount ครั้งแรก
   useEffect(() => {
     const fetchProjectDetails = async () => {
       try {
-        const data = await getDashboard();
-        console.log("API Response:", data);
-
+        const data = await getDashboard(); // ดึงข้อมูลจาก API
         if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
-          setProjectDetails(data.responseObject);
-          setFilteredProjects(data.responseObject);
+          // ถ้าข้อมูลถูกต้อง
+          setProjectDetails(data.responseObject); // เก็บข้อมูลทั้งหมด
+          setFilteredProjects(data.responseObject); // ตั้งค่าข้อมูลเริ่มต้นให้เหมือนกับทั้งหมด
 
-          // สร้าง projectOptions จากข้อมูลจริง
+          // สร้างรายการชื่อโปรเจกต์ (รวม "All" ไว้ที่หัว)
           const options = ["All", ...data.responseObject.map((project) => project.project_name)];
           setProjectOptions(options);
-
-          // อัปเดต selectedProjects ให้เลือกทั้งหมดโดยค่าเริ่มต้น
-          setSelectedProjects(["All"]);
+          setSelectedProjects(["All"]); // เลือก All เป็นค่าเริ่มต้น
         } else {
           console.error("responseObject is not an array or is empty");
         }
       } catch (error) {
         console.error("Error fetching project details:", error);
       } finally {
-        setLoading(false);
+        setLoading(false); // ปิดสถานะกำลังโหลดไม่ว่าจะสำเร็จหรือเกิดข้อผิดพลาด
       }
     };
 
-    fetchProjectDetails();
+    fetchProjectDetails(); // เรียกใช้ฟังก์ชันดึงข้อมูล
   }, []);
 
-  // ฟังก์ชันสำหรับกรองข้อมูล
+  // กรองข้อมูลโปรเจกต์ใหม่ทุกครั้งที่ผู้ใช้เลือกโปรเจกต์หรือสถานะใหม่
   useEffect(() => {
     if (projectDetails) {
       const filtered = projectDetails.filter((project) => {
+        // ตรวจสอบว่าโปรเจกต์นี้อยู่ในรายการที่เลือกหรือไม่
         const matchesProject =
           selectedProjects.includes("All") || selectedProjects.includes(project.project_name);
+        // ตรวจสอบว่าสถานะของโปรเจกต์ตรงกับที่เลือกหรือไม่
         const matchesStatus =
           selectedStatuses.includes("All") || selectedStatuses.includes(project.status);
 
-        return matchesProject && matchesStatus; // กรองข้อมูลที่ตรงกับทั้ง Project และ Status
+        return matchesProject && matchesStatus; // เฉพาะโปรเจกต์ที่ผ่านทั้งสองเงื่อนไข
       });
 
-      console.log("Filtered Projects:", filtered); // Debugging
+      // อัปเดต filteredProjects ถ้ามีรายการตรงกับเงื่อนไข
       setFilteredProjects(filtered.length > 0 ? filtered : null);
     }
-  }, [selectedProjects, selectedStatuses, projectDetails]);
+  }, [selectedProjects, selectedStatuses, projectDetails]); // ทำงานใหม่เมื่อ state เหล่านี้เปลี่ยน
 
 
+  // Render the Dashboard
   return (
     <div className="min-h-screen bg-gray-400 p-3">
       <div className="container mx-auto">
         {/* Project Filter Section */}
-        <div className="bg-white shadow-lg rounded-lg p-6 mb-4 border border-gray-300">
-          <h2 className="text-xl font-semibold mb-4">Filter Projects</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg shadow-md border border-gray-200">
-              <h3 className="text-lg font-semibold mb-2">Projects</h3>
+        <div className="bg-white shadow-xl rounded-2xl p-5 mb-3 border border-zinc-800 ">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 ">🔍 Filter Projects</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Project Name Filter */}
+            <div className="p-5 rounded-xl border border-gray-800 shadow-sm bg-gray-100 hover:shadow-md transition">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">📁 Project Name</h3>
               <CustomSelect
                 options={projectOptions}
                 placeholder="Select Projects"
-                selectedOptions={selectedProjects} // ส่งค่าที่เลือก
-                onChange={(value) => setSelectedProjects(value)} // อัปเดต selectedProjects
+                selectedOptions={selectedProjects}
+                onChange={(value: string[]) => setSelectedProjects(value)}
               />
             </div>
-            <div className="p-4 rounded-lg shadow-md border border-gray-200">
-              <h3 className="text-lg font-semibold mb-2">Project Status</h3>
+
+            {/* Project Status Filter */}
+            <div className="p-5 rounded-xl border border-gray-800 shadow-sm bg-gray-100 hover:shadow-md transition">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">📌 Project Status</h3>
               <CustomSelect
                 options={["All", "In progress", "Completed", "Suspend operations", "Project Cancellation"]}
                 placeholder="Select Status"
-                selectedOptions={selectedStatuses} // ส่งค่าที่เลือก
-                onChange={(value) => setSelectedStatuses(value)} // อัปเดต selectedStatuses
+                selectedOptions={selectedStatuses}
+                onChange={(value: string[]) => setSelectedStatuses(value)}
               />
             </div>
           </div>
         </div>
 
-        {/* Dashboard Content */}
-        <div className="grid grid-cols-3 gap-3">
-          {/* Project Details */}
-          <div className="bg-white shadow-lg rounded-lg p-2 border border-gray-200">
-            <div className=" bg-indigo-200 shadow-lg rounded-lg border border-gray-200">
-              <h2 className="text-xl font-semibold pl-2 mt-2 ">Project Details</h2>
+        <div className="mb-3">
+          <div className="bg-indigo-100 p-5 rounded-2xl shadow-xl text-center space-y-4 border border-indigo-300 relative">
+            {/* Toggle Button Top-Right */}
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="absolute top-4 right-4 text-indigo-600 hover:text-indigo-900 text-sm font-medium transition"
+              title="Toggle Budget Details"
+            >
+              🔁 {showDetails ? "Hide Details" : "Show Details"}
+            </button>
+
+            {/* Percent Value */}
+            <h2
+              className="text-4xl md:text-5xl font-extrabold text-indigo-800 cursor-pointer hover:text-indigo-900 transition transform hover:scale-105"
+              onClick={() => setShowAsPercent(!showAsPercent)}
+            >
+              {showAsPercent
+                ? `${percent.toFixed(2)}%`
+                : ((percent / 100) * (aggregatedValues?.totalBudget || 0)).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              {showAsPercent ? "" : <span className="text-sm ml-1">THB</span>}
+            </h2>
+            <p className="text-base text-gray-700 font-medium tracking-wide">🎯 Percent of Target Budget</p>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-300 rounded-full h-4 overflow-hidden shadow-inner">
               <div
-                className="space-y-3 p-4 mt-4 bg-indigo-100 shadow-lg rounded-lg border border-gray-200 overflow-y-auto"
-                style={{
-                  minHeight: "280px",
-                  maxHeight: "280px",
-                }}
-              >
-                {loading ? (
-                  <p>Loading...</p>
-                ) : filteredProjects && filteredProjects.length > 0 ? (
-                  filteredProjects.map((project, index) => (
-                    <div
-                      key={project.project_id}
-                      className={`mb-4 ${index !== filteredProjects.length - 1 ? "border-b border-emerald-700 pb-4" : ""}`}
-                    >
-                      <p className="text-lg">
-                        <strong>Project Name:</strong> {project.project_name}
-                      </p>
-                      <p className="text-lg">
-                        <strong>Start Date:</strong> {new Date(project.start_date).toLocaleDateString()}
-                      </p>
-                      <p className="text-lg">
-                        <strong>Finish Date:</strong> {new Date(project.end_date).toLocaleDateString()}
-                      </p>
-                      <p className="text-lg">
-                        <strong>Status:</strong> {project.status}
-                      </p>
-                      <p className="text-lg">
-                        <strong>Actual Cost:</strong> {Number(project.actual).toLocaleString()}
-                        <span className="text-sm">THB</span>
-                      </p>
-                      <p className="text-lg">
-                        <strong>Budget:</strong> {Number(project.budget).toLocaleString()}
-                        <span className="text-sm">THB</span>
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p>No selected projects.</p>
-                )}
-              </div>
+                className={`h-4 rounded-full ${isOverBudget ? "bg-red-500" : percent > 80 ? "bg-yellow-400" : "bg-green-500"}`}
+                style={{ width: `${Math.min(percent, 100)}%`, transition: "width 0.5s ease-in-out" }}
+              />
             </div>
 
+            {/* Over Budget Alert */}
+            {isOverBudget && (
+              <p className="text-red-600 font-semibold mt-2">
+                🚨 Over Budget by {overBudgetPercent.toFixed(2)}%
+              </p>
+            )}
 
-            {/* Budget Summary */}
-            <div className="mt-3 bg-white shadow-lg rounded-lg border border-gray-200">
-              <div className="p-1">
-                <div className="grid rounded-lg shadow-lg bg-red-600">
-                  <h2 className="text-center font-semibold text-l mt-6 mb-4">Estimate At Completion</h2>
-                  <h2 className="text-center font-semibold text-4xl mt-2 mb-6">
+            {/* Budget Overview Grid */}
+            {showDetails && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6 text-sm">
+                {/* Amount Spent */}
+                <div className="bg-white p-4 rounded-xl shadow border border-gray-300 hover:shadow-md transition">
+                  <p className="text-gray-600 mb-1 font-medium">💸 Amount Spent</p>
+                  <p className="text-xl font-bold text-gray-800">
                     {filteredProjects ? (
                       <>
-                        {calculateEAC(filteredProjects)?.toLocaleString() || "N/A"}{" "}
-                        <span className="text-lg">THB</span>
+                        {totalAmountSpent.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{" "}
+                        <span className="text-xs">THB</span>
                       </>
                     ) : (
                       "Loading..."
                     )}
-                  </h2>
+                  </p>
+                </div>
+
+                {/* Total Budget */}
+                <div className="bg-white p-4 rounded-xl shadow border border-gray-300 hover:shadow-md transition">
+                  <p className="text-gray-600 mb-1 font-medium">🏗️ Total Budget</p>
+                  <p className="text-xl font-bold text-gray-800">
+                    {aggregatedValues ? (
+                      <>
+                        {aggregatedValues.totalBudget.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{" "}
+                        <span className="text-xs">THB</span>
+                      </>
+                    ) : filteredProjects && filteredProjects.length > 0 ? (
+                      <>
+                        {filteredProjects[0].totalBudget.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{" "}
+                        <span className="text-xs">THB</span>
+                      </>
+                    ) : (
+                      "Loading..."
+                    )}
+                  </p>
+                </div>
+
+                {/* Remaining Budget */}
+                <div className="relative bg-white p-4 rounded-xl shadow border border-gray-300 hover:shadow-md transition">
+                  <p className="text-gray-600 mb-1 font-medium">💼 Remaining Budget</p>
+                  <p className="text-xl font-bold text-gray-800">
+                    {aggregatedValues ? (
+                      <>
+                        {(aggregatedValues.totalBudget - totalAmountSpent).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{" "}
+                        <span className="text-xs">THB</span>
+                      </>
+                    ) : (
+                      "Loading..."
+                    )}
+                  </p>
+
+                  {/* Budget Status Badge - Positioned Top Right */}
+                  {aggregatedValues && (
+                    <span
+                      className={`absolute top-2 right-2 px-2 py-1 text-xs font-semibold rounded-full shadow ${isOverBudget
+                        ? "bg-red-200 text-red-800"
+                        : percent > 80
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-800"
+                        }`}
+                    >
+                      {isOverBudget
+                        ? "Over Budget"
+                        : percent > 80
+                          ? "Nearing Limit"
+                          : "Healthy Budget"}
+                    </span>
+                  )}
+                </div>
+
+              </div>
+            )}
+          </div>
+        </div>
+
+
+        {/* Dashboard Content */}
+        <div className="grid grid-cols-3 gap-3">
+          {/* Project Details */}
+          <div className="bg-white shadow-lg rounded-lg p-2 border border-gray-200">
+            <div className="bg-indigo-50 shadow-xl rounded-2xl border border-indigo-200">
+              <h2 className="text-2xl font-bold text-gray-800 pl-5 pt-5 border-b">📋 Project Details</h2>
+
+              <div
+                className="grid gap-5 p-4 mt-3 overflow-y-auto"
+                style={{ minHeight: "280px", maxHeight: "280px" }}
+              >
+                {loading ? (
+                  <p className="text-gray-500 text-center">Loading...</p>
+                ) : filteredProjects && filteredProjects.length > 0 ? (
+                  filteredProjects.map((project) => {
+                    const progressPercent = (project.actual / project.budget) * 100;
+                    const progressColor =
+                      progressPercent < 80
+                        ? "bg-green-400"
+                        : progressPercent < 100
+                          ? "bg-yellow-400"
+                          : "bg-red-500";
+
+                    const statusColorMap: Record<string, string> = {
+                      "In progress": "bg-blue-100 text-blue-800",
+                      Completed: "bg-green-100 text-green-800",
+                      "Suspend operations": "bg-yellow-100 text-yellow-800",
+                      "Project Cancellation": "bg-red-100 text-red-800",
+                    };
+
+                    return (
+                      <div
+                        key={project.project_id}
+                        className="bg-white rounded-xl shadow-md p-4 border border-gray-200"
+                      >
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-lg font-bold text-indigo-800">{project.project_name}</h3>
+                          <span
+                            className={`text-xs font-semibold px-2 py-1 rounded-full ${statusColorMap[project.status] || "bg-gray-100 text-gray-800"
+                              }`}
+                          >
+                            {project.status}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+                          <p><strong>Start:</strong> {new Date(project.start_date).toLocaleDateString()}</p>
+                          <p><strong>Finish:</strong> {new Date(project.end_date).toLocaleDateString()}</p>
+                          <p><strong>Actual Cost:</strong> {Number(project.actual).toLocaleString()} <span className="text-xs">THB</span></p>
+                          <p><strong>Budget:</strong> {Number(project.budget).toLocaleString()} <span className="text-xs">THB</span></p>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mt-3">
+                          <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Budget Usage</span>
+                            <span>{progressPercent.toFixed(1)}%</span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-200 rounded-full">
+                            <div
+                              className={`h-2 rounded-full ${progressColor}`}
+                              style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-center text-gray-500">No selected projects.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Budget Summary */}
+            <div className="mt-3 rounded-2xl border border-gray-200 bg-white shadow-lg transition-shadow hover:shadow-xl">
+              <div className="p-3 flex flex-col items-center gap-4 relative">
+                {/* Decorative icon */}
+                <div className="absolute top-4 right-4 animate-bounce text-sky-400 text-xl">
+                  💰
+                </div>
+
+                <div className="w-full max-w-md text-center bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl px-6 py-4 shadow-inner border border-sky-200">
+                  <h3 className="text-lg font-bold text-sky-800 mb-1">
+                    📊 Estimate At Completion
+                  </h3>
+                  <p className="text-xs text-sky-600 mb-3">Final cost prediction for the entire project</p>
+
+                  <div className="border-t border-sky-200 my-2 w-3/4 mx-auto"></div>
+
+                  <p className="text-4xl font-extrabold text-sky-900 tracking-wide">
+                    {filteredProjects ? (
+                      <>
+                        {calculateLocalEAC(filteredProjects)?.toLocaleString() || "N/A"}{" "}
+                        <span className="text-xl font-medium">THB</span>
+                      </>
+                    ) : (
+                      <span className="text-gray-400 text-lg">Loading...</span>
+                    )}
+                  </p>
                 </div>
               </div>
-              <div className=" p-1 mt-1">
-                <div className="grid p-4 rounded-lg shadow-lg bg-indigo-400">
-                  <h2 className="text-center font-semibold text-4xl mt-2">
-                    {percent.toFixed(2)}%
-                  </h2>
-                  <h2 className="text-center font-semibold text-l mt-4">Percent Of Target</h2>
-                  {isOverBudget && (
-                    <h2 className="text-center text-red-700 font-semibold mt-2">
-                      Over Budget by {overBudgetPercent.toFixed(2)}%
-                    </h2>
-                  )}
-                  <div className="flex justify-between w-full text-center mt-5">
-                    <div className="w-1/2 pr-2">
-                      {filteredProjects ? (
-                        <>
-                          {totalAmountSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                          <span className="text-xs">THB</span>
-                        </>
-                      ) : (
-                        "Loading..."
-                      )}
-                      <h2 className="text-center font-semibold mt-1">Amount Spent</h2>
-                    </div>
-                    <div className="w-1/2 border-l-2 border-black pl-2">
-                      {aggregatedValues ? (
-                        <>
-                          {aggregatedValues.totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                          <span className="text-xs">THB</span>
-                        </>
-                      ) : filteredProjects && filteredProjects.length > 0 ? (
-                        <>
-                          {filteredProjects[0].totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                          <span className="text-xs">THB</span>
-                        </>
-                      ) : (
-                        "Loading..."
-                      )}
-                      <h2 className="text-center font-semibold mt-1">Total Budget</h2>
-                    </div>
-                  </div>
-                </div>
+
+              {/* Budget Summary Chart */}
+              <div>
+                <BudgetSummaryEAC actualBudget={actualBudget} estimatedEAC={estimatedEAC} />
               </div>
             </div>
           </div >
 
           {/* Cost Breakdown */}
-          < div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200" >
-            <h2 className="text-xl font-semibold mb-12">Cost Breakdown</h2>
+          < div className="bg-white shadow-lg rounded-lg p-2 border border-gray-200" >
+            <h2 className="text-xl font-semibold mb-12 mt-6 ml-6">Cost Breakdown</h2>
             <CostBreakdown filteredProjects={filteredProjects} />
-            <div className="grid grid-cols-2 gap-2 p-2 mt-12 text-center ">
-              <div className="border p-2">Equipment</div>
-              <div className="border p-2 bg-red-600">
-                159,801 <span className="text-xs">THB</span>
-              </div>
-              <div className="border p-2">Foreign Labor</div>
-              <div className="border p-2 bg-red-600">
-                134,568 <span className="text-xs">THB</span>
-              </div>
-              <div className="border p-2">Labor</div>
-              <div className="border p-2 bg-red-600">
-                157,986 <span className="text-xs">THB</span>
-              </div>
-              <div className="border p-2">Material</div>
-              <div className="border p-2 bg-red-600">
-                161,837 <span className="text-xs">THB</span>
-              </div>
-              <div className="border p-2">Subcontractors</div>
-              <div className="border p-2 bg-red-600">
-                151,775 <span className="text-xs">THB</span>
+            <div className="bg-white mt-12 shadow-lg rounded-lg p-1 border border-gray-200">
+              <h2 className="text-l font-bold mb-6 mt-6 text-indigo-700">💰 Resource Cost Breakdown</h2>
+
+              <div className="overflow-x-auto rounded-lg">
+                <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                  <thead className="bg-indigo-100">
+                    <tr>
+                      <th className="text-left px-2 py-3 border-b text-gray-700">Resource Type</th>
+                      <th className="text-center px-2 py-3 border-b text-gray-700">Quantity</th>
+                      <th className="text-right pr-2 py-3 border-b text-gray-700">Total Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    <tr>
+                      <td className="px-4 py-3">🛠️ Equipment</td>
+                      <td className="text-center px-4 py-3">15</td>
+                      <td className="text-right px-4 py-3 text-red-700 font-semibold">159,801</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3">👷 Labor</td>
+                      <td className="text-center px-4 py-3">30</td>
+                      <td className="text-right px-4 py-3 text-red-700 font-semibold">157,986</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3">🧱 Material</td>
+                      <td className="text-center px-4 py-3">47</td>
+                      <td className="text-right px-4 py-3 text-red-700 font-semibold">161,837</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3">🤝 Subcontractors</td>
+                      <td className="text-center px-4 py-3">10</td>
+                      <td className="text-right px-4 py-3 text-red-700 font-semibold">151,775</td>
+                    </tr>
+                  </tbody>
+
+                  <tfoot className="bg-indigo-50 font-bold">
+                    <tr>
+                      <td className="px-4 py-3 text-indigo-900">Total</td>
+                      <td className="text-center px-4 py-3 text-indigo-900">102</td>
+                      <td className="text-right px-4 py-3 text-indigo-900">
+                        {(
+                          159801 + 157986 + 161837 + 151775
+                        ).toLocaleString(undefined, {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             </div>
           </div >
 
           {/* Charts Section */}
-          < div className="grid bg-white shadow-lg rounded-lg p-6 border border-gray-200" >
-            <div className="grid gap-2 ">
-              <div className="bg-white shadow-md rounded-lg border border-gray-200 ">
-                <div className="text-sm font-semibold p-1 mt-2 pl-4 ">Project Completion Rate</div>
+          <div className="grid bg-white shadow-xl rounded-2xl p-6 border border-gray-200 gap-4 overflow-x-auto">
+            <div className="grid gap-4 overflow-x-auto">
+              {/* Project Completion Rate */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg rounded-2xl border border-blue-200 p-4 hover:shadow-xl transition-shadow">
+                <div className="text-sm font-semibold text-blue-800 mb-2">Project Completion Rate</div>
                 <ProjectCompletionRate completionRate={completionRate} />
+                <div className="text-center text-2xl font-bold text-blue-900 mt-3">
+                  {completionRate.toFixed(2)}%
+                </div>
               </div>
-              <div className="bg-white shadow-md rounded-lg border border-gray-200 ">
-                <div className="text-sm font-semibold p-1 mt-2 pl-4">Utilized Duration</div>
+
+              {/* Utilized Duration */}
+              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-2xl border border-yellow-200 p-4 hover:shadow-xl transition-shadow">
+                <div className="text-sm font-semibold text-yellow-800 mb-2">Utilized Duration</div>
                 <UtilizedDuration utilizedDays={utilizedDays} />
+                <div className="text-center text-2xl font-bold text-yellow-900 mt-3">
+                  {utilizedDays} days
+                </div>
               </div>
             </div>
-          </div >
+          </div>
         </div >
         <div >
 
           {/* Budget Variance Chart */}
-          <div className="bg-white shadow-lg rounded-lg p-6 mt-4 border border-gray-200">
-            <h2 className="text-xl font-semibold mb-4">Budget Variance</h2>
-            <div className=" mt-8">
-              <BudgetVariance filteredProjects={filteredProjects} />
-            </div>
+          <div className="bg-white shadow-lg rounded-lg p-6 mt-3 border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">📊 Budget Variance</h2>
+            <BudgetVariance filteredProjects={filteredProjects} />
           </div>
 
         </div>
