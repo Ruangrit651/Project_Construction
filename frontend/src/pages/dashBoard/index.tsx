@@ -174,7 +174,7 @@ const Dashboard = () => {
   // Render the Dashboard
   return (
     <div className="min-h-screen bg-gray-400 p-3">
-      <div className="container mx-auto">
+      <div className="container max-w-none">
         {/* Project Filter Section */}
         <div className="bg-white shadow-xl rounded-2xl p-5 mb-3 border border-zinc-800 ">
           <h2 className="text-2xl font-bold text-gray-800 mb-6 ">🔍 Filter Projects</h2>

@@ -7,7 +7,7 @@ const MainLayoutCEO = () => {
     <div className=" h-screen flex flex-col">
       <NavbarCEO />
       <div className="flex">
-        <div className=" container p-4 overflow-x-auto">
+        <div className=" container p-4 overflow-x-auto max-w-none ">
         <Outlet />
         </div>
       </div>
