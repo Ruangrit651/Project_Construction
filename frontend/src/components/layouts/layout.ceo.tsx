@@ -1,14 +1,12 @@
 import { Outlet } from "react-router-dom";
-import NavbarMain from "./navbars/navbar.main";
-import SidebarMain from "./sidebars/sider.employee";
+import NavbarCEO from "./navbars/navbar.mainCEO";
 
 const MainLayoutCEO = () => {
   
   return (
     <div className=" h-screen">
-      <NavbarMain />
+      <NavbarCEO />
       <div className="flex">
-        <SidebarMain />
         <div className=" container p-4 ">
         <Outlet />
         </div>

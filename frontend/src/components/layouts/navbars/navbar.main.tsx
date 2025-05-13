@@ -1,71 +1,21 @@
-// // import React from 'react';
-// import * as NavigationMenu from '@radix-ui/react-navigation-menu';
-// import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-// import { PersonIcon } from '@radix-ui/react-icons';
-// import { logoutUser } from '@/services/logout.service';
-// import { useNavigate } from 'react-router-dom';
-
-// const NavbarMain = () => {
-//   const navigate = useNavigate();
-  
-//   // ฟังก์ชันสำหรับ Logout
-//   const handleLogout = async () => {
-//     try {
-//       await logoutUser({ username: 'Myuser' }); // เรียกใช้งาน Logout Service
-//       navigate('/', { state: { logoutSuccess: true } }); // ส่ง state ไปที่หน้า Login
-//     } catch (err) {
-//       console.error('Logout failed', err);
-//       navigate('/', { state: { logoutFailed: true } }); // ส่ง state ไปที่หน้า Login ในกรณีที่เกิดข้อผิดพลาด
-//     }
-//   };
-
-//   return (
-//     <div>
-//       {/* Navbar */}
-//       <NavigationMenu.Root className="w-full bg-gray-800 text-white px-6 py-3 flex justify-between items-center">
-//         <h2 className="text-xl font-bold">CITE Construction</h2>
-//         <NavigationMenu.List className="flex gap-6">
-//           <NavigationMenu.Item>
-//             <DropdownMenu.Root>
-//               <DropdownMenu.Trigger className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
-//                 <PersonIcon />
-//                 Myuser
-//               </DropdownMenu.Trigger>
-//               <DropdownMenu.Portal>
-//                 <DropdownMenu.Content className="bg-gray-700 text-white p-2 rounded shadow-lg" sideOffset={5}>
-//                   <DropdownMenu.Item
-//                     className="cursor-pointer p-2 hover:bg-gray-600 rounded"
-//                     onClick={handleLogout}
-//                   >
-//                     Logout
-//                   </DropdownMenu.Item>
-//                 </DropdownMenu.Content>
-//               </DropdownMenu.Portal>
-//             </DropdownMenu.Root>
-//           </NavigationMenu.Item>
-//         </NavigationMenu.List>
-//       </NavigationMenu.Root>
-//     </div>
-//   );
-// };
-
-// export default NavbarMain;
-
-
 import * as NavigationMenu from '@radix-ui/react-navigation-menu';
+import * as Tabs from '@radix-ui/react-tabs';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { 
   PersonIcon, 
-  HomeIcon, 
-  ListBulletIcon, 
-  CalendarIcon, 
-  BarChartIcon 
+  DashboardIcon, 
+  ArchiveIcon,
+  ClipboardIcon,
+  CalendarIcon,
+  ExitIcon
 } from '@radix-ui/react-icons';
 import { logoutUser } from '@/services/logout.service';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 
 const NavbarMain = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   
   // ฟังก์ชันสำหรับ Logout
   const handleLogout = async () => {
@@ -78,53 +28,52 @@ const NavbarMain = () => {
     }
   };
 
+  // คำนวณว่า path ปัจจุบันเป็นของ tab ใด
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.includes('/ManagerDash')) return 'dashboard';
+    if (path.includes('/ManagerPlan')) return 'timeline';
+    if (path.includes('/ManagerTask')) return 'tasklist';
+    if (path.includes('/ManagerResource')) return 'resource';
+    return 'dashboard';
+  };
+
+  const handleTabChange = (value: string) => {
+    if (value === 'dashboard') navigate('/ManagerDash');
+    else if (value === 'timeline') navigate('/ManagerPlan');
+    else if (value === 'tasklist') navigate('/ManagerTask');
+    else if (value === 'resource') navigate('/ManagerResource');
+  };
+
   return (
-    <div>
-      {/* Navbar */}
-      <NavigationMenu.Root className="w-full bg-gray-800 text-white px-6 py-3 flex justify-between items-center">
-        <div className="flex items-center gap-10">
-          <h2 className="text-xl font-bold">CITE Construction</h2>
-          <NavigationMenu.List className="flex gap-6">
-            <NavigationMenu.Item>
-              <Link to="/ManagerDash" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
-                <HomeIcon />
-                Dashboard
-              </Link>
-            </NavigationMenu.Item>
-            <NavigationMenu.Item>
-              <Link to="/ManagerTask" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
-                <ListBulletIcon />
-                Tasklist
-              </Link>
-            </NavigationMenu.Item>
-            <NavigationMenu.Item>
-              <Link to="/ManagerPlan" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
-                <CalendarIcon />
-                Timeline
-              </Link>
-            </NavigationMenu.Item>
-            <NavigationMenu.Item>
-              <Link to="/ManagerResource" className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
-                <BarChartIcon />
-                Resource/Budget
-              </Link>
-            </NavigationMenu.Item>
-          </NavigationMenu.List>
+    <div className="flex flex-col">
+      {/* Main Navbar */}
+      <NavigationMenu.Root className="w-full bg-gradient-to-r from-gray-900 to-gray-800 text-white px-6 py-4 flex justify-between items-center shadow-lg">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+            <span className="font-bold">C</span>
+          </div>
+          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 bg-clip-text text-transparent">
+            CITE Construction
+          </h2>
         </div>
         
         <NavigationMenu.List className="flex gap-6">
           <NavigationMenu.Item>
             <DropdownMenu.Root>
-              <DropdownMenu.Trigger className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded">
-                <PersonIcon />
-                Myuser
+              <DropdownMenu.Trigger className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-full transition-all duration-200 ease-in-out">
+                <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+                  <PersonIcon className="h-5 w-5" />
+                </div>
+                <span className="font-medium">Myuser</span>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
-                <DropdownMenu.Content className="bg-gray-700 text-white p-2 rounded shadow-lg" sideOffset={5}>
+                <DropdownMenu.Content className="bg-gray-800 text-white p-1 rounded-lg shadow-xl border border-gray-700" sideOffset={5}>
                   <DropdownMenu.Item
-                    className="cursor-pointer p-2 hover:bg-gray-600 rounded"
+                    className="cursor-pointer p-2 flex items-center gap-2 hover:bg-gray-700 rounded transition-colors duration-150 ease-in-out"
                     onClick={handleLogout}
                   >
+                    <ExitIcon className="text-red-400" />
                     Logout
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>
@@ -133,6 +82,63 @@ const NavbarMain = () => {
           </NavigationMenu.Item>
         </NavigationMenu.List>
       </NavigationMenu.Root>
+
+      {/* Tabs Navigation */}
+      <Tabs.Root 
+        className="w-full bg-gray-800 text-white shadow-md" 
+        value={getActiveTab()} 
+        onValueChange={handleTabChange}
+      >
+        <Tabs.List className="flex max-w-screen-lg ">
+          <Tabs.Trigger 
+            value="dashboard" 
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
+              getActiveTab() === 'dashboard' 
+                ? 'border-blue-500 text-blue-400 font-medium' 
+                : 'border-transparent hover:bg-gray-700'
+            }`}
+          >
+            <DashboardIcon className={`${getActiveTab() === 'dashboard' ? 'text-blue-400' : ''}`} />
+            Dashboard
+          </Tabs.Trigger>
+
+          <Tabs.Trigger 
+            value="timeline" 
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
+              getActiveTab() === 'timeline' 
+                ? 'border-blue-500 text-blue-400 font-medium' 
+                : 'border-transparent hover:bg-gray-700'
+            }`}
+          >
+            <CalendarIcon className={`${getActiveTab() === 'timeline' ? 'text-blue-400' : ''}`} />
+            Timeline
+          </Tabs.Trigger>
+
+          <Tabs.Trigger 
+            value="tasklist" 
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
+              getActiveTab() === 'tasklist' 
+                ? 'border-blue-500 text-blue-400 font-medium' 
+                : 'border-transparent hover:bg-gray-700'
+            }`}
+          >
+            <ClipboardIcon className={`${getActiveTab() === 'tasklist' ? 'text-blue-400' : ''}`} />
+            Tasklist
+          </Tabs.Trigger>
+
+          <Tabs.Trigger 
+            value="resource" 
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
+              getActiveTab() === 'resource' 
+                ? 'border-blue-500 text-blue-400 font-medium' 
+                : 'border-transparent hover:bg-gray-700'
+            }`}
+          >
+            <ArchiveIcon className={`${getActiveTab() === 'resource' ? 'text-blue-400' : ''}`} />
+            Resource/Budget
+          </Tabs.Trigger>
+        </Tabs.List>
+      </Tabs.Root>
     </div>
   );
 };

@@ -6,20 +6,20 @@ import {
   ArchiveIcon,
   ClipboardIcon,
   CalendarIcon,
-  ExitIcon,
-  DashboardIcon
+  ReaderIcon,
+  ExitIcon
 } from '@radix-ui/react-icons';
 import { logoutUser } from '@/services/logout.service';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 
-const NavbarCEO = () => {
+const NavbarEmployee = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
   // ฟังก์ชันสำหรับ Logout
   const handleLogout = async () => {
     try {
-      await logoutUser({ username: 'CEO' }); // เรียกใช้งาน Logout Service
+      await logoutUser({ username: 'Myuser' }); // เรียกใช้งาน Logout Service
       navigate('/', { state: { logoutSuccess: true } }); // ส่ง state ไปที่หน้า Login
     } catch (err) {
       console.error('Logout failed', err);
@@ -30,18 +30,18 @@ const NavbarCEO = () => {
   // คำนวณว่า path ปัจจุบันเป็นของ tab ใด
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path.includes('/CEODashBoard')) return 'dashboard';
-    if (path.includes('/CEOPlan')) return 'timeline';
-    if (path.includes('/CEOTask')) return 'tasklist';
-    if (path.includes('/CEOResource')) return 'resource';
-    return 'dashboard'; // Default ให้เป็น dashboard
+    if (path.includes('/employeePlan')) return 'timeline';
+    if (path.includes('/employeeTask')) return 'tasklist';
+    if (path.includes('/employeeResource')) return 'resource';
+    if (path.includes('/employeeReport')) return 'report';
+    return 'timeline'; // Default ให้เป็น timeline แทน dashboard
   };
 
   const handleTabChange = (value: string) => {
-    if (value === 'dashboard') navigate('/CEODashBoard');
-    else if (value === 'timeline') navigate('/CEOPlan');
-    else if (value === 'tasklist') navigate('/CEOTask');
-    else if (value === 'resource') navigate('/CEOResource');
+    if (value === 'timeline') navigate('/employeePlan');
+    else if (value === 'tasklist') navigate('/employeeTask');
+    else if (value === 'resource') navigate('/employeeResource');
+    else if (value === 'report') navigate('/employeeReport');
   };
 
   return (
@@ -64,7 +64,7 @@ const NavbarCEO = () => {
                 <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
                   <PersonIcon className="h-5 w-5" />
                 </div>
-                <span className="font-medium">CEO</span>
+                <span className="font-medium">Employee</span>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.Content className="bg-gray-800 text-white p-1 rounded-lg shadow-xl border border-gray-700" sideOffset={5}>
@@ -90,18 +90,6 @@ const NavbarCEO = () => {
       >
         <Tabs.List className="flex max-w-screen-lg ">
           <Tabs.Trigger 
-            value="dashboard" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'dashboard' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
-          >
-            <DashboardIcon className={`${getActiveTab() === 'dashboard' ? 'text-blue-400' : ''}`} />
-            Dashboard
-          </Tabs.Trigger>
-
-          <Tabs.Trigger 
             value="timeline" 
             className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
               getActiveTab() === 'timeline' 
@@ -110,7 +98,7 @@ const NavbarCEO = () => {
             }`}
           >
             <CalendarIcon className={`${getActiveTab() === 'timeline' ? 'text-blue-400' : ''}`} />
-            Timeline
+            Planning
           </Tabs.Trigger>
 
           <Tabs.Trigger 
@@ -136,10 +124,11 @@ const NavbarCEO = () => {
             <ArchiveIcon className={`${getActiveTab() === 'resource' ? 'text-blue-400' : ''}`} />
             Resource/Budget
           </Tabs.Trigger>
+        
         </Tabs.List>
       </Tabs.Root>
     </div>
   );
 };
 
-export default NavbarCEO;
+export default NavbarEmployee;
