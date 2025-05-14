@@ -37,6 +37,6 @@ export type TaskResponse = {
 export type TypeTaskAllResponse = {
     success: boolean;
     message: string;
-    responseObject: TypeTaskAll[];
-    statusCode:number;
+    responseObject: TypeTaskAll[] | TypeTaskAll | null;
+    statusCode: number;
 }

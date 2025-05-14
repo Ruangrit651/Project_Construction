@@ -381,4 +381,23 @@ export const projectService = {
             );
         }
     },
+
+    findAvailableProjects: async (userId: string) => {
+        try {
+            const projects = await ProjectRepository.findAvailableProjects(userId);
+            return new ServiceResponse(
+                ResponseStatus.Success,
+                "Available projects retrieved successfully",
+                projects,
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                "Error retrieving available projects: " + (ex as Error).message,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
 };

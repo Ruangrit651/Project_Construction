@@ -44,9 +44,8 @@ export default function AdminPage() {
                         <Table.Row>
                             <Table.ColumnHeaderCell>Username</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
-                            {/* <Table.ColumnHeaderCell>Project</Table.ColumnHeaderCell> */}
-                            <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
-                            <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
+                            <Table.ColumnHeaderCell className="text-center">Status</Table.ColumnHeaderCell>
+                            <Table.ColumnHeaderCell className="text-center">Actions</Table.ColumnHeaderCell>
                         </Table.Row>
                     </Table.Header>
                     <Table.Body>
@@ -56,13 +55,13 @@ export default function AdminPage() {
                                     <Table.Cell>{user.username}</Table.Cell>
                                     <Table.Cell>{user.role}</Table.Cell>
                                     {/* <Table.Cell>{user.projects?.project_name}</Table.Cell> */}
-                                    <Table.Cell>
+                                    <Table.Cell justify="center">
                                         <Badge color={user.is_active ? "green" : "red"}>
                                             {user.is_active ? "Active" : "Suspended"}
                                         </Badge>
                                     </Table.Cell>
                                     <Table.Cell>
-                                        <Flex gap="2">
+                                        <Flex gap="2" justify="center">
                                             <Button 
                                                 className="cursor-pointer"
                                                 size="1" 

@@ -6,6 +6,7 @@ import { getUser } from "@/services/user.service";
 
 type DialogProjectProps = {
     getProjectData: Function;
+    showToast?: (message: string, type: 'success' | 'error') => void;
 };
 
 type User = {
@@ -13,7 +14,7 @@ type User = {
     username: string;
 };
 
-const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
+const DialogAdd = ({ getProjectData, showToast }: DialogProjectProps) => {
     const [projectName, setProjectName] = useState("");
     const [actual, setActual] = useState(0);
     const [formmattedActual, setFormattedActual] = useState("0");
@@ -58,9 +59,14 @@ const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
     };
 
     // ฟังก์ชันสำหรับสร้างโปรเจกต์
-    const handleCreateProject = async () => {
+   const handleCreateProject = async () => {
         if (!projectName || !budget || !startDate || !endDate) {
-            alert("Please enter all required fields (project name, budget, start date, and end date).");
+            // ใช้ showToast แทน alert
+            if (showToast) {
+                showToast("Please enter all required fields (project name, budget, start date, and end date).", 'error');
+            } else {
+                alert("Please enter all required fields (project name, budget, start date, and end date).");
+            }
             return;
         }
 
@@ -89,7 +95,9 @@ const DialogAdd = ({ getProjectData }: DialogProjectProps) => {
 
             if (projectResponse.statusCode === 200) {
                 // กรณีส่งผ่าน user_id แต่ backend ไม่ได้สร้างความสัมพันธ์ให้ เราสามารถใช้ createRelation ได้
-                if (selectedUserId) {
+                if (showToast) {
+                    showToast(`Project "${projectName}" created successfully`, 'success');
+                    
                     try {
                         await createRelation({
                             project_id: projectResponse.responseObject.project_id,

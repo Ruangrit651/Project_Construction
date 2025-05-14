@@ -2,7 +2,6 @@ import { Outlet } from "react-router-dom";
 import NavbarCEO from "./navbars/navbar.mainCEO";
 
 const MainLayoutCEO = () => {
-  
   return (
     <div className=" h-screen flex flex-col">
       <NavbarCEO />
@@ -11,7 +10,6 @@ const MainLayoutCEO = () => {
         <Outlet />
         </div>
       </div>
-     
     </div>
   );
 };

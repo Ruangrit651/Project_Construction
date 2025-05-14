@@ -3,24 +3,20 @@ import * as Tabs from '@radix-ui/react-tabs';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { 
   PersonIcon, 
-  DashboardIcon, 
   ArchiveIcon,
-  ClipboardIcon,
-  CalendarIcon,
   ExitIcon
 } from '@radix-ui/react-icons';
 import { logoutUser } from '@/services/logout.service';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const NavbarMain = () => {
+const NavbarAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
   // ฟังก์ชันสำหรับ Logout
   const handleLogout = async () => {
     try {
-      await logoutUser({ username: 'Myuser' }); // เรียกใช้งาน Logout Service
+      await logoutUser({ username: 'Admin' }); // เรียกใช้งาน Logout Service
       navigate('/', { state: { logoutSuccess: true } }); // ส่ง state ไปที่หน้า Login
     } catch (err) {
       console.error('Logout failed', err);
@@ -31,20 +27,14 @@ const NavbarMain = () => {
   // คำนวณว่า path ปัจจุบันเป็นของ tab ใด
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path.includes('/ManagerDash')) return 'dashboard';
-    if (path.includes('/ManagerPlan')) return 'timeline';
-    if (path.includes('/ManagerTask')) return 'tasklist';
-    if (path.includes('/ManagerResource')) return 'resource';
-    if (path.includes('/ManagerProjectList')) return 'projectlist';
-    return 'dashboard';
+    if (path.includes('/admin') && !path.includes('/adminproject')) return 'members';
+    if (path.includes('/adminproject')) return 'projects';
+    return 'members'; // Default ให้เป็น members
   };
 
   const handleTabChange = (value: string) => {
-    if (value === 'dashboard') navigate('/ManagerDash');
-    else if (value === 'projectlist') navigate('/ManagerProjectList');
-    else if (value === 'timeline') navigate('/ManagerPlan');
-    else if (value === 'tasklist') navigate('/ManagerTask');
-    else if (value === 'resource') navigate('/ManagerResource');
+    if (value === 'members') navigate('/admin');
+    else if (value === 'projects') navigate('/adminproject');
   };
 
   return (
@@ -67,7 +57,7 @@ const NavbarMain = () => {
                 <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
                   <PersonIcon className="h-5 w-5" />
                 </div>
-                <span className="font-medium">Myuser</span>
+                <span className="font-medium">Admin</span>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.Content className="bg-gray-800 text-white p-1 rounded-lg shadow-xl border border-gray-700" sideOffset={5}>
@@ -92,66 +82,28 @@ const NavbarMain = () => {
         onValueChange={handleTabChange}
       >
         <Tabs.List className="flex max-w-screen-lg ">
-
           <Tabs.Trigger 
-            value="projectlist" 
+            value="members" 
             className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'projectlist' 
+              getActiveTab() === 'members' 
                 ? 'border-blue-500 text-blue-400 font-medium' 
                 : 'border-transparent hover:bg-gray-700'
             }`}
           >
-            <ArchiveIcon className={`${getActiveTab() === 'projectlist' ? 'text-blue-400' : ''}`} />
-            Project List
-          </Tabs.Trigger>
-          
-          <Tabs.Trigger 
-            value="dashboard" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'dashboard' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
-          >
-            <DashboardIcon className={`${getActiveTab() === 'dashboard' ? 'text-blue-400' : ''}`} />
-            Dashboard
+            <PersonIcon className={`${getActiveTab() === 'members' ? 'text-blue-400' : ''}`} />
+            Member
           </Tabs.Trigger>
 
           <Tabs.Trigger 
-            value="tasklist" 
+            value="projects" 
             className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'tasklist' 
+              getActiveTab() === 'projects' 
                 ? 'border-blue-500 text-blue-400 font-medium' 
                 : 'border-transparent hover:bg-gray-700'
             }`}
           >
-            <ClipboardIcon className={`${getActiveTab() === 'tasklist' ? 'text-blue-400' : ''}`} />
-            Tasklist
-          </Tabs.Trigger>
-
-          <Tabs.Trigger 
-            value="timeline" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'timeline' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
-          >
-            <CalendarIcon className={`${getActiveTab() === 'timeline' ? 'text-blue-400' : ''}`} />
-            Timeline
-          </Tabs.Trigger>
-
-
-          <Tabs.Trigger 
-            value="resource" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'resource' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
-          >
-            <ArchiveIcon className={`${getActiveTab() === 'resource' ? 'text-blue-400' : ''}`} />
-            Resource/Budget
+            <ArchiveIcon className={`${getActiveTab() === 'projects' ? 'text-blue-400' : ''}`} />
+            Project
           </Tabs.Trigger>
         </Tabs.List>
       </Tabs.Root>
@@ -159,4 +111,4 @@ const NavbarMain = () => {
   );
 };
 
-export default NavbarMain;
+export default NavbarAdmin;

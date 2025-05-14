@@ -36,7 +36,7 @@ const Login: React.FC = () => {
           } else if (userRole === 'CEO') {
             navigate('/CEODashBoard');
           } else if (userRole === 'Manager') {
-            navigate('/ManagerDash');
+            navigate('/ManagerProjectList');
           } else if (userRole === 'Employee') {
             navigate('/employeePlan');
           } else {

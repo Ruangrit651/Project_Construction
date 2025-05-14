@@ -3,6 +3,7 @@ import { GET_USER_PROJECTS } from "@/apis/endpoint.api";
 import mainApi from "@/apis/main.api";
 import { PayloadCreateUser , PayloadDeleteUser ,PayloadUpdateUser} from "@/types/requests/request.user";
 import { UserResponse } from "@/types/response/response.user";
+import axios from "axios";
 
 export const getUser = async () => {
     const { data: response} = await mainApi.get(

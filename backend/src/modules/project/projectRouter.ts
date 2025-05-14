@@ -63,6 +63,15 @@ export const projectRouter = (() => {
         }
     );
 
+    // GET all projects
+    router.get("/available",
+        authenticateJWT,
+        async (req: Request, res: Response) => {
+            const userId = req.user.userId;
+            const ServiceResponse = await projectService.findAvailableProjects(userId);
+            handleServiceResponse(ServiceResponse, res);
+        });
+
 
     // GET all projects
     router.get("/get",
