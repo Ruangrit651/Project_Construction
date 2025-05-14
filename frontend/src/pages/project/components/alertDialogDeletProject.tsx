@@ -1,13 +1,14 @@
 import { Button, Flex, Strong ,Dialog,Text } from "@radix-ui/themes";
 import { deleteProject } from "@/services/project.service";
 
-type DialogProjectProps ={
+type DialogProjectProps = {
     getProjectDate: Function;
     project_id: string;
     project_name: string;
+    showToast?: (message: string, type: 'success' | 'error') => void; // เพิ่ม prop สำหรับ showToast
 }
 
-const AlertDialogDelete = ({getProjectDate, project_id, project_name}: DialogProjectProps) => {
+const AlertDialogDelete = ({ getProjectDate, project_id, project_name, showToast }: DialogProjectProps) => {
     const handleDeleteProject = async () => {
         try {
             await deleteProject({
@@ -16,18 +17,40 @@ const AlertDialogDelete = ({getProjectDate, project_id, project_name}: DialogPro
                 .then((response) => {
                     if (response.statusCode === 200) {
                         getProjectDate();
+                        // แสดง Toast แทน alert
+                        if (showToast) {
+                            showToast(`Project "${project_name}" deleted successfully`, 'success');
+                        }
                     } else if (response.statusCode === 400) {
-                        alert(response.message);
+                        // แสดง Toast แทน alert
+                        if (showToast) {
+                            showToast(response.message, 'error');
+                        } else {
+                            alert(response.message); // fallback ไปใช้ alert ถ้าไม่มี showToast
+                        }
                     } else {
-                        alert("Unexpected error:" + response.message);
+                        // แสดง Toast แทน alert
+                        if (showToast) {
+                            showToast(`Unexpected error: ${response.message}`, 'error');
+                        } else {
+                            alert("Unexpected error:" + response.message);
+                        }
                     }
-                }) 
+                })
                 .catch((error) => {
                     console.error("Error update user", error.response?.date || error.message);
-                    alert("Failed to update user. Please try again.");
+                    // แสดง Toast แทน alert
+                    if (showToast) {
+                        showToast("Failed to delete project. Please try again.", 'error');
+                    } else {
+                        alert("Failed to delete project. Please try again.");
+                    }
                 });
-        }catch (error){
+        } catch (error) {
             console.error("Error delete user:", error);
+            if (showToast) {
+                showToast("An unexpected error occurred", 'error');
+            }
         }
     };
 

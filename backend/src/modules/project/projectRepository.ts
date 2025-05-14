@@ -136,5 +136,34 @@ export const ProjectRepository = {
         return await prisma.project.delete({
             where: { project_id: project_id }
         });
+    },
+
+    // ค้นหาโปรเจกต์ที่ผู้ใช้มีส่วนร่วม
+    findAvailableProjects : async (userId: string) => { 
+        return await prisma.relation.findMany({
+            where: {
+                user_id: userId,
+            },
+            select: {
+                project_id: true,
+                project: {
+                    select: {
+                        project_id: true,
+                        project_name: true,
+                        actual: true,
+                        budget: true,
+                        start_date: true,
+                        end_date: true,
+                        status: true,
+                        owner: {
+                            select: {
+                                user_id: true,
+                                username: true,
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 }

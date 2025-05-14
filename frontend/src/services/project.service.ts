@@ -1,5 +1,5 @@
 import { CREATE_PROJECT, GET_PROJECT_ALL , UPDATE_PROJECT ,DELETE_PROJECT,GET_MANAGER_PROJECTS} from "@/apis/endpoint.api";
-import { GET_PROJECT_USERS, ADD_USER_TO_PROJECT, REMOVE_USER_FROM_PROJECT } from "@/apis/endpoint.api";
+import { GET_PROJECT_USERS, ADD_USER_TO_PROJECT, REMOVE_USER_FROM_PROJECT,GET_PROJECT_ALL_AVAILABLE } from "@/apis/endpoint.api";
 import mainApi from "@/apis/main.api";
 import { PayloadCreateProject , PayloadDeleteProject ,PayloadUpdateProject} from "@/types/requests/request.project";
 import { ProjectResponse } from "@/types/response/response.project";
@@ -7,6 +7,13 @@ import { ProjectResponse } from "@/types/response/response.project";
 export const getProject = async () => {
     const { data: response} = await mainApi.get(
         GET_PROJECT_ALL
+    );
+    return response;
+};
+
+export const getProjectAvailable = async () => {
+    const { data: response} = await mainApi.get(
+        GET_PROJECT_ALL_AVAILABLE
     );
     return response;
 };

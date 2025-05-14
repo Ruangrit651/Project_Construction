@@ -2,6 +2,7 @@ import { Text, Dialog, Button, Flex, TextField, Select } from "@radix-ui/themes"
 import { postUser } from "@/services/user.service";
 import { getRole } from "@/services/role.service";
 import { getProject } from "@/services/project.service";
+import { createRelation } from "@/services/relation.service";
 import { useEffect, useState } from "react";
 
 type DialogUserProps = {
@@ -74,7 +75,22 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
         role: postRole,
         project_id: postProject, // postProject จะเป็น null หากเลือก "No Project"
       });
+
       if (response.statusCode === 200) {
+        // If user has selected a project, create the relation
+        if (postProject) {
+          try {
+            await createRelation({
+              project_id: postProject,
+              user_id: response.responseObject.user_id
+            });
+            console.log("User-project relation created successfully");
+          } catch (relationError) {
+            console.error("Failed to create relation:", relationError);
+            // User was created successfully, so we don't need to alert the user about this error
+          }
+        }
+
         setPostUserName("");
         setPostPassword("");
         setPostRole("");
@@ -88,8 +104,8 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
       console.error("Error creating user:", error);
       alert("Failed to create user. Please try again.");
     }
-  };  
-  
+  };
+
 
   return (
     <Dialog.Root>
@@ -148,7 +164,7 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
               </Select.Root>
             )}
           </label>
-          
+
           {/* Project */}
           <label>
             <Text as="div" size="2" mb="1" weight="bold">
@@ -161,7 +177,7 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
                 size="2"
                 value={postProject || "none"} // กำหนดค่าเริ่มต้นเป็น "none" หากไม่มี Project
                 onValueChange={(value) => setPostProject(value === "none" ? null : value)} // แปลง "none" เป็น null
-                
+
               >
                 <Select.Trigger>
                   {postProject
@@ -204,4 +220,3 @@ export default DialogAdd;
 
 
 
-  

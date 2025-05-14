@@ -17,6 +17,7 @@ export const CREATE_PROJECT = "/v1/project/create";
 export const UPDATE_PROJECT = "/v1/project/update";
 export const DELETE_PROJECT = "/v1/project/delete";
 export const GET_MANAGER_PROJECTS = "/v1/project/manager";
+export const GET_PROJECT_ALL_AVAILABLE = "/v1/project/available";
 
 // roles
 export const GET_ROLE_ALL = "/v1/role/get";
