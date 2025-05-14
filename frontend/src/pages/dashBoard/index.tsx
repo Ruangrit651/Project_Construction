@@ -8,6 +8,7 @@ import UtilizedDuration from "./UtilizedDuration";
 import CostBreakdown from "./CostBreakdown";
 import BudgetSummaryEAC from "./BudgetSummaryEAC"; // Ensure this path is correct
 
+
 // ฟังก์ชันคำนวณ Estimate At Completion (EAC)
 // EAC = AC + (BAC - EV)
 const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
