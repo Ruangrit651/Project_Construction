@@ -1,24 +1,57 @@
-import React from "react";
-import { Card, Text, Flex, Tooltip } from "@radix-ui/themes";
+import React, { useState, useEffect } from "react";
+import { Card, Text, Flex } from "@radix-ui/themes";
 import { TypeTaskAll } from "@/types/response/response.task";
 import { TypeSubTaskAll } from "@/types/response/response.subtask";
+import { calculateProjectProgress } from "../Function/CalProgress";
+
+// Utility function to get color based on percentage
+const getProgressColor = (percent: number) => {
+    if (percent < 25) return "#ef4444"; // แดง
+    if (percent < 50) return "#f97316"; // ส้ม 
+    if (percent < 75) return "#facc15"; // เหลือง
+    return "#22c55e"; // เขียว
+};
+
+// Calculate status counts for tasks
+const calculateStatusCounts = (tasks: TypeTaskAll[]) => {
+    const counts = {
+        completed: 0,
+        inProgress: 0,
+        notStarted: 0,
+        cancelled: 0,
+        total: tasks.length
+    };
+
+    tasks.forEach(task => {
+        switch (task.status) {
+            case "completed":
+                counts.completed++;
+                break;
+            case "in progress":
+                counts.inProgress++;
+                break;
+            case "not started":
+                counts.notStarted++;
+                break;
+            case "cancelled":
+                counts.cancelled++;
+                break;
+        }
+    });
+
+    return counts;
+};
 
 // สร้าง component ProgressBar สำหรับโปรเจค
 const ProjectProgressBar = ({ percent, width = "100%" }: { percent: number, width?: string }) => {
-    // กำหนดสีตามเปอร์เซ็นต์
-    const getColor = () => {
-        if (percent < 25) return "#ef4444"; // แดง
-        if (percent < 50) return "#f97316"; // ส้ม 
-        if (percent < 75) return "#facc15"; // เหลือง
-        return "#22c55e"; // เขียว
-    };
+    console.log("Rendering progress bar with percent:", percent);
 
     return (
         <div style={{ width }}>
-            <Flex justify="between" align="center" mb="1">
-                <Text size="2" weight="medium">Overall Progress</Text>
-                <Text size="2" weight="medium">{percent.toFixed(2)}%</Text>
-            </Flex>
+            <div className="flex justify-between mb-1">
+                <span className="text-sm font-medium text-gray-700">{percent.toFixed(2)}%</span>
+            </div>
+            
             <div
                 style={{
                     width: "100%",
@@ -29,8 +62,8 @@ const ProjectProgressBar = ({ percent, width = "100%" }: { percent: number, widt
             >
                 <div
                     style={{
-                        width: `${percent}%`,
-                        backgroundColor: getColor(),
+                        width: `${Math.max(0.5, percent)}%`, // กำหนดค่าขั้นต่ำเพื่อให้แถบยังคงมองเห็นได้แม้ค่าจะน้อยมาก
+                        backgroundColor: getProgressColor(percent),
                         height: "100%",
                         borderRadius: "6px",
                         transition: "width 0.3s ease-in-out",
@@ -55,74 +88,79 @@ interface ProjectProgressProps {
     tasks: TypeTaskAll[];
     subtasks: Record<string, TypeSubTaskAll[]>;
     taskProgress: Record<string, number>;
+    subtaskProgress: Record<string, number>;
+    projectProgress?: number;
+    baseProjectProgress?: number;
 }
 
-const ProjectProgress: React.FC<ProjectProgressProps> = ({ tasks, subtasks, taskProgress }) => {
-    // คำนวณความคืบหน้าโดยรวมของโปรเจค
-    const calculateProjectProgress = (): number => {
-        if (tasks.length === 0) return 0;
-        
-        let totalProgress = 0;
-        let totalWeight = 0;
-        
-        tasks.forEach(task => {
-            const weight = task.budget || 1; // ใช้งบประมาณเป็นน้ำหนัก หรือ 1 ถ้าไม่มีงบประมาณ
-            const progress = taskProgress[task.task_id] || 0;
-            
-            totalProgress += progress * weight;
-            totalWeight += weight;
+const ProjectProgress: React.FC<ProjectProgressProps> = ({
+    tasks,
+    subtasks,
+    taskProgress,
+    subtaskProgress,
+    projectProgress: externalProjectProgress,
+    baseProjectProgress
+}) => {
+    const [internalProjectProgress, setInternalProjectProgress] = useState<number>(0);
+    const [statusCounts, setStatusCounts] = useState({
+        completed: 0,
+        inProgress: 0,
+        notStarted: 0,
+        cancelled: 0,
+        total: 0
+    });
+
+    useEffect(() => {
+        // เพิ่ม logging สำหรับ debug
+        console.log("ProjectProgress useEffect triggered with:", {
+            taskCount: tasks.length,
+            subtasksCount: Object.keys(subtasks).length,
+            taskProgressEntries: Object.keys(taskProgress).length,
+            subtaskProgressEntries: Object.keys(subtaskProgress).length,
+            externalProgressProvided: externalProjectProgress !== undefined,
+            baseProgressProvided: baseProjectProgress !== undefined
         });
-        
-        return totalWeight > 0 ? totalProgress / totalWeight : 0;
-    };
-    
-    // คำนวณจำนวนงานตามสถานะ
-    const calculateStatusCounts = () => {
-        const counts = {
-            completed: 0,
-            inProgress: 0,
-            notStarted: 0,
-            cancelled: 0,
-            total: tasks.length
-        };
-        
-        tasks.forEach(task => {
-            switch(task.status) {
-                case 'completed':
-                    counts.completed++;
-                    break;
-                case 'in progress':
-                    counts.inProgress++;
-                    break;
-                case 'cancelled':
-                    counts.cancelled++;
-                    break;
-                default:
-                    counts.notStarted++;
-                    break;
-            }
-        });
-        
-        return counts;
-    };
-    
-    const projectProgress = calculateProjectProgress();
-    const statusCounts = calculateStatusCounts();
-    
+
+        // ตรวจสอบว่าข้อมูลมีความพร้อมที่จะคำนวณหรือไม่
+        const hasData = tasks.length > 0 && Object.keys(taskProgress).length > 0;
+
+        if (baseProjectProgress !== undefined) {
+            console.log("Using base project progress always:", baseProjectProgress);
+            setInternalProjectProgress(baseProjectProgress);
+        }
+        else if (externalProjectProgress !== undefined) {
+            console.log("Using external project progress:", externalProjectProgress);
+            setInternalProjectProgress(externalProjectProgress);
+        }
+        else if (hasData) {
+            // คำนวณทันทีถ้ามีข้อมูลพร้อม
+            const progress = calculateProjectProgress(tasks, taskProgress, subtasks, subtaskProgress);
+            console.log("Calculated internal progress value (immediate):", progress);
+            setInternalProjectProgress(progress);
+        }
+
+        setStatusCounts(calculateStatusCounts(tasks));
+    }, [tasks, subtasks, baseProjectProgress, externalProjectProgress, taskProgress, subtaskProgress]);
+
+    // ไม่แสดงอะไรเลยถ้าไม่มีข้อมูล
+    if (tasks.length === 0) {
+        return null;
+    }
+
     return (
         <Card variant="surface" className="mb-4">
             <Text as="div" size="5" weight="bold" className="mb-4">
                 Project Overview
             </Text>
-            
+
             <Flex direction="column" gap="4">
-                <ProjectProgressBar percent={projectProgress} />
-                
+                <ProjectProgressBar percent={internalProjectProgress} />
+
                 <Flex gap="2" wrap="wrap">
                     <StatCard label="Total Tasks" value={statusCounts.total} />
                     <StatCard label="Completed" value={statusCounts.completed} color="green" />
                     <StatCard label="In Progress" value={statusCounts.inProgress} color="blue" />
-                    <StatCard label="Not Started" value={statusCounts.notStarted} color="orange" />
+                    <StatCard label="Not Started" value={statusCounts.notStarted} color="gray" />
                     <StatCard label="Cancelled" value={statusCounts.cancelled} color="red" />
                 </Flex>
             </Flex>

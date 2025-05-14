@@ -10,6 +10,7 @@ interface DialogEditSubtaskProps {
     trigger: React.ReactNode;
     fetchSubTasks?: () => void;
     updateTaskStatus?: (taskId: string) => void; // เพิ่ม function สำหรับอัปเดต task status
+    onProgressUpdate?: (percent: number) => void;
 }
 
 const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
@@ -17,7 +18,8 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
     subtaskId,
     taskId,
     trigger,
-    updateTaskStatus
+    updateTaskStatus,
+    onProgressUpdate
 }) => {
     const [subtaskName, setSubtaskName] = useState("");
     const [description, setDescription] = useState("");
@@ -123,6 +125,7 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
         }
     };
 
+
     // เรียกใช้ fetchSubtaskData เมื่อ dialog เปิด
     useEffect(() => {
         if (open && subtaskId) {
@@ -174,6 +177,12 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
                             description: `Updated progress to ${progressPercent}%`,
                         });
                         console.log("Updated progress to:", progressPercent);
+                        
+                        // เรียก callback เพื่ออัพเดต state ในหน้าหลัก
+                        if (onProgressUpdate) {
+                            onProgressUpdate(progressPercent);
+                        }
+                        
                     } catch (progressError) {
                         console.error("Failed to update progress:", progressError);
                     }
@@ -196,6 +205,8 @@ const DialogEditSubtask: React.FC<DialogEditSubtaskProps> = ({
             setErrorMessage("An error occurred while updating the subtask.");
         }
     };
+
+    
 
     return (
         <Dialog.Root open={open} onOpenChange={setOpen}>

@@ -157,6 +157,10 @@ export const fetchSubtasksAndProgress = async (
                 [taskId]: []
             }));
         }
+
+        const taskProgressValue = calculateTaskProgress(taskId);
+        console.log(`Subtask fetch complete. Task ${taskId} progress calculated: ${taskProgressValue}%`);
+        
     } catch (error) {
         console.error(`Error fetching subtasks for task ${taskId}:`, error);
         setSubtasks(prev => ({

@@ -15,6 +15,7 @@ interface DialogEditTaskProps {
     status: string;
     updateSubtasksOnComplete?: boolean;
     updateTaskStatusFromSubtasks?: (taskId: string) => void; // เพิ่ม prop นี้
+    onProgressUpdate?: (percent: number) => void;
 }
 
 const DialogEditTask: React.FC<DialogEditTaskProps> = ({
@@ -27,7 +28,8 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({
     end_date = "",
     status,
     updateSubtasksOnComplete = true,
-    updateTaskStatusFromSubtasks
+    updateTaskStatusFromSubtasks,
+    onProgressUpdate
 }) => {
     const [taskName, setTaskName] = useState(task_name);
     const [taskDescription, setTaskDescription] = useState(description);
@@ -158,6 +160,11 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({
                             description: `Updated task progress to ${progressPercent}%`,
                         });
                         console.log("Updated task progress to:", progressPercent);
+                        
+                        // เรียก callback เพื่ออัพเดต state ในหน้าหลัก
+                        if (onProgressUpdate) {
+                            onProgressUpdate(progressPercent);
+                        }
                     } catch (progressError) {
                         console.error("Failed to update progress:", progressError);
                     }
