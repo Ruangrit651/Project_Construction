@@ -1,13 +1,13 @@
 import express, { Request, Response } from "express";
 import { handleServiceResponse, validateRequest } from "@common/utils/httpHandlers";
 import { progressService } from "@modules/progress/progressService";
-import { 
-  CreateProgressSchema, 
-  UpdateProgressSchema, 
+import {
+  CreateProgressSchema,
+  UpdateProgressSchema,
   GetProgressByIdSchema,
   GetTaskProgressSchema,
   GetSubtaskProgressSchema,
-  DeleteProgressSchema 
+  DeleteProgressSchema
 } from "@modules/progress/progressModel";
 import { authenticateJWT } from "@common/middleware/authMiddleware";
 import rolegrop5 from "@common/middleware/roleGroup5"; // สำหรับสิทธิ์การจัดการ
@@ -17,7 +17,7 @@ export const progressRouter = (() => {
 
   // ดึงข้อมูลความคืบหน้าทั้งหมด
   router.get(
-    "/get", 
+    "/get",
     authenticateJWT,
     async (req: Request, res: Response) => {
       const serviceResponse = await progressService.findAll();
@@ -32,16 +32,16 @@ export const progressRouter = (() => {
     validateRequest(CreateProgressSchema),
     async (req: Request, res: Response) => {
       const payload = req.body;
-      
+
       // แปลง date_recorded จาก string เป็น Date ถ้ามี
       if (payload.date_recorded) {
         payload.date_recorded = new Date(payload.date_recorded);
       }
-      
+
       // ตั้งค่า created_by และ updated_by จากข้อมูลผู้ใช้ที่ login
       payload.created_by = req.user.userId;
       payload.updated_by = req.user.userId;
-      
+
       const serviceResponse = await progressService.create(payload);
       handleServiceResponse(serviceResponse, res);
     }
@@ -54,15 +54,15 @@ export const progressRouter = (() => {
     validateRequest(UpdateProgressSchema),
     async (req: Request, res: Response) => {
       const { progress_id, ...payload } = req.body;
-      
+
       // แปลง date_recorded จาก string เป็น Date ถ้ามี
       if (payload.date_recorded) {
         payload.date_recorded = new Date(payload.date_recorded);
       }
-      
+
       // ตั้งค่า updated_by จากข้อมูลผู้ใช้ที่ login
       payload.updated_by = req.user.userId;
-      
+
       const serviceResponse = await progressService.update(progress_id, payload);
       handleServiceResponse(serviceResponse, res);
     }
@@ -103,6 +103,27 @@ export const progressRouter = (() => {
       handleServiceResponse(serviceResponse, res);
     }
   );
+
+  router.get("/project/:project_id",
+    authenticateJWT,
+    async (req: Request, res: Response) => {
+      const { project_id } = req.params;
+      const serviceResponse = await progressService.calculateProjectProgress(project_id);
+      handleServiceResponse(serviceResponse, res);
+    }
+  );
+
+  // เพิ่ม endpoint สำหรับดึงข้อมูลความคืบหน้าของทั้ง tasks และ subtasks ในโปรเจค
+  router.get("/project-detailed/:project_id",
+    authenticateJWT,
+    async (req: Request, res: Response) => {
+      const { project_id } = req.params;
+      const serviceResponse = await progressService.getDetailedProjectProgress(project_id);
+      handleServiceResponse(serviceResponse, res);
+    }
+  );
+
+
 
   return router;
 })();

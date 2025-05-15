@@ -59,6 +59,11 @@ export const GET_PROGRESS_ALL = "/v1/progress/get";
 export const CREATE_PROGRESS = "/v1/progress/create";
 export const UPDATE_PROGRESS = "/v1/progress/update";
 export const DELETE_PROGRESS = "/v1/progress/delete";
+export const GET_TASK_PROGRESS = "/v1/progress/task";
+export const GET_SUBTASK_PROGRESS = "/v1/progress/subtask";
+export const GET_PROJECT_PROGRESS = "/v1/progress/project";
+export const GET_DETAILED_PROJECT_PROGRESS = "/v1/progress/project-detailed";
+
 
 // relations
 export const GET_ALL_RELATIONS = "/v1/relations/get";
