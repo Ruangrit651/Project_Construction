@@ -1,14 +1,23 @@
 import { useEffect, useState, Fragment } from "react";
-import { Card, Table, Text, Flex, Spinner, Button, Badge, Box } from "@radix-ui/themes";
+import { Card, Table, Text, Flex, Spinner, Button, Badge, Box, Heading } from "@radix-ui/themes";
 import { getResource } from "@/services/resource.service";
-import { getTask } from "@/services/task.service";
+import { getTask, getTaskProject } from "@/services/task.service";
 import { getSubtask } from "@/services/subtask.service";
 import { TypeTask } from "@/types/response/response.task";
 import { TypeResourceAll } from "@/types/response/response.resource";
 import { TypeSubTask } from "@/types/response/response.subtask";
-import { ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons";
+import { useNavigate, useLocation } from "react-router-dom";
+import { ChevronDownIcon, ChevronUpIcon, ArrowLeftIcon } from "@radix-ui/react-icons";
 
 export default function ResourcePage() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const searchParams = new URLSearchParams(location.search);
+
+    // อ่าน URL parameters
+    const project_id = searchParams.get('project_id');
+    const project_name = searchParams.get('project_name');
+
     const [tasks, setTasks] = useState<TypeTask[]>([]);
     const [subTasks, setSubTasks] = useState<TypeSubTask[]>([]);
     const [resourcesBySubTask, setResourcesBySubTask] = useState<{ [subtask_id: string]: TypeResourceAll[] }>({});
@@ -34,11 +43,37 @@ export default function ResourcePage() {
         setExpandedSubTasks(newState);
     };
 
+    // Function to navigate to different views for the same project
+    const navigateToProjectView = (view: string) => {
+        if (!project_id || !project_name) return;
+
+        switch (view) {
+            case 'tasks':
+                navigate(`/ManagerTask?project_id=${project_id}&project_name=${encodeURIComponent(project_name || '')}`);
+                break;
+            case 'resources':
+                navigate(`/ManagerResource?project_id=${project_id}&project_name=${encodeURIComponent(project_name || '')}`);
+                break;
+            default:
+                break;
+        }
+    };
+
     const getResourceData = async () => {
         setIsLoading(true);
         try {
+            if (!project_id) {
+                // ถ้าไม่มี project_id ให้แสดงว่าไม่มีข้อมูล
+                setTasks([]);
+                setSubTasks([]);
+                setResourcesBySubTask({});
+                setSubTasksByTask({});
+                setIsLoading(false);
+                return;
+            }
+
             const [resTasks, resSubTasks, resResources] = await Promise.all([
-                getTask(),
+                getTaskProject(project_id),
                 getSubtask(),
                 getResource()
             ]);
@@ -47,6 +82,11 @@ export default function ResourcePage() {
                 const tasks: TypeTask[] = resTasks.responseObject;
                 const subTasks: TypeSubTask[] = resSubTasks.responseObject;
                 const resourceList: TypeResourceAll[] = resResources.responseObject;
+
+                // Filter tasks by project_id
+                const filteredTasks = tasks.filter(task =>
+                    task.project_id?.toString() === project_id
+                );
 
                 // Set initial state for all subtasks as collapsed
                 const initialExpandedState = subTasks.reduce<{ [subtask_id: string]: boolean }>((acc, subtask) => {
@@ -64,14 +104,14 @@ export default function ResourcePage() {
                 }, {});
 
                 // Group subtasks by task
-                const subTasksByTask = tasks.reduce<{ [task_id: string]: TypeSubTask[] }>((acc, task) => {
+                const subTasksByTask = filteredTasks.reduce<{ [task_id: string]: TypeSubTask[] }>((acc, task) => {
                     acc[task.task_id] = subTasks.filter(subtask =>
                         subtask.task_id === task.task_id
                     );
                     return acc;
                 }, {});
 
-                setTasks(tasks);
+                setTasks(filteredTasks);
                 setSubTasks(subTasks);
                 setResourcesBySubTask(resourcesBySubTask);
                 setSubTasksByTask(subTasksByTask);
@@ -88,7 +128,7 @@ export default function ResourcePage() {
 
     useEffect(() => {
         getResourceData();
-    }, []);
+    }, [project_id]);
 
     // Calculate total resources value for each task
     const calculateTaskTotalResources = (task_id: string): number => {
@@ -128,6 +168,42 @@ export default function ResourcePage() {
     return (
         <Card variant="surface" style={{ padding: '16px' }}>
             <Flex direction="column" gap="3">
+                {/* Project Header section */}
+                <div>
+                    <Flex direction="column" gap="1">
+                        <Flex align="center" gap="2">
+                            <Text
+                                size="2"
+                                className="text-blue-500 hover:underline cursor-pointer flex items-center"
+                                onClick={() => navigate('/ManagerProjectList')}
+                            >
+                                <ArrowLeftIcon className="mr-1" /> รายการโปรเจกต์
+                            </Text>
+                        </Flex>
+                        <Heading size="6" className="mt-1">
+                            {project_name ? `ทรัพยากร: ${project_name}` : "ทรัพยากรทั้งหมด"}
+                        </Heading>
+                    </Flex>
+                </div>
+
+                {/* Navigation tabs for project views */}
+                {project_id && (
+                    <Flex gap="3" className="mt-2 mb-4">
+                        <Button
+                            variant="soft"
+                            onClick={() => navigateToProjectView('tasks')}
+                        >
+                            งาน
+                        </Button>
+                        <Button
+                            variant="solid"
+                            onClick={() => navigateToProjectView('resources')}
+                        >
+                            ทรัพยากร
+                        </Button>
+                    </Flex>
+                )}
+
                 <Flex justify="between" align="center">
                     <Text size="4" weight="bold">ทรัพยากรงานก่อสร้าง</Text>
                     <Flex gap="2">

@@ -1,34 +1,57 @@
 import * as NavigationMenu from '@radix-ui/react-navigation-menu';
 import * as Tabs from '@radix-ui/react-tabs';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { 
-  PersonIcon, 
-  DashboardIcon, 
+import {
+  PersonIcon,
+  DashboardIcon,
   ArchiveIcon,
   ClipboardIcon,
   CalendarIcon,
   ExitIcon
 } from '@radix-ui/react-icons';
 import { logoutUser } from '@/services/logout.service';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const NavbarMain = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
+  // เก็บข้อมูลโปรเจกต์จาก URL parameters
+  const [selectedProject, setSelectedProject] = useState<{
+    id: string | null;
+    name: string | null;
+  }>({
+    id: null,
+    name: null
+  });
+
+  // อ่าน URL parameters เมื่อ location เปลี่ยน
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const projectId = searchParams.get('project_id');
+    const projectName = searchParams.get('project_name');
+
+    if (projectId && projectName) {
+      setSelectedProject({
+        id: projectId,
+        name: projectName
+      });
+    }
+  }, [location]);
+
   // ฟังก์ชันสำหรับ Logout
   const handleLogout = async () => {
     try {
-      await logoutUser({ username: 'Myuser' }); // เรียกใช้งาน Logout Service
-      navigate('/', { state: { logoutSuccess: true } }); // ส่ง state ไปที่หน้า Login
+      await logoutUser({ username: 'Myuser' });
+      navigate('/', { state: { logoutSuccess: true } });
     } catch (err) {
       console.error('Logout failed', err);
-      navigate('/', { state: { logoutFailed: true } }); // ส่ง state ไปที่หน้า Login ในกรณีที่เกิดข้อผิดพลาด
+      navigate('/', { state: { logoutFailed: true } });
     }
   };
 
-  // คำนวณว่า path ปัจจุบันเป็นของ tab ใด
+  /// คำนวณว่า path ปัจจุบันเป็นของ tab ใด
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.includes('/ManagerDash')) return 'dashboard';
@@ -40,11 +63,38 @@ const NavbarMain = () => {
   };
 
   const handleTabChange = (value: string) => {
-    if (value === 'dashboard') navigate('/ManagerDash');
-    else if (value === 'projectlist') navigate('/ManagerProjectList');
-    else if (value === 'timeline') navigate('/ManagerPlan');
-    else if (value === 'tasklist') navigate('/ManagerTask');
-    else if (value === 'resource') navigate('/ManagerResource');
+    // ถ้าเปลี่ยนไปหน้า ProjectList ให้เคลียร์ค่าโปรเจกต์ที่เลือก
+    if (value === 'projectlist') {
+      navigate('/ManagerProjectList');
+      return;
+    }
+
+    // ถ้ามีโปรเจกต์ที่เลือกอยู่แล้ว ก็นำทางไปยังหน้านั้นพร้อมข้อมูลโปรเจกต์ที่เลือก
+    if (selectedProject.id && selectedProject.name) {
+      // ตรวจสอบค่า value และกำหนด path ที่ถูกต้อง
+      let pagePath = "";
+      switch (value) {
+        case 'dashboard':
+          pagePath = "/ManagerDash";
+          break;
+        case 'tasklist':
+          pagePath = "/ManagerTask";
+          break;
+        case 'timeline':
+          pagePath = "/ManagerPlan";
+          break;
+        case 'resource':
+          pagePath = "/ManagerResource";
+          break;
+        default:
+          pagePath = `/Manager${value.charAt(0).toUpperCase() + value.slice(1)}`;
+      }
+
+      navigate(`${pagePath}?project_id=${selectedProject.id}&project_name=${encodeURIComponent(selectedProject.name)}`);
+    } else {
+      // ถ้ายังไม่มีโปรเจกต์ที่เลือก ให้ไปยังหน้าโปรเจกต์ลิสต์
+      navigate('/ManagerProjectList');
+    }
   };
 
   return (
@@ -58,8 +108,13 @@ const NavbarMain = () => {
           <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 bg-clip-text text-transparent">
             CITE Construction
           </h2>
+          {selectedProject.id && (
+            <span className="ml-4 px-3 py-1 bg-blue-600 rounded-full text-sm">
+              โปรเจกต์: {selectedProject.name}
+            </span>
+          )}
         </div>
-        
+
         <NavigationMenu.List className="flex gap-6">
           <NavigationMenu.Item>
             <DropdownMenu.Root>
@@ -86,69 +141,63 @@ const NavbarMain = () => {
       </NavigationMenu.Root>
 
       {/* Tabs Navigation */}
-      <Tabs.Root 
-        className="w-full bg-gray-800 text-white shadow-md" 
-        value={getActiveTab()} 
+      <Tabs.Root
+        className="w-full bg-gray-800 text-white shadow-md"
+        value={getActiveTab()}
         onValueChange={handleTabChange}
       >
         <Tabs.List className="flex max-w-screen-lg ">
 
-          <Tabs.Trigger 
-            value="projectlist" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'projectlist' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
+          <Tabs.Trigger
+            value="projectlist"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'projectlist'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
           >
             <ArchiveIcon className={`${getActiveTab() === 'projectlist' ? 'text-blue-400' : ''}`} />
             Project List
           </Tabs.Trigger>
-          
-          <Tabs.Trigger 
-            value="dashboard" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'dashboard' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
+
+          <Tabs.Trigger
+            value="dashboard"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'dashboard'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
           >
             <DashboardIcon className={`${getActiveTab() === 'dashboard' ? 'text-blue-400' : ''}`} />
             Dashboard
           </Tabs.Trigger>
 
-          <Tabs.Trigger 
-            value="tasklist" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'tasklist' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
+          <Tabs.Trigger
+            value="tasklist"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'tasklist'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
           >
             <ClipboardIcon className={`${getActiveTab() === 'tasklist' ? 'text-blue-400' : ''}`} />
             Tasklist
           </Tabs.Trigger>
 
-          <Tabs.Trigger 
-            value="timeline" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'timeline' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
+          <Tabs.Trigger
+            value="timeline"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'timeline'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
           >
             <CalendarIcon className={`${getActiveTab() === 'timeline' ? 'text-blue-400' : ''}`} />
             Timeline
           </Tabs.Trigger>
 
-
-          <Tabs.Trigger 
-            value="resource" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'resource' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
+          <Tabs.Trigger
+            value="resource"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'resource'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
           >
             <ArchiveIcon className={`${getActiveTab() === 'resource' ? 'text-blue-400' : ''}`} />
             Resource/Budget

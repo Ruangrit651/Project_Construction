@@ -868,9 +868,8 @@ const ProgressBar = ({ percent }: { percent: number }) => {
 export default function TasklistPage() {
     const location = useLocation();
     const navigate = useNavigate();
-
-    // ใช้ URLSearchParams เพื่อดึงค่า query parameters จาก URL
     const searchParams = new URLSearchParams(location.search);
+
     const project_id = searchParams.get('project_id');
     const project_name = searchParams.get('project_name');
 
@@ -883,6 +882,22 @@ export default function TasklistPage() {
     const [projectName, setProjectName] = useState<string>("");
     const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
     const [projectProgressValue, setProjectProgressValue] = useState<number>(0);
+
+    // Function to navigate to different views for the same project
+    const navigateToProjectView = (view: string) => {
+        if (!project_id || !project_name) return;
+        
+        switch (view) {
+            case 'tasks':
+                navigate(`/ManagerTask?project_id=${project_id}&project_name=${encodeURIComponent(project_name)}`);
+                break;
+            case 'resources':
+                navigate(`/ManagerResource?project_id=${project_id}&project_name=${encodeURIComponent(project_name)}`);
+                break;
+            default:
+                break;
+        }
+    };
 
     // ย้าย fetchAllData ออกมานอก useEffect
     const fetchAllData = async () => {
@@ -1235,24 +1250,41 @@ export default function TasklistPage() {
     });
 
     return (
-        <div className="space-y-4">
-            {/* Project Header section */}
-            <div>
-                <Flex direction="column" gap="1">
-                    <Flex align="center" gap="2">
-                        <Text
-                            size="2"
-                            className="text-blue-500 hover:underline cursor-pointer flex items-center"
+        <div className="container mx-auto px-4 py-6">
+            {/* Project Header */}
+            <div className="mb-6">
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                        <span
+                            className="text-sm text-blue-500 hover:underline cursor-pointer flex items-center"
                             onClick={() => navigate('/ManagerProjectList')}
                         >
-                            <ArrowLeftIcon className="mr-1" /> Project List
-                        </Text>
-                    </Flex>
-                    <Heading size="6" className="mt-1">
-                        {projectName || "All Tasks"}
-                    </Heading>
-                </Flex>
+                            <ArrowLeftIcon className="mr-1" /> รายการโปรเจกต์
+                        </span>
+                    </div>
+                    <h1 className="text-2xl font-bold mt-1">
+                        {project_name ? `งาน: ${project_name}` : "งานทั้งหมด"}
+                    </h1>
+                </div>
             </div>
+
+            {/* Navigation tabs */}
+            {project_id && (
+                <div className="flex gap-3 mt-2 mb-4">
+                    <Button 
+                        variant="solid" 
+                        onClick={() => navigateToProjectView('tasks')}
+                    >
+                        งาน
+                    </Button>
+                    <Button 
+                        variant="soft" 
+                        onClick={() => navigateToProjectView('resources')}
+                    >
+                        ทรัพยากร
+                    </Button>
+                </div>
+            )}
 
             {/* Project Progress Component */}
             <ProjectProgress
