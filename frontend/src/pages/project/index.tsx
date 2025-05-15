@@ -107,7 +107,7 @@ export default function AdminProjectPage() {
                             <Table.ColumnHeaderCell>Project Name</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Budget</Table.ColumnHeaderCell>
                             <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
-                            <Table.ColumnHeaderCell>Owner</Table.ColumnHeaderCell>
+                            {/* <Table.ColumnHeaderCell>Owner</Table.ColumnHeaderCell> */}
                             <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
                         </Table.Row>
                     </Table.Header>
@@ -118,10 +118,9 @@ export default function AdminProjectPage() {
                                     <Table.Cell>{project.project_name}</Table.Cell>
                                     <Table.Cell>{new Intl.NumberFormat("en-US").format(project.budget)}</Table.Cell>
                                     <Table.Cell>{project.status}</Table.Cell>
-                                    <Table.Cell>
-                                        {/* แสดงชื่อเจ้าของ โดยใช้ owner ที่ส่งมาจาก API หรือหาจาก user_id */}
+                                    {/* <Table.Cell>
                                         {project.owner?.username || getUsernameById(project.user_id) || "ไม่ระบุ"}
-                                    </Table.Cell>
+                                    </Table.Cell> */}
                                     <Table.Cell>
                                         <Flex gap="2">
                                             {/* เพิ่มปุ่มดูรายละเอียด */}
