@@ -40,5 +40,15 @@ export const resourceRouter = (() => {
         handleServiceResponse(ServiceResponse, res);
     });
 
+     // GET resource summary by type
+     router.get("/summary", async (req, res) => {
+        const project_ids = typeof req.query.project_ids === "string"
+          ? req.query.project_ids.split(",")
+          : undefined;
+        console.log("project_ids", project_ids);
+        const ServiceResponse = await resourceService.summaryByType(project_ids);
+        handleServiceResponse(ServiceResponse, res);
+      });
+
     return router;
 })();

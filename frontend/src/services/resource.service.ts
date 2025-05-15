@@ -1,4 +1,4 @@
-import { CREATE_RESOURCE, GET_RESOURCE_ALL , UPDATE_RESOURCE ,DELETE_RESOURCE} from "@/apis/endpoint.api";
+import { CREATE_RESOURCE, GET_RESOURCE_ALL , UPDATE_RESOURCE ,DELETE_RESOURCE, GET_RESOURCE_SUMMARY} from "@/apis/endpoint.api";
 import mainApi from "@/apis/main.api";
 import { PayloadCreateResource , PayloadDeleteResource ,PayloadUpdateResource} from "@/types/requests/request.resource";
 import { ResourceResponse } from "@/types/response/response.resource";
@@ -9,6 +9,11 @@ export const getResource = async () => {
     );
     return response;
 };
+
+export const getResourceSummary = async (params?: any) => {
+    const { data: response } = await mainApi.get(GET_RESOURCE_SUMMARY, { params });
+    return response;
+  };
 
 export const postResource = async (data: PayloadCreateResource) => {
     const { data: response } = await mainApi.post<ResourceResponse>(

@@ -17,7 +17,7 @@ export const CREATE_PROJECT = "/v1/project/create";
 export const UPDATE_PROJECT = "/v1/project/update";
 export const DELETE_PROJECT = "/v1/project/delete";
 export const GET_MANAGER_PROJECTS = "/v1/project/manager";
-export const GET_PROJECT_ALL_AVAILABLE = "/v1/project/available";
+export const GET_PROJECT_ALL_AVAILABLE = "/v1/project/available";    
 
 // roles
 export const GET_ROLE_ALL = "/v1/role/get";
@@ -46,6 +46,7 @@ export const GET_RESOURCE_ALL = "/v1/resource/get"
 export const CREATE_RESOURCE = "/v1/resource/create"
 export const UPDATE_RESOURCE = "/v1/resource/update"
 export const DELETE_RESOURCE = "/v1/resource/delete"
+export const GET_RESOURCE_SUMMARY = "/v1/resource/summary";
 
 // login
 export const LOGIN = "/v1/auth/login";
