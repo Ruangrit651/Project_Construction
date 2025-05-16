@@ -86,6 +86,18 @@ async function main() {
     },
   });
 
+  const hashedPassword2 = await bcrypt.hash('nice_sarawut@A2000sb;-hk;', 10);
+
+   const rootAdmin2 = await prisma.user.upsert({
+    where: { username: 'rootadmin-nice' }, // ค้นหาจาก username
+    update: {}, // ถ้าพบจะไม่อัปเดตข้อมูลเพิ่มเติม
+    create: {
+      username: 'rootadmin-nice',
+      password: hashedPassword2, // รหัสผ่านที่เข้ารหัส (ถ้าต้องการเข้ารหัสให้แทนที่ข้อความนี้)
+      role: rootAdminRole.name, // อ้างอิง role_id จาก role
+    },
+  });
+
   console.log({ roleResults });
   console.log({ rootAdmin });
 }
