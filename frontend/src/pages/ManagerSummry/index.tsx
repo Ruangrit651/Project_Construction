@@ -9,7 +9,7 @@ import CostBreakdown from "../dashBoard/CostBreakdown";
 import BudgetSummaryEAC from "../dashBoard/BudgetSummaryEAC";
 import { getResourceSummary } from "@/services/resource.service";
 import { useLocation } from "react-router-dom";
-import { getDetailedProjectProgress } from "@/services/progress.service";
+
 
 // EAC calculation function
 const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
@@ -97,7 +97,7 @@ const calculateUtilizedDuration = (projects: TypeDashboard[] | null): number => 
   return totalDays;
 };
 
-export default function ManagerDashboard() {
+export default function ManagerSummary() {
   const location = useLocation();
   const [projectDetails, setProjectDetails] = useState<TypeDashboard[] | null>(null);
   const [filteredProjects, setFilteredProjects] = useState<TypeDashboard[] | null>(null);
@@ -105,26 +105,17 @@ export default function ManagerDashboard() {
   const [selectedProjects, setSelectedProjects] = useState<string[]>(["All"]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["All"]);
   const [loading, setLoading] = useState(true);
-  const [progressLoading, setProgressLoading] = useState(false);
   const [showAsPercent, setShowAsPercent] = useState(true);
   const [showDetails, setShowDetails] = useState(true);
   const [resourceSummary, setResourceSummary] = useState<{ type: string; quantity: number; totalCost: number }[]>([]);
-  const [currentProject, setCurrentProject] = useState<TypeDashboard | null>(null);
-  const [projectProgressMap, setProjectProgressMap] = useState<Record<string, number>>({});
 
   // Get project ID from URL if available
   const searchParams = new URLSearchParams(location.search);
   const projectId = searchParams.get('project_id');
-  const projectName = searchParams.get('project_name');
 
   // Calculate metrics based on filtered projects
   const aggregatedValues = filteredProjects ? calculateAggregatedValues(filteredProjects) : null;
-  const completionRate = filteredProjects ?
-    filteredProjects.reduce((sum, project) => {
-      // ใช้ progress จาก API ถ้ามี หรือใช้ค่าจาก project.completionRate
-      const projectProgress = projectProgressMap[project.project_id] || project.completionRate || 0;
-      return sum + projectProgress;
-    }, 0) / (filteredProjects.length || 1) : 0;
+  const completionRate = filteredProjects ? calculateCompletionRate(filteredProjects) : 0;
   const totalAmountSpent = filteredProjects ? calculateTotalAmountSpent(filteredProjects) : 0;
   const utilizedDays = filteredProjects ? calculateUtilizedDuration(filteredProjects) : 0;
   const actualBudget = filteredProjects
@@ -133,96 +124,25 @@ export default function ManagerDashboard() {
   const estimatedEAC = calculateLocalEAC(filteredProjects) || 0;
   const { percent, isOverBudget, overBudgetPercent } = calculatePercentOfTarget(filteredProjects);
 
-  // เพิ่ม function สำหรับดึงข้อมูล progress
-  const fetchProjectProgress = async (projectId: string) => {
-    try {
-      const progressData = await getDetailedProjectProgress(projectId);
-      if (progressData.success) {
-        return progressData.responseObject.projectProgress || 0;
-      }
-      return 0;
-    } catch (error) {
-      console.error(`Error fetching progress for project ${projectId}:`, error);
-      return 0;
-    }
-  };
-
   // Fetch project data
   useEffect(() => {
     const fetchProjectDetails = async () => {
-      setLoading(true);
       try {
         const data = await getDashboard();
         if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
           setProjectDetails(data.responseObject);
-
+          
           // If projectId is in URL, filter to show only that project
           if (projectId) {
             const selectedProject = data.responseObject.filter(project => project.project_id === projectId);
             setFilteredProjects(selectedProject);
-            
-            if (selectedProject.length > 0) {
-              setCurrentProject(selectedProject[0]);
-              
-              // ดึงข้อมูล progress สำหรับโครงการเดียว
-              setProgressLoading(true);
-              try {
-                const progress = await fetchProjectProgress(projectId);
-                
-                // อัพเดต projectProgressMap
-                setProjectProgressMap({ [projectId]: progress });
-                
-                // อัพเดต currentProject ด้วย progress ใหม่
-                const updatedProject = {
-                  ...selectedProject[0],
-                  completionRate: progress
-                };
-                setCurrentProject(updatedProject);
-                
-                // อัพเดต filtered projects
-                setFilteredProjects([updatedProject]);
-              } catch (progressError) {
-                console.error("Error fetching project progress:", progressError);
-              } finally {
-                setProgressLoading(false);
-              }
-            }
           } else {
             setFilteredProjects(data.responseObject);
-            
-            // ดึงข้อมูล progress สำหรับทุกโครงการ
-            setProgressLoading(true);
-            const progressMap: Record<string, number> = {};
-            const progressPromises = data.responseObject.map(async (project) => {
-              const progress = await fetchProjectProgress(project.project_id);
-              progressMap[project.project_id] = progress;
-              return { projectId: project.project_id, progress };
-            });
-            
-            // รอให้การดึงข้อมูล progress ทั้งหมดเสร็จสิ้น
-            const progressResults = await Promise.all(progressPromises);
-            
-            // อัพเดต projectProgressMap
-            const newProgressMap: Record<string, number> = {};
-            progressResults.forEach(result => {
-              newProgressMap[result.projectId] = result.progress;
-            });
-            setProjectProgressMap(newProgressMap);
-            
-            // อัพเดตข้อมูลโครงการด้วยค่า progress ที่ดึงมาใหม่
-            const updatedProjects = data.responseObject.map(project => ({
-              ...project,
-              completionRate: newProgressMap[project.project_id] || project.completionRate
-            }));
-            
-            setProjectDetails(updatedProjects);
-            setFilteredProjects(updatedProjects);
-            setProgressLoading(false);
           }
 
           const options = ["All", ...data.responseObject.map((project) => project.project_name)];
           setProjectOptions(options);
-
+          
           // If project ID exists in URL, select only that project
           if (projectId) {
             const projectName = data.responseObject.find(p => p.project_id === projectId)?.project_name;
@@ -258,7 +178,7 @@ export default function ManagerDashboard() {
       }
       try {
         let params = {};
-        if (selectedProjects.length > 0 && !selectedProjects.includes("All")) {
+        if(selectedProjects.length > 0 && !selectedProjects.includes("All")){
           params = {
             project_ids: filteredProjects.map((p) => p.project_id).join(","),
           };
@@ -271,7 +191,7 @@ export default function ManagerDashboard() {
         setResourceSummary([]);
       }
     };
-
+    
     fetchResourceSummary();
   }, [filteredProjects, selectedProjects]);
 
@@ -291,6 +211,7 @@ export default function ManagerDashboard() {
     }
   }, [selectedProjects, selectedStatuses, projectDetails]);
 
+  // Show loading or no data message
   if (loading) {
     return <p className="text-center text-gray-500 p-8">Loading dashboard data...</p>;
   }
@@ -304,91 +225,38 @@ export default function ManagerDashboard() {
       <div className="container max-w-none">
         {/* Header with title */}
         <div className="bg-gradient-to-r from-gray-800 to-gray-700 shadow-xl rounded-lg p-4 mb-4 text-white">
-          <h1 className="text-2xl md:text-3xl font-bold">
-            {projectName ? projectName : "Manager Dashboard"}
-          </h1>
-          <p className="text-gray-300">Track and analyze your construction project performance</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Manager Summary</h1>
+          <p className="text-gray-300">Track and analyze your construction projects performance</p>
         </div>
+        
+        {/* Project Filter Section */}
+        <div className="bg-white shadow-xl rounded-lg p-4 md:p-5 mb-3 border border-gray-200">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">🔍 Filter Projects</h2>
 
-        {/* Project Progress Section - Replaces Filter Projects */}
-        {currentProject && (
-          <div className="bg-white shadow-xl rounded-lg p-4 md:p-5 mb-3 border border-gray-200 relative">
-            {progressLoading && (
-              <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center z-10">
-                <p className="text-blue-600 font-medium">Loading progress data...</p>
-              </div>
-            )}
-            
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">📈 Project Progress</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Project Name Filter */}
+            <div className="p-4 md:p-5 rounded-xl border border-gray-300 shadow-sm bg-gray-50 hover:shadow-md transition">
+              <h3 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-3">📁 Project Name</h3>
+              <CustomSelect
+                options={projectOptions}
+                placeholder="Select Projects"
+                selectedOptions={selectedProjects}
+                onChange={(value: string[]) => setSelectedProjects(value)}
+              />
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Completion Progress - ใช้ progress จาก API */}
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-4 shadow-md">
-                <h3 className="text-lg font-semibold text-blue-800 mb-2">Completion</h3>
-                <div className="flex items-center justify-between mb-1 text-sm">
-                  <span>Progress</span>
-                  <span className="font-bold">
-                    {(projectProgressMap[currentProject.project_id] !== undefined 
-                      ? projectProgressMap[currentProject.project_id] 
-                      : currentProject.completionRate || 0).toFixed(1)}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${projectProgressMap[currentProject.project_id] !== undefined 
-                        ? projectProgressMap[currentProject.project_id] 
-                        : currentProject.completionRate || 0}%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Schedule Status */}
-              <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200 p-4 shadow-md">
-                <h3 className="text-lg font-semibold text-green-800 mb-2">Schedule</h3>
-                <div className="flex flex-col">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="font-medium">Start Date:</div>
-                    <div>{new Date(currentProject.start_date).toLocaleDateString()}</div>
-                    <div className="font-medium">End Date:</div>
-                    <div>{new Date(currentProject.end_date).toLocaleDateString()}</div>
-                  </div>
-                  <div className="mt-2 text-xs px-2 py-1 rounded-full bg-green-200 text-green-800 font-medium inline-block text-center w-auto self-center">
-                    {new Date() < new Date(currentProject.end_date) ? "On Schedule" : "Past Due"}
-                  </div>
-                </div>
-              </div>
-
-              {/* Budget Usage */}
-              <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl border border-purple-200 p-4 shadow-md">
-                <h3 className="text-lg font-semibold text-purple-800 mb-2">Budget Usage</h3>
-                <div className="flex items-center justify-between mb-1 text-sm">
-                  <span>Usage</span>
-                  <span className="font-bold">
-                    {currentProject.budget > 0 ? ((currentProject.actual / currentProject.budget) * 100).toFixed(1) : 0}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className={`h-3 rounded-full transition-all duration-300 ${currentProject.actual > currentProject.budget ? "bg-red-500" :
-                      currentProject.actual > (currentProject.budget * 0.8) ? "bg-yellow-500" : "bg-green-500"
-                      }`}
-                    style={{ width: `${Math.min((currentProject.actual / currentProject.budget) * 100, 100)}%` }}
-                  ></div>
-                </div>
-                <div className="mt-2 text-sm">
-                  <span className="font-medium">Actual: </span>
-                  <span>{Number(currentProject.actual).toLocaleString()} THB</span>
-                  <span className="mx-2">|</span>
-                  <span className="font-medium">Budget: </span>
-                  <span>{Number(currentProject.budget).toLocaleString()} THB</span>
-                </div>
-              </div>
+            {/* Project Status Filter */}
+            <div className="p-4 md:p-5 rounded-xl border border-gray-300 shadow-sm bg-gray-50 hover:shadow-md transition">
+              <h3 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-3">📌 Project Status</h3>
+              <CustomSelect
+                options={["All", "In progress", "Completed", "Suspend operations", "Project Cancellation"]}
+                placeholder="Select Status"
+                selectedOptions={selectedStatuses}
+                onChange={(value: string[]) => setSelectedStatuses(value)}
+              />
             </div>
           </div>
-        )}
+        </div>
 
         {/* Budget Overview Section */}
         <div className="mb-3">
@@ -410,9 +278,9 @@ export default function ManagerDashboard() {
               {showAsPercent
                 ? `${percent.toFixed(2)}%`
                 : ((percent / 100) * (aggregatedValues?.totalBudget || 0)).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
               {showAsPercent ? "" : <span className="text-sm ml-1">THB</span>}
             </h2>
             <p className="text-sm md:text-base text-gray-700 font-medium tracking-wide">🎯 Budget Utilization</p>
@@ -420,8 +288,9 @@ export default function ManagerDashboard() {
             {/* Progress Bar */}
             <div className="w-full bg-gray-300 rounded-full h-3 md:h-4 overflow-hidden shadow-inner">
               <div
-                className={`h-3 md:h-4 rounded-full ${isOverBudget ? "bg-red-500" : percent > 80 ? "bg-yellow-400" : "bg-green-500"
-                  }`}
+                className={`h-3 md:h-4 rounded-full ${
+                  isOverBudget ? "bg-red-500" : percent > 80 ? "bg-yellow-400" : "bg-green-500"
+                }`}
                 style={{ width: `${Math.min(percent, 100)}%`, transition: "width 0.5s ease-in-out" }}
               />
             </div>
@@ -492,12 +361,13 @@ export default function ManagerDashboard() {
                   {/* Budget Status Badge */}
                   {aggregatedValues && (
                     <span
-                      className={`absolute top-2 right-2 px-2 py-1 text-xs font-semibold rounded-full shadow ${isOverBudget
-                        ? "bg-red-200 text-red-800"
-                        : percent > 80
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-green-100 text-green-800"
-                        }`}
+                      className={`absolute top-2 right-2 px-2 py-1 text-xs font-semibold rounded-full shadow ${
+                        isOverBudget
+                          ? "bg-red-200 text-red-800"
+                          : percent > 80
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                      }`}
                     >
                       {isOverBudget
                         ? "Over Budget"
@@ -525,7 +395,7 @@ export default function ManagerDashboard() {
                 className="grid gap-4 p-3 md:p-4 mt-2 md:mt-3 overflow-y-auto"
                 style={{ minHeight: "250px", maxHeight: "280px" }}
               >
-                {loading || progressLoading ? (
+                {loading ? (
                   <p className="text-gray-500 text-center">Loading...</p>
                 ) : filteredProjects && filteredProjects.length > 0 ? (
                   filteredProjects.map((project) => {
@@ -553,8 +423,9 @@ export default function ManagerDashboard() {
                         <div className="flex justify-between items-center mb-2">
                           <h3 className="text-base md:text-lg font-bold text-blue-800">{project.project_name}</h3>
                           <span
-                            className={`text-xs font-semibold px-2 py-1 rounded-full ${statusColorMap[project.status] || "bg-gray-100 text-gray-800"
-                              }`}
+                            className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                              statusColorMap[project.status] || "bg-gray-100 text-gray-800"
+                            }`}
                           >
                             {project.status}
                           </span>
@@ -577,28 +448,6 @@ export default function ManagerDashboard() {
                             <div
                               className={`h-2 rounded-full ${progressColor}`}
                               style={{ width: `${Math.min(progressPercent, 100)}%` }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        {/* Project Completion Progress */}
-                        <div className="mt-3">
-                          <div className="flex justify-between text-xs text-gray-600 mb-1">
-                            <span>Completion Progress</span>
-                            <span>
-                              {(projectProgressMap[project.project_id] !== undefined 
-                                ? projectProgressMap[project.project_id] 
-                                : project.completionRate || 0).toFixed(1)}%
-                            </span>
-                          </div>
-                          <div className="w-full h-2 bg-gray-200 rounded-full">
-                            <div
-                              className="h-2 rounded-full bg-blue-500"
-                              style={{ 
-                                width: `${projectProgressMap[project.project_id] !== undefined 
-                                  ? projectProgressMap[project.project_id] 
-                                  : project.completionRate || 0}%` 
-                              }}
                             ></div>
                           </div>
                         </div>
@@ -700,16 +549,13 @@ export default function ManagerDashboard() {
           {/* Charts Section */}
           <div className="bg-white shadow-lg rounded-lg p-4 border border-gray-200">
             <div className="grid gap-4 h-full">
-              {/* Project Completion Rate - แสดงค่า completion rate ที่คำนวณใหม่จาก API */}
+              {/* Project Completion Rate */}
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg rounded-lg border border-blue-200 p-4 hover:shadow-xl transition-shadow">
                 <div className="text-sm font-semibold text-blue-800 mb-2">Project Completion Rate</div>
                 <ProjectCompletionRate completionRate={completionRate} />
                 <div className="text-center text-xl md:text-2xl font-bold text-blue-900 mt-2 md:mt-3">
                   {completionRate.toFixed(2)}%
                 </div>
-                {progressLoading && (
-                  <p className="text-xs text-blue-600 text-center mt-1">Updating progress data...</p>
-                )}
               </div>
 
               {/* Utilized Duration */}
