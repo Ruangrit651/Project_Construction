@@ -38,7 +38,7 @@ const Login: React.FC = () => {
           } else if (userRole === 'Manager') {
             navigate('/ManagerProjectList');
           } else if (userRole === 'Employee') {
-            navigate('/employeePlan');
+            navigate('/employeeProjectList');
           } else {
             navigate('/admin'); // Fallback route
           }

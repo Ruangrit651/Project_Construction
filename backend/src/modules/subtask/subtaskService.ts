@@ -368,5 +368,225 @@ export const subtaskService = {
         StatusCodes.INTERNAL_SERVER_ERROR
       );
     }
+  },
+
+  // อัปเดต start date ของ subtask
+  updateStartDate: async (subtask_id: string, payload: { start_date: string, updated_by: string }) => {
+    try {
+      // ตรวจสอบว่า Subtask มีอยู่หรือไม่
+      const existingSubtask = await SubTaskRepository.findById(subtask_id);
+      if (!existingSubtask) {
+        return new ServiceResponse(
+          ResponseStatus.Failed,
+          "Not found subtask",
+          null,
+          StatusCodes.NOT_FOUND
+        );
+      }
+
+      // ตรวจสอบว่าวันที่ไม่ล้ำกับ end_date
+      if (existingSubtask.end_date) {
+        const startDate = new Date(payload.start_date);
+        const endDate = new Date(existingSubtask.end_date);
+
+        if (startDate > endDate) {
+          return new ServiceResponse(
+            ResponseStatus.Failed,
+            "Start date cannot be later than end date",
+            null,
+            StatusCodes.BAD_REQUEST
+          );
+        }
+      }
+
+      // ตรวจสอบ task_id ถ้ามี
+      if (existingSubtask.task_id) {
+        const parentTask = await TaskRepository.findById(existingSubtask.task_id);
+        if (parentTask && parentTask.start_date) {
+          const subtaskStartDate = new Date(payload.start_date);
+          const taskStartDate = new Date(parentTask.start_date);
+
+          if (subtaskStartDate < taskStartDate) {
+            return new ServiceResponse(
+              ResponseStatus.Failed,
+              "Subtask start date cannot be earlier than the parent task start date",
+              null,
+              StatusCodes.BAD_REQUEST
+            );
+          }
+        }
+      }
+
+      // อัปเดต start date
+      const updatedSubtask = await SubTaskRepository.update(subtask_id, {
+        start_date: payload.start_date,
+        updated_by: payload.updated_by
+      });
+
+      return new ServiceResponse(
+        ResponseStatus.Success,
+        "Update subtask start date success",
+        updatedSubtask,
+        StatusCodes.OK
+      );
+    } catch (ex) {
+      return new ServiceResponse(
+        ResponseStatus.Failed,
+        "Error updating subtask start date: " + (ex as Error).message,
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  },
+
+  // อัปเดต end date ของ subtask
+  updateEndDate: async (subtask_id: string, payload: { end_date: string, updated_by: string }) => {
+    try {
+      // ตรวจสอบว่า Subtask มีอยู่หรือไม่
+      const existingSubtask = await SubTaskRepository.findById(subtask_id);
+      if (!existingSubtask) {
+        return new ServiceResponse(
+          ResponseStatus.Failed,
+          "Not found subtask",
+          null,
+          StatusCodes.NOT_FOUND
+        );
+      }
+
+      // ตรวจสอบว่าวันที่ไม่ล้ำกับ start_date
+      if (existingSubtask.start_date) {
+        const startDate = new Date(existingSubtask.start_date);
+        const endDate = new Date(payload.end_date);
+
+        if (endDate < startDate) {
+          return new ServiceResponse(
+            ResponseStatus.Failed,
+            "End date cannot be earlier than start date",
+            null,
+            StatusCodes.BAD_REQUEST
+          );
+        }
+      }
+
+      // ตรวจสอบ task_id ถ้ามี
+      if (existingSubtask.task_id) {
+        const parentTask = await TaskRepository.findById(existingSubtask.task_id);
+        if (parentTask && parentTask.end_date) {
+          const subtaskEndDate = new Date(payload.end_date);
+          const taskEndDate = new Date(parentTask.end_date);
+
+          if (subtaskEndDate > taskEndDate) {
+            return new ServiceResponse(
+              ResponseStatus.Failed,
+              "Subtask end date cannot be later than the parent task end date",
+              null,
+              StatusCodes.BAD_REQUEST
+            );
+          }
+        }
+      }
+
+      // อัปเดต end date
+      const updatedSubtask = await SubTaskRepository.update(subtask_id, {
+        end_date: payload.end_date,
+        updated_by: payload.updated_by
+      });
+
+      return new ServiceResponse(
+        ResponseStatus.Success,
+        "Update subtask end date success",
+        updatedSubtask,
+        StatusCodes.OK
+      );
+    } catch (ex) {
+      return new ServiceResponse(
+        ResponseStatus.Failed,
+        "Error updating subtask end date: " + (ex as Error).message,
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  },
+
+  // อัปเดตทั้ง start และ end date พร้อมกัน
+  updateDates: async (subtask_id: string, payload: { start_date: string, end_date: string, updated_by: string }) => {
+    try {
+      // ตรวจสอบว่า Subtask มีอยู่หรือไม่
+      const existingSubtask = await SubTaskRepository.findById(subtask_id);
+      if (!existingSubtask) {
+        return new ServiceResponse(
+          ResponseStatus.Failed,
+          "Not found subtask",
+          null,
+          StatusCodes.NOT_FOUND
+        );
+      }
+
+      // ตรวจสอบว่าวันที่ไม่ล้ำกัน
+      const startDate = new Date(payload.start_date);
+      const endDate = new Date(payload.end_date);
+
+      if (endDate < startDate) {
+        return new ServiceResponse(
+          ResponseStatus.Failed,
+          "End date cannot be earlier than start date",
+          null,
+          StatusCodes.BAD_REQUEST
+        );
+      }
+
+      // ตรวจสอบว่าอยู่ในช่วงของ task หลัก (ถ้ามี)
+      if (existingSubtask.task_id) {
+        const parentTask = await TaskRepository.findById(existingSubtask.task_id);
+        if (parentTask) {
+          // ตรวจสอบว่า start_date ไม่น้อยกว่า start_date ของ task
+          if (parentTask.start_date) {
+            const taskStartDate = new Date(parentTask.start_date);
+            if (startDate < taskStartDate) {
+              return new ServiceResponse(
+                ResponseStatus.Failed,
+                "Subtask start date cannot be earlier than the parent task start date",
+                null,
+                StatusCodes.BAD_REQUEST
+              );
+            }
+          }
+
+          // ตรวจสอบว่า end_date ไม่มากกว่า end_date ของ task
+          if (parentTask.end_date) {
+            const taskEndDate = new Date(parentTask.end_date);
+            if (endDate > taskEndDate) {
+              return new ServiceResponse(
+                ResponseStatus.Failed,
+                "Subtask end date cannot be later than the parent task end date",
+                null,
+                StatusCodes.BAD_REQUEST
+              );
+            }
+          }
+        }
+      }
+
+      // อัปเดตทั้ง start และ end date
+      const updatedSubtask = await SubTaskRepository.update(subtask_id, {
+        start_date: payload.start_date,
+        end_date: payload.end_date,
+        updated_by: payload.updated_by
+      });
+
+      return new ServiceResponse(
+        ResponseStatus.Success,
+        "Update subtask dates success",
+        updatedSubtask,
+        StatusCodes.OK
+      );
+    } catch (ex) {
+      return new ServiceResponse(
+        ResponseStatus.Failed,
+        "Error updating subtask dates: " + (ex as Error).message,
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 };

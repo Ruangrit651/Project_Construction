@@ -6,12 +6,6 @@ import { TypeTaskAll } from "@/types/response/response.task";
 import { getSubtask } from "@/services/subtask.service";
 import { TypeSubTaskAll } from "@/types/response/response.subtask";
 import { getTaskProgress, getSubtaskProgress, createProgress, getDetailedProjectProgress } from "@/services/progress.service";
-import DialogAddTask from "./components/DialogAddTask";
-import DialogEditTask from "./components/DialogEditTask";
-import AlertDialogDeleteTask from "./components/alertDialogDeleteTask";
-import DialogAddSubTask from "./components/DialogAddSubTask";
-import DialogEditSubtask from "./components/DialogEditSubtask";
-import AlertDialogDeleteSubtask from "./components/alertDialogDeleteSubtask";
 import ProjectProgress from "./components/ProjectProgress";
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -443,37 +437,11 @@ export default function TasklistPage() {
             {/* Project Header */}
             <div className="mb-6">
                 <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                        <span
-                            className="text-sm text-blue-500 hover:underline cursor-pointer flex items-center"
-                            onClick={() => navigate('/ManagerProjectList')}
-                        >
-                            <ArrowLeftIcon className="mr-1" /> รายการโปรเจกต์
-                        </span>
-                    </div>
                     <h1 className="text-2xl font-bold mt-1">
                         {project_name ? `งาน: ${project_name}` : "งานทั้งหมด"}
                     </h1>
                 </div>
             </div>
-
-            {/* Navigation tabs */}
-            {/* {project_id && (
-                <div className="flex gap-3 mt-2 mb-4">
-                    <Button 
-                        variant="solid" 
-                        onClick={() => navigateToProjectView('tasks')}
-                    >
-                        งาน
-                    </Button>
-                    <Button 
-                        variant="soft" 
-                        onClick={() => navigateToProjectView('resources')}
-                    >
-                        ทรัพยากร
-                    </Button>
-                </div>
-            )} */}
 
             {/* Project Progress Component */}
             <ProjectProgress
@@ -486,15 +454,6 @@ export default function TasklistPage() {
 
             {/* Tasks List */}
             <Card variant="surface">
-                <Flex className="w-full" direction="row" gap="2" justify="between">
-                    <Text as="div" size="4" weight="bold">
-                        Tasks
-                    </Text>
-                    <DialogAddTask
-                        getTaskData={() => fetchAllData()}
-                        projectId={currentProjectId}
-                    />
-                </Flex>
                 <div className="w-full mt-2">
                     {isLoading ? (
                         <Flex align="center" justify="center" py="4">
@@ -511,7 +470,6 @@ export default function TasklistPage() {
                                     <Table.ColumnHeaderCell>End Date</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell>Progress</Table.ColumnHeaderCell>
-                                    <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body>
@@ -546,34 +504,6 @@ export default function TasklistPage() {
                                                         </div>
                                                     </Tooltip>
                                                 </Table.Cell>
-                                                <Table.Cell>
-                                                    <Flex gap="2">
-                                                        <DialogAddSubTask
-                                                            getSubtaskData={() => fetchSubtasks(task.task_id)}
-                                                            taskId={task.task_id}
-                                                            taskName={task.task_name}
-                                                            updateTaskStatus={() => updateTaskStatusFromSubtasks(task.task_id)}
-                                                        />
-                                                        <DialogEditTask
-                                                            getTaskData={() => fetchAllData()}
-                                                            task_id={task.task_id}
-                                                            task_name={task.task_name}
-                                                            description={task.description}
-                                                            budget={task.budget}
-                                                            start_date={task.start_date}
-                                                            end_date={task.end_date}
-                                                            status={task.status}
-                                                            updateSubtasksOnComplete={true}
-                                                            updateTaskStatusFromSubtasks={updateTaskStatusFromSubtasks}
-                                                            onProgressUpdate={(percent) => updateProgressInState(task.task_id, percent, 'task')}
-                                                        />
-                                                        <AlertDialogDeleteTask
-                                                            getTaskData={() => fetchAllData()}
-                                                            task_id={task.task_id}
-                                                            task_name={task.task_name}
-                                                        />
-                                                    </Flex>
-                                                </Table.Cell>
                                             </Table.Row>
 
                                             {/* SubTasks Section */}
@@ -599,30 +529,6 @@ export default function TasklistPage() {
                                                                 />
                                                             </div>
                                                         </Tooltip>
-                                                    </Table.Cell>
-                                                    <Table.Cell>
-                                                        <Flex gap="2">
-                                                            <div style={{ width: "51px" }}></div>
-                                                            <DialogEditSubtask
-                                                                getSubtaskData={() => {
-                                                                    fetchSubtasks(task.task_id);
-                                                                    updateTaskStatusFromSubtasks(task.task_id);
-                                                                }}
-                                                                subtaskId={subtask.subtask_id}
-                                                                taskId={task.task_id}
-                                                                trigger={<Button className="cursor-pointer" size="1" variant="soft" color="orange">Edit</Button>}
-                                                                updateTaskStatus={updateTaskStatusFromSubtasks}
-                                                                onProgressUpdate={(percent) => updateProgressInState(subtask.subtask_id, percent, 'subtask')}
-                                                            />
-                                                            <AlertDialogDeleteSubtask
-                                                                getSubtaskData={() => {
-                                                                    fetchSubtasks(task.task_id);
-                                                                    updateTaskStatusFromSubtasks(task.task_id);
-                                                                }}
-                                                                subtask_id={subtask.subtask_id}
-                                                                subtask_name={subtask.subtask_name}
-                                                            />
-                                                        </Flex>
                                                     </Table.Cell>
                                                 </Table.Row>
                                             ))}

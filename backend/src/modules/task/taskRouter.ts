@@ -3,7 +3,7 @@ import { handleServiceResponse, validateRequest } from "@common/utils/httpHandle
 import { taskService } from "@modules/task/taskService";
 import { ProjectRepository } from "@modules/project/projectRepository";
 import { RelationRepository } from "@modules/relation/relationRepository";
-import { CreateTaskSchema, UpdateTaskSchema, DeleteTaskSchema, UpdateEndDateSchema, UpdateStartDateSchema } from "@modules/task/taskModel";
+import { CreateTaskSchema, UpdateTaskSchema, DeleteTaskSchema, UpdateEndDateSchema, UpdateStartDateSchema , UpdateDatesSchema } from "@modules/task/taskModel";
 import { authenticateJWT } from "@common/middleware/authMiddleware";
 import rolegrop4 from "@common/middleware/roleGroup4";
 import rolegrop5 from "@common/middleware/roleGroup5";
@@ -207,33 +207,49 @@ export const taskRouter = (() => {
             handleServiceResponse(ServiceResponse, res);
         });
 
-    // // UPDATE start date
-    // router.put("/updatestartdate",
-    //     authenticateJWT,
-    //     rolegrop5,
-    //     validateRequest(UpdateStartDateSchema), async (req: Request, res: Response) => {
-    //         const { task_id, start_date } = req.body;
-    //         const payload = {
-    //             start_date,
-    //             updated_by: req.user.userId, // Set updated_by from the authenticated user
-    //         };
-    //         const ServiceResponse = await taskService.updateStartDate(task_id, payload);
-    //         handleServiceResponse(ServiceResponse, res);
-    //     });
+    // UPDATE start date
+    router.put("/updatestartdate",
+        authenticateJWT,
+        rolegrop5,
+        validateRequest(UpdateStartDateSchema), async (req: Request, res: Response) => {
+            const { task_id, start_date } = req.body;
+            const payload = {
+                start_date,
+                updated_by: req.user.userId, // Set updated_by from the authenticated user
+            };
+            const ServiceResponse = await taskService.updateStartDate(task_id, payload);
+            handleServiceResponse(ServiceResponse, res);
+        });
 
-    // // UPDATE end date
-    // router.put("/updateenddate",
-    //     authenticateJWT,
-    //     rolegrop5,
-    //     validateRequest(UpdateEndDateSchema), async (req: Request, res: Response) => {
-    //         const { task_id, end_date } = req.body;
-    //         const payload = {
-    //             end_date,
-    //             updated_by: req.user.userId, // Set updated_by from the authenticated user
-    //         };
-    //         const ServiceResponse = await taskService.updateEndDate(task_id, payload);
-    //         handleServiceResponse(ServiceResponse, res);
-    //     });
+    // UPDATE end date
+    router.put("/updateenddate",
+        authenticateJWT,
+        rolegrop5,
+        validateRequest(UpdateEndDateSchema), async (req: Request, res: Response) => {
+            const { task_id, end_date } = req.body;
+            const payload = {
+                end_date,
+                updated_by: req.user.userId, // Set updated_by from the authenticated user
+            };
+            const ServiceResponse = await taskService.updateEndDate(task_id, payload);
+            handleServiceResponse(ServiceResponse, res);
+        });
+
+    // UPDATE both dates together
+    router.put("/updatedates",
+        authenticateJWT,
+        rolegrop5,
+        validateRequest(UpdateDatesSchema), async (req: Request, res: Response) => {
+            const { task_id, start_date, end_date } = req.body;
+            const payload = {
+                start_date,
+                end_date,
+                updated_by: req.user.userId, // Set updated_by from the authenticated user
+            };
+            const ServiceResponse = await taskService.updateDates(task_id, payload);
+            handleServiceResponse(ServiceResponse, res);
+        });
+
 
     router.get(
         "/project/:projectId",

@@ -28,6 +28,12 @@ export type PayloadUpdateEndDate = {
     end_date?: string;
 }
 
+export type PayloadUpdateDates = {
+    task_id: string;
+    start_date: string;
+    end_date: string;
+}
+
 export type PayloadDeleteTask = {
     task_id : string;
 }
