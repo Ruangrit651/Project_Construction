@@ -6,15 +6,38 @@ import {
   ArchiveIcon,
   ClipboardIcon,
   CalendarIcon,
-  ReaderIcon,
-  ExitIcon
+  ExitIcon,
 } from '@radix-ui/react-icons';
 import { logoutUser } from '@/services/logout.service';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const NavbarEmployee = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // เก็บข้อมูลโปรเจกต์จาก URL parameters
+  const [selectedProject, setSelectedProject] = useState<{
+    id: string | null;
+    name: string | null;
+  }>({
+    id: null,
+    name: null
+  });
+
+  // อ่าน URL parameters เมื่อ location เปลี่ยน
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const projectId = searchParams.get('project_id');
+    const projectName = searchParams.get('project_name');
+
+    if (projectId && projectName) {
+      setSelectedProject({
+        id: projectId,
+        name: projectName
+      });
+    }
+  }, [location]);
   
   // ฟังก์ชันสำหรับ Logout
   const handleLogout = async () => {
@@ -28,20 +51,49 @@ const NavbarEmployee = () => {
   };
 
   // คำนวณว่า path ปัจจุบันเป็นของ tab ใด
-  const getActiveTab = () => {
+ const getActiveTab = () => {
     const path = location.pathname;
     if (path.includes('/employeePlan')) return 'timeline';
     if (path.includes('/employeeTask')) return 'tasklist';
     if (path.includes('/employeeResource')) return 'resource';
     if (path.includes('/employeeReport')) return 'report';
-    return 'timeline'; // Default ให้เป็น timeline แทน dashboard
+    if (path.includes('/employeeProjectList')) return 'projectlist';
+    return 'projectlist'; // Default ให้เป็น projectlist
   };
 
   const handleTabChange = (value: string) => {
-    if (value === 'timeline') navigate('/employeePlan');
-    else if (value === 'tasklist') navigate('/employeeTask');
-    else if (value === 'resource') navigate('/employeeResource');
-    else if (value === 'report') navigate('/employeeReport');
+    // ถ้าเปลี่ยนไปหน้า ProjectList ให้เคลียร์ค่าโปรเจกต์ที่เลือก
+    if (value === 'projectlist') {
+      navigate('/employeeProjectList');
+      return;
+    }
+
+    // ถ้ามีโปรเจกต์ที่เลือกอยู่แล้ว ก็นำทางไปยังหน้านั้นพร้อมข้อมูลโปรเจกต์ที่เลือก
+    if (selectedProject.id && selectedProject.name) {
+      // ตรวจสอบค่า value และกำหนด path ที่ถูกต้อง
+      let pagePath = "";
+      switch (value) {
+        case 'timeline':
+          pagePath = "/employeePlan";
+          break;
+        case 'tasklist':
+          pagePath = "/employeeTask";
+          break;
+        case 'resource':
+          pagePath = "/employeeResource";
+          break;
+        case 'report':
+          pagePath = "/employeeReport";
+          break;
+        default:
+          pagePath = `/employee${value.charAt(0).toUpperCase() + value.slice(1)}`;
+      }
+
+      navigate(`${pagePath}?project_id=${selectedProject.id}&project_name=${encodeURIComponent(selectedProject.name)}`);
+    } else {
+      // ถ้ายังไม่มีโปรเจกต์ที่เลือก ให้ไปยังหน้าโปรเจกต์ลิสต์
+      navigate('/employeeProjectList');
+    }
   };
 
   return (
@@ -55,6 +107,11 @@ const NavbarEmployee = () => {
           <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 bg-clip-text text-transparent">
             CITE Construction
           </h2>
+          {selectedProject.id && (
+            <span className="ml-4 px-3 py-1 bg-blue-600 rounded-full text-sm">
+              โปรเจกต์: {selectedProject.name}
+            </span>
+          )}
         </div>
         
         <NavigationMenu.List className="flex gap-6">
@@ -88,7 +145,20 @@ const NavbarEmployee = () => {
         value={getActiveTab()} 
         onValueChange={handleTabChange}
       >
-        <Tabs.List className="flex max-w-screen-lg ">
+        <Tabs.List className="flex max-w-screen-lg">
+          
+          <Tabs.Trigger 
+            value="projectlist" 
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
+              getActiveTab() === 'projectlist' 
+                ? 'border-blue-500 text-blue-400 font-medium' 
+                : 'border-transparent hover:bg-gray-700'
+            }`}
+          >
+            <ArchiveIcon className={`${getActiveTab() === 'projectlist' ? 'text-blue-400' : ''}`} />
+            Project List
+          </Tabs.Trigger>
+          
           <Tabs.Trigger 
             value="timeline" 
             className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
@@ -96,9 +166,10 @@ const NavbarEmployee = () => {
                 ? 'border-blue-500 text-blue-400 font-medium' 
                 : 'border-transparent hover:bg-gray-700'
             }`}
+            disabled={!selectedProject.id}
           >
             <CalendarIcon className={`${getActiveTab() === 'timeline' ? 'text-blue-400' : ''}`} />
-            Planning
+            Timeline
           </Tabs.Trigger>
 
           <Tabs.Trigger 
@@ -108,6 +179,7 @@ const NavbarEmployee = () => {
                 ? 'border-blue-500 text-blue-400 font-medium' 
                 : 'border-transparent hover:bg-gray-700'
             }`}
+            disabled={!selectedProject.id}
           >
             <ClipboardIcon className={`${getActiveTab() === 'tasklist' ? 'text-blue-400' : ''}`} />
             Tasklist
@@ -120,11 +192,12 @@ const NavbarEmployee = () => {
                 ? 'border-blue-500 text-blue-400 font-medium' 
                 : 'border-transparent hover:bg-gray-700'
             }`}
+            disabled={!selectedProject.id}
           >
             <ArchiveIcon className={`${getActiveTab() === 'resource' ? 'text-blue-400' : ''}`} />
             Resource/Budget
           </Tabs.Trigger>
-        
+          
         </Tabs.List>
       </Tabs.Root>
     </div>

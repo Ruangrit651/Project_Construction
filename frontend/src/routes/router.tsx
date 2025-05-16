@@ -5,7 +5,7 @@ import Resource from "@/pages/managerresource";
 import Report from "@/pages/managerreport";
 import Tasklist from "@/pages/managertasklist";
 import ProjectListManager from "@/pages/projectlistManager";
-import ManagerSummary  from "@/pages/ManagerSummry";
+import ManagerSummary from "@/pages/ManagerSummry";
 
 //CEO
 import Dashboardceo from "@/pages/dashBoard";
@@ -16,8 +16,10 @@ import AdminProjectPage from "@/pages/project";
 
 // Employee
 import EmployeePlanning from "@/pages/employeestask";
+import EmployeeProjectList from "@/pages/projectlistemployee"; // Add this import
 import EmployeeResource from "@/pages/employeeresource";
-import EmployeeReprot from "@/pages/employeereport";
+import EmployeeTasklist from "@/pages/employeetasklist";
+// import EmployeeReprot from "@/pages/employeereport";
 
 
 // Navbar Sidebar
@@ -39,30 +41,30 @@ import Login from "@/pages/login";
 import MainLayoutCEO from "@/components/layouts/layout.ceo";
 
 
-const router = createBrowserRouter([  
-    {
-      index: true,
-      path: "/",
-      element: <Login />,
-    },
+const router = createBrowserRouter([
+  {
+    index: true,
+    path: "/",
+    element: <Login />,
+  },
 
   {
-      path: "/",
-      element: <MainLayout />,
-      children: [
-        {
-          path: "/categories",
-          element: <CategoriesPage />,
-        },
-        {
-          path: "/admin",
-          element: <AdminPage/>
-        },
-        {
-          path: "/adminproject",
-          element: <AdminProjectPage/>
-        }
-      ],
+    path: "/",
+    element: <MainLayout />,
+    children: [
+      {
+        path: "/categories",
+        element: <CategoriesPage />,
+      },
+      {
+        path: "/admin",
+        element: <AdminPage />
+      },
+      {
+        path: "/adminproject",
+        element: <AdminProjectPage />
+      }
+    ],
   },
 
   {
@@ -73,70 +75,74 @@ const router = createBrowserRouter([
         path: "/CEODashBoard",
         element: <Dashboardceo />,
       },
-      
+
     ],
-},
+  },
 
-{
-  path: "/",
-  element: <MainLayoutManager />,
-  children: [
-    {
-      path: "/ManagerProjectList",
-      element: <ProjectListManager />,
-    },
-    {
-      path: "/ManagerSummry",
-      element: <ManagerSummary />,
-    },
-    {
-      path: "/ManagerDash",
-      element: <Dashboard />,
-    },
-    {
-      path: "/ManagerPlan",
-      element: <Planning />,
-    },
-    {
-      path: "/ManagerTask",
-      element: <Tasklist />,
-    },
-    {
-      path: "/ManagerResource",
-      element: <Resource />,
-    },
-    {
-      path: "/ManagerReport",
-      element: <Report />,
-    },
-  ],
-},
-
-{
-  path: "/",
-  element: <MainLayoutEmployee />,
-  children: [
-    {
-      path: "/employeePlan",
-      element: <EmployeePlanning />,
-    },
-    {
-      path: "/employeeReport",
-      element: <EmployeeReprot />,
-    },
-    {
-      path: "/employeeResource",
-      element: <EmployeeResource />,
-    },
-  ],
-},
   {
-      path: "*",
-      element: <Error404 />,
+    path: "/",
+    element: <MainLayoutManager />,
+    children: [
+      {
+        path: "/ManagerProjectList",
+        element: <ProjectListManager />,
+      },
+      {
+        path: "/ManagerSummry",
+        element: <ManagerSummary />,
+      },
+      {
+        path: "/ManagerDash",
+        element: <Dashboard />,
+      },
+      {
+        path: "/ManagerPlan",
+        element: <Planning />,
+      },
+      {
+        path: "/ManagerTask",
+        element: <Tasklist />,
+      },
+      {
+        path: "/ManagerResource",
+        element: <Resource />,
+      },
+      {
+        path: "/ManagerReport",
+        element: <Report />,
+      },
+    ],
+  },
+
+  {
+    path: "/",
+    element: <MainLayoutEmployee />,
+    children: [
+      {
+        path: "/employeeProjectList",
+        element: <EmployeeProjectList />, // Use the new component
+      },
+      {
+        path: "/employeePlan",
+        element: <EmployeePlanning />,
+      },
+      {
+        path: "/employeeTask",
+        element: <EmployeeTasklist />,
+      },
+      {
+        path: "/employeeResource",
+        element: <EmployeeResource />,
+      },
+    ],
+  },
+  {
+    path: "*",
+    element: <Error404 />,
   },
 ])
 
 
 export default function Router() {
-    return <RouterProvider router={router} />;
+  return <RouterProvider router={router} />;
 }

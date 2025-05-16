@@ -1,17 +1,26 @@
 import { useEffect, useState, Fragment } from "react";
-import { Card, Table, Text, Flex, Spinner, Button, Badge, Box } from "@radix-ui/themes";
+import { Card, Table, Text, Flex, Spinner, Button, Badge, Box, Tooltip } from "@radix-ui/themes";
 import { getResource } from "@/services/resource.service";
-import { getTask } from "@/services/task.service";
+import { getTask, getTaskProject } from "@/services/task.service";
 import { getSubtask } from "@/services/subtask.service";
 import { TypeTask } from "@/types/response/response.task";
 import { TypeResourceAll } from "@/types/response/response.resource";
 import { TypeSubTask } from "@/types/response/response.subtask";
+import { useNavigate, useLocation } from "react-router-dom";
 import DialogAddResource from "./components/DialogAddResource";
 import DialogEditResource from "./components/DialogEditResource";
 import AlertDialogDeleteResource from "./components/alertDialogDeleteResource";
-import { ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, ChevronUpIcon, PlusIcon, Pencil1Icon, TrashIcon } from "@radix-ui/react-icons";
 
 export default function ResourcePage() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const searchParams = new URLSearchParams(location.search);
+
+    // URL parameters
+    const project_id = searchParams.get('project_id');
+    const project_name = searchParams.get('project_name');
+
     const [tasks, setTasks] = useState<TypeTask[]>([]);
     const [subTasks, setSubTasks] = useState<TypeSubTask[]>([]);
     const [resourcesBySubTask, setResourcesBySubTask] = useState<{ [subtask_id: string]: TypeResourceAll[] }>({});
@@ -40,25 +49,51 @@ export default function ResourcePage() {
     const getResourceData = async () => {
         setIsLoading(true);
         try {
+            if (!project_id) {
+                // If no project_id, show no data
+                setTasks([]);
+                setSubTasks([]);
+                setResourcesBySubTask({});
+                setSubTasksByTask({});
+                setIsLoading(false);
+                return;
+            }
+
             const [resTasks, resSubTasks, resResources] = await Promise.all([
-                getTask(),
+                getTaskProject(project_id),
                 getSubtask(),
                 getResource()
             ]);
 
             if (resTasks.success && resSubTasks.success && resResources.success) {
                 const tasks: TypeTask[] = resTasks.responseObject;
-                const subTasks: TypeSubTask[] = resSubTasks.responseObject;
+                const allSubTasks: TypeSubTask[] = resSubTasks.responseObject;
                 const resourceList: TypeResourceAll[] = resResources.responseObject;
 
-                // กำหนดค่าเริ่มต้นให้ทุก subtask เป็น collapsed
-                const initialExpandedState = subTasks.reduce<{ [subtask_id: string]: boolean }>((acc, subtask) => {
+                // Filter tasks by project_id
+                const filteredTasks = tasks.filter(task =>
+                    task.project_id?.toString() === project_id
+                );
+
+                // Get task IDs from the current project only
+                const projectTaskIds = filteredTasks.map(task => task.task_id);
+
+                // Filter subtasks that belong to the current project's tasks only
+                const filteredSubTasks = allSubTasks.filter(subtask =>
+                    projectTaskIds.includes(subtask.task_id)
+                );
+
+                // Initialize expanded state for all subtasks as collapsed
+                const initialExpandedState = filteredSubTasks.reduce<{ [subtask_id: string]: boolean }>((acc, subtask) => {
                     acc[subtask.subtask_id] = false;
                     return acc;
                 }, {});
 
-                // ใช้วิธีจับคู่แบบยืดหยุ่นขึ้น
-                const resourcesBySubTask = subTasks.reduce<{ [subtask_id: string]: TypeResourceAll[] }>((acc, subtask) => {
+                // Get subtask IDs from the current project only
+                const projectSubtaskIds = filteredSubTasks.map(subtask => subtask.subtask_id);
+
+                // Group resources by subtask (only for subtasks in the current project)
+                const resourcesBySubTask = filteredSubTasks.reduce<{ [subtask_id: string]: TypeResourceAll[] }>((acc, subtask) => {
                     const filteredResources = resourceList.filter(resource =>
                         resource.subtask_id && resource.subtask_id === subtask.subtask_id
                     );
@@ -67,15 +102,15 @@ export default function ResourcePage() {
                 }, {});
 
                 // Group subtasks by task
-                const subTasksByTask = tasks.reduce<{ [task_id: string]: TypeSubTask[] }>((acc, task) => {
-                    acc[task.task_id] = subTasks.filter(subtask =>
+                const subTasksByTask = filteredTasks.reduce<{ [task_id: string]: TypeSubTask[] }>((acc, task) => {
+                    acc[task.task_id] = filteredSubTasks.filter(subtask =>
                         subtask.task_id === task.task_id
                     );
                     return acc;
                 }, {});
 
-                setTasks(tasks);
-                setSubTasks(subTasks);
+                setTasks(filteredTasks);
+                setSubTasks(filteredSubTasks);
                 setResourcesBySubTask(resourcesBySubTask);
                 setSubTasksByTask(subTasksByTask);
                 setExpandedSubTasks(initialExpandedState);
@@ -93,7 +128,11 @@ export default function ResourcePage() {
         getResourceData();
     }, []);
 
-    // คำนวณมูลค่า Resources ทั้งหมดในแต่ละ Task
+    useEffect(() => {
+        getResourceData();
+    }, [project_id]);
+
+    // Calculate resources value for each task
     const calculateTaskTotalResources = (task_id: string): number => {
         let total = 0;
         const taskSubTasks = subTasksByTask[task_id] || [];
@@ -155,11 +194,11 @@ export default function ResourcePage() {
                                     <Table.ColumnHeaderCell style={{ width: '20%' }}>Task</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell style={{ width: '20%' }}>SubTask</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell style={{ width: '15%' }}>Resource</Table.ColumnHeaderCell>
-                                    <Table.ColumnHeaderCell style={{ width: '10%' }}>Type</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell style={{ width: '8%' }}>Type</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell style={{ width: '10%', textAlign: 'right' }}>Cost</Table.ColumnHeaderCell>
-                                    <Table.ColumnHeaderCell style={{ width: '10%', textAlign: 'center' }}>Quantity</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell style={{ width: '7%', textAlign: 'center' }}>Quantity</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell style={{ width: '10%', textAlign: 'right' }}>Total</Table.ColumnHeaderCell>
-                                    <Table.ColumnHeaderCell style={{ width: '15%' }}>Actions</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell style={{ width: '10%', textAlign: 'center' }}>Actions</Table.ColumnHeaderCell>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body>
@@ -176,11 +215,14 @@ export default function ResourcePage() {
                                                         <Text weight="bold">{task.task_name}</Text>
                                                     </Flex>
                                                 </Table.Cell>
-                                                <Table.Cell colSpan={6} style={{ color: '#888' }}>
+                                                <Table.Cell colSpan={5} style={{ color: '#888' }}>
                                                     ไม่มีงานย่อย
                                                 </Table.Cell>
-                                                <Table.Cell>
-                                                    <Text>Task total: {new Intl.NumberFormat("en-US").format(taskTotal)}</Text>
+                                                <Table.Cell style={{ textAlign: 'right' }}>
+                                                    <Text>{new Intl.NumberFormat("en-US").format(taskTotal)}</Text>
+                                                </Table.Cell>
+                                                <Table.Cell style={{ textAlign: 'center' }}>
+                                                    {/* ไม่มี Actions สำหรับ task ที่ไม่มี subtask */}
                                                 </Table.Cell>
                                             </Table.Row>
                                         );
@@ -190,7 +232,7 @@ export default function ResourcePage() {
                                         <Fragment key={`task-${task.task_id}`}>
                                             {/* Task Row */}
                                             <Table.Row style={{
-                                                backgroundColor: '#ffffff',
+                                                backgroundColor: '#f5f7fa',
                                                 borderTop: '2px solid #ddd',
                                                 boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
                                             }}>
@@ -246,14 +288,14 @@ export default function ResourcePage() {
                                                             <Table.Cell style={{ textAlign: 'right' }}>
                                                                 <Text weight="medium">{new Intl.NumberFormat("en-US").format(subTaskTotal)}</Text>
                                                             </Table.Cell>
-                                                            <Table.Cell>
-                                                                <Flex justify="end">
+                                                            <Table.Cell style={{ textAlign: 'center' }}>
+                                                                <Tooltip content="เพิ่มทรัพยากร">
                                                                     <DialogAddResource
                                                                         getResourceData={getResourceData}
                                                                         task_id={task.task_id}
                                                                         subtask_id={subTask.subtask_id}
                                                                     />
-                                                                </Flex>
+                                                                </Tooltip>
                                                             </Table.Cell>
                                                         </Table.Row>
 
@@ -299,17 +341,21 @@ export default function ResourcePage() {
                                                                             {new Intl.NumberFormat("en-US").format(resource.total)}
                                                                         </Table.Cell>
                                                                         <Table.Cell>
-                                                                            <Flex gap="2" justify="end">
-                                                                                <DialogEditResource
-                                                                                    getResourceData={getResourceData}
-                                                                                    resource={resource}
-                                                                                />
-                                                                                <AlertDialogDeleteResource
-                                                                                    getResourceData={getResourceData}
-                                                                                    resource_id={resource.resource_id}
-                                                                                    task_name={task.task_name}
-                                                                                    resource_name={resource.resource_name}
-                                                                                />
+                                                                            <Flex gap="2" justify="center">
+                                                                                <Tooltip content="แก้ไขทรัพยากร">
+                                                                                    <DialogEditResource
+                                                                                        getResourceData={getResourceData}
+                                                                                        resource={resource}
+                                                                                    />
+                                                                                </Tooltip>
+                                                                                <Tooltip content="ลบทรัพยากร">
+                                                                                    <AlertDialogDeleteResource
+                                                                                        getResourceData={getResourceData}
+                                                                                        resource_id={resource.resource_id}
+                                                                                        task_name={task.task_name}
+                                                                                        resource_name={resource.resource_name}
+                                                                                    />
+                                                                                </Tooltip>
                                                                             </Flex>
                                                                         </Table.Cell>
                                                                     </Table.Row>
@@ -324,7 +370,11 @@ export default function ResourcePage() {
                                 })}
 
                                 {/* แสดงรวมทั้งหมด */}
-                                <Table.Row style={{ backgroundColor: '#ffffff', borderTop: '2px solid #ddd' }}>
+                                <Table.Row style={{
+                                    backgroundColor: '#f0f4f8',
+                                    borderTop: '2px solid #ddd',
+                                    fontWeight: 'bold'
+                                }}>
                                     <Table.Cell colSpan={6} style={{ textAlign: 'right' }}>
                                         <Text weight="bold" size="3">Grand Total:</Text>
                                     </Table.Cell>

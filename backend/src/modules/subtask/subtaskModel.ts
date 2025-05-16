@@ -63,3 +63,27 @@ export const RecordSubtaskProgressSchema = z.object({
     description: z.string().optional(),
   }),
 });
+
+export const UpdateSubTaskStartDateSchema = z.object({
+  body: z.object({
+    subtask_id: z.string().uuid(), // ต้องระบุ subtask_id เพื่อทำการอัปเดต
+    start_date: z.string(),
+  }),
+});
+
+// Schema สำหรับการอัปเดต end date ของ SubTask
+export const UpdateSubTaskEndDateSchema = z.object({
+  body: z.object({
+    subtask_id: z.string().uuid(), // ต้องระบุ subtask_id เพื่อทำการอัปเดต
+    end_date: z.string(),
+  }),
+});
+
+// Schema สำหรับการอัปเดตทั้ง start และ end date ของ SubTask
+export const UpdateSubTaskDatesSchema = z.object({
+  body: z.object({
+    subtask_id: z.string().uuid(), // ต้องระบุ subtask_id เพื่อทำการอัปเดต
+    start_date: z.string(),
+    end_date: z.string(),
+  }),
+});

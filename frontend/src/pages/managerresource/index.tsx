@@ -63,7 +63,7 @@ export default function ResourcePage() {
         setIsLoading(true);
         try {
             if (!project_id) {
-                // ถ้าไม่มี project_id ให้แสดงว่าไม่มีข้อมูล
+                // If no project_id, show no data
                 setTasks([]);
                 setSubTasks([]);
                 setResourcesBySubTask({});
@@ -80,7 +80,7 @@ export default function ResourcePage() {
 
             if (resTasks.success && resSubTasks.success && resResources.success) {
                 const tasks: TypeTask[] = resTasks.responseObject;
-                const subTasks: TypeSubTask[] = resSubTasks.responseObject;
+                const allSubTasks: TypeSubTask[] = resSubTasks.responseObject;
                 const resourceList: TypeResourceAll[] = resResources.responseObject;
 
                 // Filter tasks by project_id
@@ -88,14 +88,25 @@ export default function ResourcePage() {
                     task.project_id?.toString() === project_id
                 );
 
-                // Set initial state for all subtasks as collapsed
-                const initialExpandedState = subTasks.reduce<{ [subtask_id: string]: boolean }>((acc, subtask) => {
+                // Get task IDs from the current project only
+                const projectTaskIds = filteredTasks.map(task => task.task_id);
+
+                // Filter subtasks that belong to the current project's tasks only
+                const filteredSubTasks = allSubTasks.filter(subtask =>
+                    projectTaskIds.includes(subtask.task_id)
+                );
+
+                // Initialize expanded state for all subtasks as collapsed
+                const initialExpandedState = filteredSubTasks.reduce<{ [subtask_id: string]: boolean }>((acc, subtask) => {
                     acc[subtask.subtask_id] = false;
                     return acc;
                 }, {});
 
-                // Group resources by subtask
-                const resourcesBySubTask = subTasks.reduce<{ [subtask_id: string]: TypeResourceAll[] }>((acc, subtask) => {
+                // Get subtask IDs from the current project only
+                const projectSubtaskIds = filteredSubTasks.map(subtask => subtask.subtask_id);
+
+                // Group resources by subtask (only for subtasks in the current project)
+                const resourcesBySubTask = filteredSubTasks.reduce<{ [subtask_id: string]: TypeResourceAll[] }>((acc, subtask) => {
                     const filteredResources = resourceList.filter(resource =>
                         resource.subtask_id && resource.subtask_id === subtask.subtask_id
                     );
@@ -105,14 +116,14 @@ export default function ResourcePage() {
 
                 // Group subtasks by task
                 const subTasksByTask = filteredTasks.reduce<{ [task_id: string]: TypeSubTask[] }>((acc, task) => {
-                    acc[task.task_id] = subTasks.filter(subtask =>
+                    acc[task.task_id] = filteredSubTasks.filter(subtask =>
                         subtask.task_id === task.task_id
                     );
                     return acc;
                 }, {});
 
                 setTasks(filteredTasks);
-                setSubTasks(subTasks);
+                setSubTasks(filteredSubTasks);
                 setResourcesBySubTask(resourcesBySubTask);
                 setSubTasksByTask(subTasksByTask);
                 setExpandedSubTasks(initialExpandedState);
@@ -187,7 +198,7 @@ export default function ResourcePage() {
                 </div>
 
                 {/* Navigation tabs for project views */}
-                {project_id && (
+                {/* {project_id && (
                     <Flex gap="3" className="mt-2 mb-4">
                         <Button
                             variant="soft"
@@ -202,7 +213,7 @@ export default function ResourcePage() {
                             ทรัพยากร
                         </Button>
                     </Flex>
-                )}
+                )} */}
 
                 <Flex justify="between" align="center">
                     <Text size="4" weight="bold">ทรัพยากรงานก่อสร้าง</Text>

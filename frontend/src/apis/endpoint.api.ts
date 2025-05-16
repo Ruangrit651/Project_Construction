@@ -32,6 +32,7 @@ export const UPDATE_TASK = "/v1/task/update";
 export const DELETE_TASK = "/v1/task/delete";
 export const UPDATE_START_DATE_TASK = "/v1/task/updatestartdate";
 export const UPDATE_END_DATE_TASK = "/v1/task/updateenddate";
+export const UPDATE_DATES_TASK = "/v1/task/updatedates";
 export const GET_TASK_PROJECT = "/v1/task/project";
 
 
@@ -40,6 +41,9 @@ export const GET_SUBTASK_ALL = "/v1/subtask/get";
 export const CREATE_SUBTASK = "/v1/subtask/create";
 export const UPDATE_SUBTASK = "/v1/subtask/update";
 export const DELETE_SUBTASK = "/v1/subtask/delete";
+export const UPDATE_START_DATE_SUBTASK = "/v1/subtask/updatestartdate";
+export const UPDATE_END_DATE_SUBTASK = "/v1/subtask/updateenddate";
+export const UPDATE_DATES_SUBTASK = "/v1/subtask/updatedates";
 
 //resource
 export const GET_RESOURCE_ALL = "/v1/resource/get"
