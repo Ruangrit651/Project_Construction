@@ -121,6 +121,7 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
               Username
             </Text>
             <TextField.Root
+              id="enter-username"
               value={postUserName}
               placeholder="Enter username"
               onChange={(event) => setPostUserName(event.target.value)}

@@ -1,0 +1,18 @@
+{
+  "name": "puppeteer",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "login": "node login/login.js",
+    "member-create": "node createMember/create.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "puppeteer": "^24.8.2"
+  }
+}
