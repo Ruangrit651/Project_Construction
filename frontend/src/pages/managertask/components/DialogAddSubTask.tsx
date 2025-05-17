@@ -3,9 +3,10 @@ import { Dialog, Button, Flex, TextField, Text, Select } from "@radix-ui/themes"
 import { postSubtask } from "@/services/subtask.service";
 
 interface DialogAddSubTaskProps {
-    getSubtaskData: () => void;
-    taskId: string;
-    taskName: string;
+  getSubtaskData: () => void;
+  taskId: string;
+  taskName: string;
+  projectId?: string | null; // Add this line
 }
 
 const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, taskId, taskName }) => {

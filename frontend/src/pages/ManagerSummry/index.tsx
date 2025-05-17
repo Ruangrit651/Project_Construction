@@ -131,7 +131,7 @@ export default function ManagerSummary() {
         const data = await getDashboard();
         if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
           setProjectDetails(data.responseObject);
-          
+
           // If projectId is in URL, filter to show only that project
           if (projectId) {
             const selectedProject = data.responseObject.filter(project => project.project_id === projectId);
@@ -142,7 +142,7 @@ export default function ManagerSummary() {
 
           const options = ["All", ...data.responseObject.map((project) => project.project_name)];
           setProjectOptions(options);
-          
+
           // If project ID exists in URL, select only that project
           if (projectId) {
             const projectName = data.responseObject.find(p => p.project_id === projectId)?.project_name;
@@ -178,7 +178,7 @@ export default function ManagerSummary() {
       }
       try {
         let params = {};
-        if(selectedProjects.length > 0 && !selectedProjects.includes("All")){
+        if (selectedProjects.length > 0 && !selectedProjects.includes("All")) {
           params = {
             project_ids: filteredProjects.map((p) => p.project_id).join(","),
           };
@@ -191,7 +191,7 @@ export default function ManagerSummary() {
         setResourceSummary([]);
       }
     };
-    
+
     fetchResourceSummary();
   }, [filteredProjects, selectedProjects]);
 
@@ -228,7 +228,7 @@ export default function ManagerSummary() {
           <h1 className="text-2xl md:text-3xl font-bold">Manager Summary</h1>
           <p className="text-gray-300">Track and analyze your construction projects performance</p>
         </div>
-        
+
         {/* Project Filter Section */}
         <div className="bg-white shadow-xl rounded-lg p-4 md:p-5 mb-3 border border-gray-200">
           <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">🔍 Filter Projects</h2>
@@ -278,9 +278,9 @@ export default function ManagerSummary() {
               {showAsPercent
                 ? `${percent.toFixed(2)}%`
                 : ((percent / 100) * (aggregatedValues?.totalBudget || 0)).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               {showAsPercent ? "" : <span className="text-sm ml-1">THB</span>}
             </h2>
             <p className="text-sm md:text-base text-gray-700 font-medium tracking-wide">🎯 Budget Utilization</p>
@@ -288,9 +288,8 @@ export default function ManagerSummary() {
             {/* Progress Bar */}
             <div className="w-full bg-gray-300 rounded-full h-3 md:h-4 overflow-hidden shadow-inner">
               <div
-                className={`h-3 md:h-4 rounded-full ${
-                  isOverBudget ? "bg-red-500" : percent > 80 ? "bg-yellow-400" : "bg-green-500"
-                }`}
+                className={`h-3 md:h-4 rounded-full ${isOverBudget ? "bg-red-500" : percent > 80 ? "bg-yellow-400" : "bg-green-500"
+                  }`}
                 style={{ width: `${Math.min(percent, 100)}%`, transition: "width 0.5s ease-in-out" }}
               />
             </div>
@@ -361,13 +360,12 @@ export default function ManagerSummary() {
                   {/* Budget Status Badge */}
                   {aggregatedValues && (
                     <span
-                      className={`absolute top-2 right-2 px-2 py-1 text-xs font-semibold rounded-full shadow ${
-                        isOverBudget
+                      className={`absolute top-2 right-2 px-2 py-1 text-xs font-semibold rounded-full shadow ${isOverBudget
                           ? "bg-red-200 text-red-800"
                           : percent > 80
                             ? "bg-yellow-100 text-yellow-800"
                             : "bg-green-100 text-green-800"
-                      }`}
+                        }`}
                     >
                       {isOverBudget
                         ? "Over Budget"
@@ -423,9 +421,8 @@ export default function ManagerSummary() {
                         <div className="flex justify-between items-center mb-2">
                           <h3 className="text-base md:text-lg font-bold text-blue-800">{project.project_name}</h3>
                           <span
-                            className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                              statusColorMap[project.status] || "bg-gray-100 text-gray-800"
-                            }`}
+                            className={`text-xs font-semibold px-2 py-1 rounded-full ${statusColorMap[project.status] || "bg-gray-100 text-gray-800"
+                              }`}
                           >
                             {project.status}
                           </span>
@@ -451,7 +448,27 @@ export default function ManagerSummary() {
                             ></div>
                           </div>
                         </div>
+
+                        {/* Completion Progress - Added new section */}
+                        <div className="mt-2">
+                          <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Completion Progress</span>
+                            <span>{(project.completionRate || 0).toFixed(1)}%</span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-200 rounded-full">
+                            <div
+                              className={`h-2 rounded-full ${(project.completionRate || 0) < 30
+                                  ? "bg-red-400"
+                                  : (project.completionRate || 0) < 70
+                                    ? "bg-yellow-400"
+                                    : "bg-green-500"
+                                }`}
+                              style={{ width: `${Math.min(project.completionRate || 0, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
                       </div>
+
                     );
                   })
                 ) : (
