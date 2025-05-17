@@ -13,6 +13,7 @@ type DialogProjectProps = {
     start_date: string;
     end_date: string;
     user_id?: string;
+    showToast?: (message: string, type: 'success' | 'error') => void;
 };
 
 type User = {
@@ -28,8 +29,10 @@ const DialogEdit = ({
     status,
     start_date,
     end_date,
-    user_id: currentUserId
+    user_id: currentUserId,
+    showToast
 }: DialogProjectProps) => {
+    const [open, setOpen] = useState(false);
     const [patchProjectName, setPatchProjectName] = useState(project_name);
     const [patchBudget, setPatchBudget] = useState(budget);
     const [formattedBudget, setFormattedBudget] = useState(
@@ -53,7 +56,11 @@ const DialogEdit = ({
 
     const handleUpdateProject = async () => {
         if (!patchProjectName || !patchBudget || !patchStartDate || !patchEndDate) {
-            alert("Please enter all required fields (project name, budget, start date, and end date).");
+            if (showToast) {
+                showToast("Please enter all required fields (project name, budget, start date, and end date).", 'error');
+            } else {
+                alert("Please enter all required fields (project name, budget, start date, and end date).");
+            }
             return;
         }
 
@@ -68,12 +75,11 @@ const DialogEdit = ({
             const response = await patchProject({
                 project_id,
                 project_name: patchProjectName,
-                budget: budgetNumber,  // แน่ใจว่าเป็นตัวเลข
-                actual: actualNumber,  // แน่ใจว่าเป็นตัวเลข
+                budget: budgetNumber,
+                actual: actualNumber,
                 status: patchStatus,
                 start_date: patchStartDate,
                 end_date: patchEndDate
-                // ไม่ส่ง user_id เพราะจะจัดการแยกต่างหาก
             });
 
             if (response.statusCode === 200) {
@@ -106,7 +112,11 @@ const DialogEdit = ({
                             });
                         } catch (error) {
                             console.error("Error adding new owner:", error);
-                            alert("Project updated but there was an error updating the owner relationship.");
+                            if (showToast) {
+                                showToast("Project updated but there was an error updating the owner relationship.", 'error');
+                            } else {
+                                alert("Project updated but there was an error updating the owner relationship.");
+                            }
                         }
                     }
 
@@ -114,16 +124,35 @@ const DialogEdit = ({
                     setOriginalUserId(patchUserId);
                 }
 
-                alert("Project updated successfully!");
+                if (showToast) {
+                    showToast(`Project "${patchProjectName}" updated successfully!`, 'success');
+                } else {
+                    alert("Project updated successfully!");
+                }
+
                 getProjectData(); // รีเฟรชข้อมูล
+                setOpen(false); // ปิด Dialog หลังจากอัปเดตสำเร็จ
+
             } else if (response.statusCode === 400) {
-                alert(response.message);
+                if (showToast) {
+                    showToast(response.message, 'error');
+                } else {
+                    alert(response.message);
+                }
             } else {
-                alert("Unexpected error: " + response.message);
+                if (showToast) {
+                    showToast(`Unexpected error: ${response.message}`, 'error');
+                } else {
+                    alert("Unexpected error: " + response.message);
+                }
             }
         } catch (error: any) {
             console.error("Error updating project", error.response?.data || error.message);
-            alert("Failed to update project. Please try again.");
+            if (showToast) {
+                showToast("Failed to update project. Please try again.", 'error');
+            } else {
+                alert("Failed to update project. Please try again.");
+            }
         } finally {
             setProcessing(false);
         }
@@ -133,16 +162,27 @@ const DialogEdit = ({
         getUser().then(response => {
             if (response.success) {
                 setUsers(response.responseObject);
+            } else if (showToast) {
+                showToast("Failed to load users", 'error');
             }
         }).catch(error => {
             console.error("ไม่สามารถดึงข้อมูลผู้ใช้ได้", error);
+            if (showToast) {
+                showToast("Could not load user data", 'error');
+            }
         });
-    }, []);
+    }, [showToast]);
 
     return (
-        <Dialog.Root>
+        <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger>
-                <Button size="1" color="orange" variant="soft" className="cursor-pointer">
+                <Button
+                    size="1"
+                    color="orange"
+                    variant="soft"
+                    className="cursor-pointer"
+                    onClick={() => setOpen(true)}
+                >
                     Edit
                 </Button>
             </Dialog.Trigger>
@@ -250,6 +290,7 @@ const DialogEdit = ({
                             Cancel
                         </Button>
                     </Dialog.Close>
+                    {/* นำ Dialog.Close ออกเพื่อไม่ให้ปิด Dialog ทันทีที่กดปุ่ม */}
                     <Button
                         onClick={handleUpdateProject}
                         color="orange"

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, Table, Text, Flex, Badge, Button, Dialog, Heading } from "@radix-ui/themes"; // เพิ่ม Dialog และ Heading
+import { Card, Table, Text, Flex, Badge, Button, Dialog, Heading } from "@radix-ui/themes";
 import { getUser } from "@/services/user.service";
 import { TypeUserAll } from "@/types/response/response.user";
 import DialogAdd from "./components/dialogAddUser";
@@ -7,11 +7,24 @@ import DialogEdit from "./components/dialogEditUser";
 import AlertDialogDelete from "./components/alertDialogDeletUser";
 import ToggleUserStatus from "./components/dialogDisableUser";
 import UserDetailPage from "./components/userDetail";
+import * as Toast from '@radix-ui/react-toast';
 
 export default function AdminPage() {
     const [user, setUser] = useState<TypeUserAll[]>([]);
     const [selectedUserID, setSelectedUserID] = useState<string | null>(null);
     const [showUserDetail, setShowUserDetail] = useState(false);
+
+    // State for Toast
+    const [toastOpen, setToastOpen] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+    // Function to show Toast
+    const showToast = (message: string, type: 'success' | 'error') => {
+        setToastMessage(message);
+        setToastType(type);
+        setToastOpen(true);
+    };
 
     const getUserData = () => {
         getUser().then((res) => {
@@ -20,7 +33,7 @@ export default function AdminPage() {
         });
     };
 
-    // เปิด dialog แสดงรายละเอียดผู้ใช้
+    // Open user detail dialog
     const openUserDetail = (userId: string) => {
         setSelectedUserID(userId);
         setShowUserDetail(true);
@@ -32,11 +45,35 @@ export default function AdminPage() {
 
     return (
         <Card variant="surface">
+            {/* Toast notification */}
+            <Toast.Provider swipeDirection="right">
+                <Toast.Root
+                    className={`${toastType === 'success' ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'
+                        } border-l-4 p-4 mb-4 fixed bottom-4 right-4 w-72 shadow-md rounded-md z-50`}
+                    open={toastOpen}
+                    onOpenChange={setToastOpen}
+                    duration={3000}
+                >
+                    <div className="flex">
+                        <Toast.Title className={`font-medium ${toastType === 'success' ? 'text-green-800' : 'text-red-800'}`}>
+                            {toastMessage}
+                        </Toast.Title>
+                        <Toast.Close className="ml-auto">
+                            <span className="text-gray-500 hover:text-gray-700">×</span>
+                        </Toast.Close>
+                    </div>
+                    <Toast.Description className="mt-1 text-sm">
+                        {toastType === 'success' ? 'Operation completed successfully.' : 'Please try again.'}
+                    </Toast.Description>
+                </Toast.Root>
+                <Toast.Viewport />
+            </Toast.Provider>
+
             <Flex className="w-full" direction="row" gap="2">
                 <Text as="div" size="4" weight="bold">
                     Member
                 </Text>
-                <DialogAdd getUserData={getUserData} />
+                <DialogAdd getUserData={getUserData} showToast={showToast} />
             </Flex>
             <div className="w-full mt-2">
                 <Table.Root variant="surface">
@@ -77,17 +114,20 @@ export default function AdminPage() {
                                                 username={user.username}
                                                 role={user.role} 
                                                 project={user.projects?.project_id || ""}
+                                                showToast={showToast}
                                             />
                                             <ToggleUserStatus
                                                 getUserData={getUserData}
                                                 userId={user.user_id}
                                                 isActive={user.is_active}
                                                 username={user.username}
+                                                showToast={showToast}
                                             />
                                             <AlertDialogDelete
                                                 getUserDate={getUserData}
                                                 user_id={user.user_id}
                                                 username={user.username}
+                                                showToast={showToast}
                                             />
                                         </Flex>
                                     </Table.Cell>

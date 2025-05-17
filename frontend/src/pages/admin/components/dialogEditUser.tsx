@@ -11,14 +11,16 @@ type DialogUserProps = {
   username: string;
   role: string;
   project: string;
+  showToast?: (message: string, type: 'success' | 'error') => void;
 };
 
-const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUserProps) => {
+const DialogEdit = ({ getUserData, user_id, username, role, project, showToast }: DialogUserProps) => {
+  const [open, setOpen] = useState(false);
   const [patchUserName, setPatchUserName] = useState(username);
   const [patchPassword, setPatchPassword] = useState("");
   const [patchRole, setPatchRole] = useState(role);
   const [patchProject, setPatchProject] = useState(project);
-  const [originalProject, setOriginalProject] = useState(project); // เก็บค่าโปรเจกต์เดิม
+  const [originalProject, setOriginalProject] = useState(project);
   const [roles, setRoles] = useState<{ role_id: string; name: string }[]>([]);
   const [projects, setProjects] = useState<{ project_id: string; project_name: string }[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
@@ -35,17 +37,25 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
         if (response.success) {
           setRoles(response.responseObject);
         } else {
-          alert("Failed to fetch roles: " + response.message);
+          if (showToast) {
+            showToast(`Failed to fetch roles: ${response.message}`, 'error');
+          } else {
+            alert("Failed to fetch roles: " + response.message);
+          }
         }
       } catch (error) {
         console.error("Error fetching roles:", error);
-        alert("Error fetching roles. Please try again.");
+        if (showToast) {
+          showToast("Error fetching roles. Please try again.", 'error');
+        } else {
+          alert("Error fetching roles. Please try again.");
+        }
       } finally {
         setLoadingRoles(false);
       }
     };
     fetchRoles();
-  }, []);
+  }, [showToast]);
 
   // Fetch projects on component load
   useEffect(() => {
@@ -57,28 +67,40 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
         if (response.success) {
           setProjects(response.responseObject);
         } else {
-          alert("Failed to fetch projects: " + response.message);
+          if (showToast) {
+            showToast(`Failed to fetch projects: ${response.message}`, 'error');
+          } else {
+            alert("Failed to fetch projects: " + response.message);
+          }
         }
       } catch (error) {
         console.error("Error fetching projects:", error);
-        alert("Error fetching projects. Please try again.");
+        if (showToast) {
+          showToast("Error fetching projects. Please try again.", 'error');
+        } else {
+          alert("Error fetching projects. Please try again.");
+        }
       } finally {
         setLoadingProjects(false);
       }
     };
     fetchProjects();
-  }, []);
+  }, [showToast]);
 
   const handleUpdateUser = async () => {
     if (!patchUserName || !patchRole) {
-      alert("Please fill out all required fields.");
+      if (showToast) {
+        showToast("Please fill out all required fields.", 'error');
+      } else {
+        alert("Please fill out all required fields.");
+      }
       return;
     }
 
     setProcessing(true);
 
     try {
-      // 1. อัพเดตข้อมูลผู้ใช้
+      // 1. Update user data
       const response = await patchUser({
         user_id,
         username: patchUserName,
@@ -87,9 +109,7 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
       });
 
       if (response.statusCode === 200) {
-        // 2. จัดการความสัมพันธ์ระหว่างผู้ใช้กับโปรเจกต์
-
-        // เพิ่มความสัมพันธ์ใหม่ (ถ้ามีการเลือก project และเป็น project ที่แตกต่างจากเดิม)
+        // 2. Handle relationship with projects
         if (patchProject && patchProject !== originalProject) {
           console.log("Adding user to new project:", patchProject);
 
@@ -101,7 +121,11 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
             console.log("Successfully added user to project");
           } catch (relationError) {
             console.error("Error adding user to new project:", relationError);
-            alert("User information updated but there was an error adding to the new project.");
+            if (showToast) {
+              showToast("User information updated but there was an error adding to the new project.", 'error');
+            } else {
+              alert("User information updated but there was an error adding to the new project.");
+            }
           }
         }
 
@@ -110,22 +134,38 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
 
         // Refresh user data
         getUserData();
-        alert("User updated successfully!");
+
+        if (showToast) {
+          showToast(`User "${patchUserName}" updated successfully!`, 'success');
+        } else {
+          alert("User updated successfully!");
+        }
+
+        // ปิด Dialog หลังจากอัปเดตสำเร็จ
+        setOpen(false);
       } else {
-        alert(response.message);
+        if (showToast) {
+          showToast(response.message, 'error');
+        } else {
+          alert(response.message);
+        }
       }
     } catch (error) {
       console.error("Error updating user:", error);
-      alert("Failed to update user. Please try again.");
+      if (showToast) {
+        showToast("Failed to update user. Please try again.", 'error');
+      } else {
+        alert("Failed to update user. Please try again.");
+      }
     } finally {
       setProcessing(false);
     }
   };
 
   return (
-    <Dialog.Root>
+    <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
-        <Button className="cursor-pointer" size="1" color="orange" variant="soft">
+        <Button className="cursor-pointer" size="1" color="orange" variant="soft" onClick={() => setOpen(true)}>
           Edit
         </Button>
       </Dialog.Trigger>
@@ -229,7 +269,15 @@ const DialogEdit = ({ getUserData, user_id, username, role, project }: DialogUse
               Cancel
             </Button>
           </Dialog.Close>
-          <Button className="cursor-pointer" variant="soft" color="orange" onClick={handleUpdateUser}>{processing ? "Updating..." : "Update"}</Button>
+          <Button
+            className="cursor-pointer"
+            variant="soft"
+            color="orange"
+            onClick={handleUpdateUser}
+            disabled={processing}
+          >
+            {processing ? "Updating..." : "Update"}
+          </Button>
         </Flex>
       </Dialog.Content>
     </Dialog.Root>

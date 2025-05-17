@@ -7,9 +7,10 @@ import { useEffect, useState } from "react";
 
 type DialogUserProps = {
   getUserData: Function;
+  showToast?: (message: string, type: 'success' | 'error') => void;
 };
 
-const DialogAdd = ({ getUserData }: DialogUserProps) => {
+const DialogAdd = ({ getUserData, showToast }: DialogUserProps) => {
   const [postUserName, setPostUserName] = useState("");
   const [postPassword, setPostPassword] = useState("");
   const [postRole, setPostRole] = useState("");
@@ -25,21 +26,29 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
       setLoadingRoles(true);
       try {
         const response = await getRole();
-        console.log("Roles:", response.responseObject); // Debugging roles
+        console.log("Roles:", response.responseObject);
         if (response.success) {
           setRoles(response.responseObject);
         } else {
-          alert("Failed to fetch roles: " + response.message);
+          if (showToast) {
+            showToast(`Failed to fetch roles: ${response.message}`, 'error');
+          } else {
+            alert("Failed to fetch roles: " + response.message);
+          }
         }
       } catch (error) {
         console.error("Error fetching roles:", error);
-        alert("Error fetching roles. Please try again.");
+        if (showToast) {
+          showToast("Error fetching roles. Please try again.", 'error');
+        } else {
+          alert("Error fetching roles. Please try again.");
+        }
       } finally {
         setLoadingRoles(false);
       }
     };
     fetchRoles();
-  }, []);
+  }, [showToast]);
 
   // Fetch projects on component load
   useEffect(() => {
@@ -47,25 +56,37 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
       setLoadingProjects(true);
       try {
         const response = await getProject();
-        console.log("Projects:", response.responseObject); // Debugging projects
+        console.log("Projects:", response.responseObject);
         if (response.success) {
           setProjects(response.responseObject);
         } else {
-          alert("Failed to fetch projects: " + response.message);
+          if (showToast) {
+            showToast(`Failed to fetch projects: ${response.message}`, 'error');
+          } else {
+            alert("Failed to fetch projects: " + response.message);
+          }
         }
       } catch (error) {
         console.error("Error fetching projects:", error);
-        alert("Error fetching projects. Please try again.");
+        if (showToast) {
+          showToast("Error fetching projects. Please try again.", 'error');
+        } else {
+          alert("Error fetching projects. Please try again.");
+        }
       } finally {
         setLoadingProjects(false);
       }
     };
     fetchProjects();
-  }, []);
+  }, [showToast]);
 
   const handleCreateUser = async () => {
     if (!postUserName || !postPassword || !postRole) {
-      alert("Please enter all required fields (username, password, and role).");
+      if (showToast) {
+        showToast("Please enter all required fields (username, password, and role).", 'error');
+      } else {
+        alert("Please enter all required fields (username, password, and role).");
+      }
       return;
     }
     try {
@@ -73,7 +94,7 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
         username: postUserName,
         password: postPassword,
         role: postRole,
-        project_id: postProject, // postProject จะเป็น null หากเลือก "No Project"
+        project_id: postProject,
       });
 
       if (response.statusCode === 200) {
@@ -87,25 +108,36 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
             console.log("User-project relation created successfully");
           } catch (relationError) {
             console.error("Failed to create relation:", relationError);
-            // User was created successfully, so we don't need to alert the user about this error
           }
         }
 
         setPostUserName("");
         setPostPassword("");
         setPostRole("");
-        setPostProject(null); // Reset เป็น null
-        getUserData(); // Refresh user data
-        alert("User created successfully!");
+        setPostProject(null);
+        getUserData();
+        
+        if (showToast) {
+          showToast(`User "${postUserName}" created successfully!`, 'success');
+        } else {
+          alert("User created successfully!");
+        }
       } else {
-        alert(response.message);
+        if (showToast) {
+          showToast(response.message, 'error');
+        } else {
+          alert(response.message);
+        }
       }
     } catch (error) {
       console.error("Error creating user:", error);
-      alert("Failed to create user. Please try again.");
+      if (showToast) {
+        showToast("Failed to create user. Please try again.", 'error');
+      } else {
+        alert("Failed to create user. Please try again.");
+      }
     }
   };
-
 
   return (
     <Dialog.Root>
@@ -176,9 +208,8 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
             ) : (
               <Select.Root
                 size="2"
-                value={postProject || "none"} // กำหนดค่าเริ่มต้นเป็น "none" หากไม่มี Project
-                onValueChange={(value) => setPostProject(value === "none" ? null : value)} // แปลง "none" เป็น null
-
+                value={postProject || "none"}
+                onValueChange={(value) => setPostProject(value === "none" ? null : value)}
               >
                 <Select.Trigger>
                   {postProject
@@ -197,15 +228,13 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
               </Select.Root>
             )}
           </label>
-
-
         </Flex>
         <Flex gap="3" mt="4" justify="end">
           <Dialog.Close>
             <Button className="cursor-pointer" variant="soft" color="gray">
               Cancel
             </Button>
-          </Dialog.Close >
+          </Dialog.Close>
           <Dialog.Close>
             <Button className="cursor-pointer" onClick={handleCreateUser}>Create</Button>
           </Dialog.Close>
@@ -216,8 +245,3 @@ const DialogAdd = ({ getUserData }: DialogUserProps) => {
 };
 
 export default DialogAdd;
-
-
-
-
-

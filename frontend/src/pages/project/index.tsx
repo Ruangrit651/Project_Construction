@@ -95,10 +95,10 @@ export default function AdminProjectPage() {
                 <Text as="div" size="4" weight="bold">
                     Project
                 </Text>
-                <DialogAdd 
-                getProjectData={getProjectData}
-                showToast={showToast} // ส่งฟังก์ชัน showToast ไปด้วย
-                 />
+                <DialogAdd
+                    getProjectData={getProjectData}
+                    showToast={showToast} // ส่งฟังก์ชัน showToast ไปด้วย
+                />
             </Flex>
             <div className="w-full mt-2">
                 <Table.Root variant="surface">
@@ -141,7 +141,8 @@ export default function AdminProjectPage() {
                                                 status={project.status}
                                                 start_date={project.start_date}
                                                 end_date={project.end_date}
-                                                user_id={project.user_id} // ส่ง user_id ไปด้วย
+                                                user_id={project.user_id}
+                                                showToast={showToast} // เพิ่มบรรทัดนี้
                                             />
                                             <AlertDialogDelete
                                                 getProjectDate={getProjectData}
