@@ -30,15 +30,15 @@ export const TimelineSidebar = ({ children }: { children: React.ReactNode }) => 
 );
 
 // Timeline Content
-export const TimelineContent = ({ children }: { children: React.ReactNode }) => (
-    <div className="overflow-x-auto relative w-full">
+export const TimelineContent = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+    <div className={`overflow-x-auto overflow-y-hidden flex-1 border-l border-gray-200 relative ${className || ''}`} style={{ scrollBehavior: 'smooth' }}>
         {children}
     </div>
 );
 
-// Timeline Content Inner
+// และ TimelineContentInner component ให้มี position: relative
 export const TimelineContentInner = ({ children }: { children: React.ReactNode }) => (
-    <div className="min-w-max">
+    <div className="relative" style={{ width: 'max-content', minWidth: '100%', position: 'relative' }}>
         {children}
     </div>
 );
@@ -214,22 +214,30 @@ export const MonthHeader = ({ month, width }: { month: string; width: string | n
 );
 
 // Day Cell
-export const DayCell = ({
-    day,
-    isWeekend,
-    isToday
-}: {
+export const DayCell: React.FC<{
     day: number;
     isWeekend: boolean;
     isToday: boolean;
-}) => (
+}> = ({ day, isWeekend, isToday }) => (
     <div
-        className={`flex items-center justify-center w-[40px] h-full 
-                ${isWeekend ? "bg-gray-50" : ""} 
-                ${isToday ? "bg-blue-50" : ""}`}
+        className={`
+      flex justify-center items-center h-full w-[40px] border-r border-gray-200 text-xs relative
+      ${isWeekend ? 'bg-gray-50' : ''}
+      ${isToday ? 'day-cell-today font-bold' : ''}
+    `}
     >
-        <div className={`text-[10px] ${isWeekend ? "text-gray-400" : "text-gray-600"}`}>
-            {day}
-        </div>
+        {isToday ? (
+            <>
+                {/* พื้นหลังและเส้นไฮไลท์วันปัจจุบัน - เปลี่ยนเป็นสีแดง */}
+                <div className="absolute top-0 bottom-0 left-0 w-full bg-red-100 z-0"></div>
+
+                {/* วันที่ที่มีสไตล์พิเศษ - เปลี่ยนเป็นสีแดง */}
+                <div className="absolute top-[1px] left-1/2 transform -translate-x-1/2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center z-20 shadow-sm">
+                    {day}
+                </div>
+            </>
+        ) : (
+            day
+        )}
     </div>
 );

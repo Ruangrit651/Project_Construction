@@ -71,28 +71,29 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                         percent: progressPercent,
                         description: `Initial progress: ${progressPercent}%`,
                     });
+
+                    // เพิ่ม await ตรงนี้เพื่อให้แน่ใจว่าการอัพเดทข้อมูลเสร็จสมบูรณ์
+                    await getSubtaskData();
+
+                    // อัพเดท task status หลังจากมีการเพิ่ม subtask
+                    if (updateTaskStatus) {
+                        await updateTaskStatus(taskId);
+                    }
+
+                    // Reset form และปิด dialog หลังจากอัพเดทข้อมูลเสร็จสมบูรณ์
+                    setSubtaskName("");
+                    setDescription("");
+                    setBudget(0);
+                    setFormattedBudget("0");
+                    setStartDate("");
+                    setEndDate("");
+                    setStatus("pending");
+                    setProgressPercent(0);
+
+                    setOpen(false);
                 } catch (progressError) {
                     console.error("Failed to create initial progress:", progressError);
                 }
-
-                // เรียก function อัปเดต task status หลังจากเพิ่ม subtask สำเร็จ
-                if (updateTaskStatus) {
-                    updateTaskStatus(taskId);
-                }
-
-                // Reset form
-                setSubtaskName("");
-                setDescription("");
-                setBudget(0);
-                setFormattedBudget("0");
-                setStartDate("");
-                setEndDate("");
-                setStatus("pending");
-                setProgressPercent(0);
-
-                // Close dialog and fetch updated subtask data
-                getSubtaskData();
-                setOpen(false);
             } else {
                 setErrorMessage(response.message || "Failed to add subtask");
             }

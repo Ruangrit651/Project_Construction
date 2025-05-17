@@ -75,7 +75,7 @@ export default function TasklistPage() {
     // Function to navigate to different views for the same project
     const navigateToProjectView = (view: string) => {
         if (!project_id || !project_name) return;
-        
+
         switch (view) {
             case 'tasks':
                 navigate(`/ManagerTask?project_id=${project_id}&project_name=${encodeURIComponent(project_name)}`);
@@ -99,18 +99,18 @@ export default function TasklistPage() {
                 if (project_name) {
                     setProjectName(project_name);
                 }
-                
+
                 // ดึงข้อมูลแบบละเอียดทั้งหมดจาก API เดียว
                 try {
                     const detailedResponse = await getDetailedProjectProgress(project_id);
                     if (detailedResponse.success) {
                         const { projectProgress, taskProgress: newTaskProgress, subtaskProgress: newSubtaskProgress } = detailedResponse.responseObject;
-                        
+
                         // อัพเดต state โดยตรงจากข้อมูล backend
                         setTaskProgress(newTaskProgress);
                         setSubtaskProgress(newSubtaskProgress);
                         setProjectProgressValue(projectProgress);
-                        
+
                         console.log("Progress data loaded from backend:", {
                             projectProgress,
                             taskProgressCount: Object.keys(newTaskProgress).length,
@@ -132,6 +132,8 @@ export default function TasklistPage() {
                     res.responseObject.forEach(task => {
                         uniqueTaskMap[task.task_id] = task;
                     });
+
+                    // แปลงเป็น array โดยไม่ต้องเรียงลำดับใหม่ - เก็บลำดับตามที่ได้รับมาจาก API
                     taskData = Object.values(uniqueTaskMap);
 
                     console.log(`Filtered from ${res.responseObject.length} to ${taskData.length} unique tasks`);
@@ -148,6 +150,8 @@ export default function TasklistPage() {
                     res.responseObject.forEach(task => {
                         uniqueTaskMap[task.task_id] = task;
                     });
+
+                    // แปลงเป็น array โดยไม่ต้องเรียงลำดับใหม่ - เก็บลำดับตามที่ได้รับมาจาก API
                     taskData = Object.values(uniqueTaskMap);
 
                     console.log(`Filtered from ${res.responseObject.length} to ${taskData.length} unique tasks`);
@@ -167,6 +171,8 @@ export default function TasklistPage() {
                         const filteredSubtasks = res.responseObject.filter(subtask =>
                             subtask.task_id === task.task_id
                         );
+
+                        // เก็บข้อมูล subtasks ตามลำดับที่ได้รับจาก API โดยไม่เรียงใหม่
                         subtasksData[task.task_id] = filteredSubtasks;
                     } else {
                         subtasksData[task.task_id] = [];
@@ -200,17 +206,17 @@ export default function TasklistPage() {
             // หา projectId จาก task
             const task = tasks.find(t => t.task_id === taskId);
             if (!task || !task.project_id) return;
-            
+
             // ดึงข้อมูลความคืบหน้าจาก API
             const response = await getDetailedProjectProgress(task.project_id);
             if (response.success) {
                 const { projectProgress, taskProgress: newTaskProgress, subtaskProgress: newSubtaskProgress } = response.responseObject;
-                
+
                 // อัพเดต state
-                setTaskProgress(prev => ({...prev, ...newTaskProgress}));
-                setSubtaskProgress(prev => ({...prev, ...newSubtaskProgress}));
+                setTaskProgress(prev => ({ ...prev, ...newTaskProgress }));
+                setSubtaskProgress(prev => ({ ...prev, ...newSubtaskProgress }));
                 setProjectProgressValue(projectProgress);
-                
+
                 console.log("Progress data refreshed from backend after update");
             }
         } catch (error) {
@@ -293,12 +299,6 @@ export default function TasklistPage() {
         try {
             console.log(`Fetching subtasks for task: ${taskId}`);
 
-            // ตรวจสอบว่าเคยดึงข้อมูลแล้วหรือยัง
-            if (subtasks[taskId] && subtasks[taskId].length > 0) {
-                console.log(`Subtasks for task ${taskId} already loaded, skipping fetch`);
-                return; // ไม่ต้องดึงข้อมูลใหม่
-            }
-
             const response = await getSubtask(taskId);
 
             if (response.success) {
@@ -309,9 +309,7 @@ export default function TasklistPage() {
                     subtask.task_id === taskId
                 );
 
-                console.log(`Filtered subtasks for task ${taskId}:`, filteredSubtasks);
-
-                // อัปเดต state โดยใช้ taskId เป็น key
+                // ไม่ต้องเรียงลำดับใหม่ ใช้ลำดับจาก backend ตามที่ได้รับมา
                 setSubtasks(prev => ({
                     ...prev,
                     [taskId]: filteredSubtasks
@@ -405,6 +403,40 @@ export default function TasklistPage() {
                     fetchSubtasks(taskId);
                 }
                 return [...prev, taskId];
+            }
+        });
+    };
+
+    const updateSubtaskAndMaintainOrder = (taskId: string, updatedSubtask: TypeSubTaskAll) => {
+        setSubtasks(prev => {
+            // ถ้าไม่มี subtasks สำหรับ task นี้ ให้สร้างใหม่
+            if (!prev[taskId]) {
+                return {
+                    ...prev,
+                    [taskId]: [updatedSubtask]
+                };
+            }
+
+            // ตรวจสอบว่า subtask มีอยู่แล้วหรือไม่
+            const subtaskIndex = prev[taskId].findIndex(s => s.subtask_id === updatedSubtask.subtask_id);
+
+            if (subtaskIndex === -1) {
+                // ถ้ายังไม่มี subtask นี้ ให้เพิ่มใหม่โดยเพิ่มต่อท้าย (ไม่ต้องเรียงลำดับใหม่)
+                const newSubtasks = [...prev[taskId], updatedSubtask];
+
+                return {
+                    ...prev,
+                    [taskId]: newSubtasks
+                };
+            } else {
+                // ถ้ามี subtask นี้แล้ว ให้อัพเดทในตำแหน่งเดิม
+                const newSubtasks = [...prev[taskId]];
+                newSubtasks[subtaskIndex] = updatedSubtask;
+
+                return {
+                    ...prev,
+                    [taskId]: newSubtasks
+                };
             }
         });
     };

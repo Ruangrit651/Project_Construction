@@ -36,10 +36,10 @@ export const TaskRepository = {
   findByProjectId: async (projectId: string) => {
     return prisma.task.findMany({
       where: {
-        project_id: projectId
+        project_id: projectId,
       },
       orderBy: {
-        created_at: 'desc'
+        created_at: 'asc'  // เรียงตามวันที่สร้างจากเก่าไปใหม่
       }
     });
   },

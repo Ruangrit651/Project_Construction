@@ -145,8 +145,9 @@ const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData, projectId })
             if (response.success) {
                 // รีเซ็ตฟอร์ม
                 resetForm();
+                // สำคัญ: รอให้การดึงข้อมูลเสร็จสมบูรณ์ก่อนปิด dialog
+                await getTaskData();
                 setOpen(false); // ปิด Dialog หลังบันทึก
-                getTaskData();
             } else {
                 alert(`Error: ${response.message}`);
             }

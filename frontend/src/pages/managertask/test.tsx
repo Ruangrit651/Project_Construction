@@ -91,12 +91,14 @@ const isWeekend = (year: number, dayOfYear: number) => {
   return day === 0 || day === 6;
 };
 
-const isToday = (year: number, dayOfYear: number) => {
+// แก้ไขฟังก์ชัน isToday ให้ถูกต้อง
+const isToday = (year: number, monthIndex: number, dayOfMonth: number) => {
   const today = new Date();
-  const date = new Date(year, 0, dayOfYear);
-  return today.getDate() === date.getDate() &&
-    today.getMonth() === date.getMonth() &&
-    today.getFullYear() === date.getFullYear();
+
+  // ตรวจสอบทั้ง ปี เดือน และวัน
+  return today.getDate() === dayOfMonth &&
+    today.getMonth() === monthIndex &&
+    today.getFullYear() === year;
 };
 
 const calculateStartColAndSpan = (startDate: string, endDate: string, year: number) => {
@@ -234,32 +236,27 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
   const [resizingTask, setResizingTask] = useState<Task | Subtask | null>(null);
   const [resizeDirection, setResizeDirection] = useState<"start" | "end" | null>(null);
 
+  // ในส่วน useEffect ที่ประกาศ style
   useEffect(() => {
     setTaskList(tasks);
 
-    // เพิ่ม CSS สำหรับ drag effects
+    // เพิ่ม CSS สำหรับ animations ต่างๆ
     const style = document.createElement('style');
     style.textContent = `
-    .task-bar {
-      transition: background-color 0.2s ease;
-    }
-    
-    .task-bar:hover {
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .task-bar.dragging {
-      cursor: grabbing;
-      z-index: 30;
-      opacity: 0.9;
-    }
-    
-    .drag-tooltip {
-      pointer-events: none;
-      z-index: 40;
-      font-weight: bold;
-    }
-    `;
+  /* โค้ด CSS เดิม... */
+  
+  /* เอฟเฟกต์สำหรับเส้นไฮไลท์วันปัจจุบัน - เปลี่ยนเป็นสีแดง */
+  .today-line {
+    animation: glow 2s infinite alternate;
+    position: relative;
+  }
+  
+  /* เพิ่มสไตล์สำหรับ highlight-flash */
+  .highlight-flash {
+    animation: flash 0.7s ease-in-out 3;
+  }
+  
+  `;
     document.head.appendChild(style);
 
     return () => {
@@ -818,25 +815,97 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
   };
 
   // เพิ่มฟังก์ชันใหม่สำหรับการเรียงลำดับ task และ subtask
-  const sortTasks = (tasks: Task[]) => {
+  const sortTasks = (tasks: Task[]): Task[] => {
+    // เราจะไม่เรียงลำดับใหม่ แต่จะใช้ลำดับที่ได้รับจาก API
     return tasks.map(task => {
-      if (task.subtasks) {
-        // เรียง subtasks ตามวันที่เริ่มต้น
-        const sortedSubtasks = [...task.subtasks].sort((a, b) => {
-          const dateA = new Date(a.startDate).getTime();
-          const dateB = new Date(b.startDate).getTime();
-          return dateA - dateB;
-        });
-        return { ...task, subtasks: sortedSubtasks };
+      // สำหรับ subtasks ก็เช่นกัน ไม่ต้องเรียงลำดับใหม่
+      if (task.subtasks && task.subtasks.length > 0) {
+        return {
+          ...task,
+          // แต่ละ subtask ควรคงตำแหน่งเดิม
+          subtasks: [...task.subtasks]
+        };
       }
       return task;
-    }).sort((a, b) => {
-      // เรียง tasks ตามวันที่เริ่มต้น
-      const dateA = new Date(a.startDate).getTime();
-      const dateB = new Date(b.startDate).getTime();
-      return dateA - dateB;
     });
   };
+
+  // แก้ไขฟังก์ชัน scrollToToday ให้ทำงานได้อย่างถูกต้อง
+  const scrollToToday = () => {
+    const today = new Date();
+
+    // Find the scrollable container - using a more specific selector
+    const timelineContent = document.querySelector('.timeline-content');
+
+    if (!timelineContent) {
+      console.error("Timeline content element not found");
+      return;
+    }
+
+    if (today.getFullYear() !== year) {
+      console.log("Current year doesn't match - can't scroll to today");
+      return;
+    }
+
+    // Calculate today's position
+    const startOfYear = new Date(year, 0, 1);
+    const dayOfYear = Math.floor((today.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+    const todayPosition = dayOfYear * 40; // 40px per day
+
+    // Calculate scroll position to center today
+    const scrollPosition = todayPosition - (timelineContent.clientWidth / 2) + 20;
+
+    // Smooth scroll to position
+    timelineContent.scrollTo({
+      left: scrollPosition,
+      behavior: 'smooth'
+    });
+
+    // Add visual feedback
+    const todayCells = document.querySelectorAll('.day-cell-today');
+    todayCells.forEach(cell => {
+      cell.classList.add('highlight-flash');
+      setTimeout(() => {
+        cell.classList.remove('highlight-flash');
+      }, 2100);
+    });
+  };
+
+  const highlightTodayColumn = () => {
+    const todayCells = document.querySelectorAll('.day-cell-today');
+
+    if (todayCells.length === 0) {
+      console.warn("No today cells found. Check if isToday function is working correctly.");
+      return;
+    }
+
+    // เพิ่ม CSS Animation สำหรับเอฟเฟกต์กระพริบด้วยสีแดง
+    const style = document.createElement('style');
+    style.textContent = `
+  @keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; background-color: rgba(239, 68, 68, 0.4); }
+  }
+  .highlight-flash {
+    animation: flash 0.7s ease-in-out 3;
+  }
+`;
+    document.head.appendChild(style);
+
+    // ลบ style element หลังจาก animation เสร็จสิ้น
+    setTimeout(() => {
+      document.head.removeChild(style);
+    }, 3500);
+  };
+
+  // อัพเดท useEffect สำหรับการเรียงลำดับ tasks
+  useEffect(() => {
+    if (tasks && tasks.length > 0) {
+      // ใช้ฟังก์ชัน sortTasks แทนการเรียงลำดับแบบอื่น
+      const sortedTasks = sortTasks(tasks);
+      setTaskList(sortedTasks);
+    }
+  }, [tasks]);
 
   // อัพเดท useEffect สำหรับการเรียงลำดับ tasks
   useEffect(() => {
@@ -847,7 +916,23 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
   return (
     <TimelineContainer>
       <TimelineHeader>
-        <h2 className="text-lg font-semibold text-gray-900">{year} Project Timeline</h2>
+        <div className="flex justify-between items-center">
+          {/* ด้านซ้าย: แสดงชื่อปีหรือข้อความอื่น */}
+          <h2 className="text-lg font-semibold text-gray-900">{year} Project Timeline</h2>
+
+          {/* ด้านขวา: ปุ่ม Today */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              console.log("Today button clicked");
+              scrollToToday();
+            }}
+            className="px-3 py-1.5 bg-blue-600 text-white border border-blue-700 rounded shadow-sm hover:bg-blue-700 transition-colors text-sm flex items-center gap-1.5 font-medium"
+          >
+            <span>Today</span>
+            <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+          </button>
+        </div>
       </TimelineHeader>
 
       <TimelineGrid>
@@ -913,8 +998,30 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
         </TimelineSidebar>
 
         {/* Timeline Content */}
-        <TimelineContent>
+        <TimelineContent className="timeline-content">
           <TimelineContentInner>
+            {/* เพิ่มเส้นไฮไลท์วันปัจจุบันก่อนเนื้อหาอื่นๆ */}
+            {(() => {
+              const today = new Date();
+              if (today.getFullYear() === year) {
+                const startOfYear = new Date(year, 0, 1);
+                const dayOfYear = Math.floor((today.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+                const position = (dayOfYear * 40) + 20; // 40px ต่อวัน
+
+                return (
+                  <div
+                    className="absolute top-[40px] w-[2px] bg-red-500 z-[1000]"
+                    style={{
+                      left: `${position}px`,
+                      height: '3000px', // ตั้งค่าความสูงมากพอเพื่อให้ปลายเส้นยาวเกินเนื้อหาทั้งหมด
+                      pointerEvents: 'none' // ให้คลิกผ่านเส้นได้
+                    }}
+                  />
+                );
+              }
+              return null;
+            })()}
+
             <div className="sticky top-0 bg-white z-10 border-b border-gray-200" style={{ height: "40px" }}>
               {/* Month and day headers */}
               <div className="flex flex-col h-full">
@@ -944,7 +1051,8 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                           const dayOfMonth = dayIndex + 1;
                           const date = new Date(year, monthIndex, dayOfMonth);
                           const isWeekendDay = date.getDay() === 0 || date.getDay() === 6;
-                          const isCurrentDay = isToday(year, date.getDate());
+                          // แก้ไขการเรียกใช้ฟังก์ชัน isToday ให้ส่งพารามิเตอร์ที่ถูกต้อง
+                          const isCurrentDay = isToday(year, monthIndex, dayOfMonth);
 
                           return (
                             <DayCell

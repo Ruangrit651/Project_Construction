@@ -51,11 +51,13 @@ export const SubTaskRepository = {
       where: { task_id },
       include: {
         progresses: {
-          orderBy: { date_recorded: 'desc' },
+          orderBy: { date_recorded: 'asc' },
           take: 1
         }
       },
-      orderBy: { created_at: 'asc' }
+      orderBy: { 
+        created_at: 'asc'  
+      }
     });
   },
 

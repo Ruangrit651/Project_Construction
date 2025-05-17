@@ -3,10 +3,10 @@ import { Dialog, Button, Flex, TextField, Text, Select } from "@radix-ui/themes"
 import { postSubtask } from "@/services/subtask.service";
 
 interface DialogAddSubTaskProps {
-  getSubtaskData: () => void;
-  taskId: string;
-  taskName: string;
-  projectId?: string | null; // Add this line
+    getSubtaskData: () => void;
+    taskId: string;
+    taskName: string;
+    projectId?: string | null; // Add this line
 }
 
 const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, taskId, taskName }) => {
@@ -61,8 +61,8 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
                 setEndDate("");
                 setStatus("pending");
 
-                // Close dialog and fetch updated subtask data
-                getSubtaskData();
+                // สำคัญ: ต้องรอให้การดึงข้อมูลเสร็จสมบูรณ์ก่อนปิด dialog
+                await getSubtaskData();
                 setOpen(false); // Close dialog after successful save
             } else {
                 setErrorMessage(response.message || "Failed to add subtask");
@@ -73,6 +73,7 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
         }
     };
 
+    
     return (
         <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger asChild>
@@ -80,7 +81,7 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
                     <Text size="1">+ Add</Text>
                 </Button>
             </Dialog.Trigger>
-            <Dialog.Content style={{ maxWidth: 450 }}  className="overflow-visible">
+            <Dialog.Content style={{ maxWidth: 450 }} className="overflow-visible">
                 <Dialog.Title>Add Subtask for: {taskName}</Dialog.Title>
                 <form onSubmit={(e) => e.preventDefault()}>
                     <Flex direction="column" gap="2">

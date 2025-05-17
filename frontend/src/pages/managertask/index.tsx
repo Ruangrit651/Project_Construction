@@ -32,6 +32,7 @@ const ManagerTaskPage: React.FC = () => {
             }
 
             if (response.success) {
+                // ใช้ข้อมูลตามลำดับที่ได้รับจาก API โดยไม่มีการเรียงลำดับใหม่
                 const formattedTasks = response.responseObject.map((task: any) => ({
                     taskId: task.task_id,
                     taskName: task.task_name,
@@ -41,8 +42,10 @@ const ManagerTaskPage: React.FC = () => {
                     endDate: task.end_date,
                     status: task.status,
                     progress: task.progress || 0,
+                    created_at: task.created_at
                 }));
 
+                console.log("Tasks received from API (original order):", formattedTasks);
                 setTasks(formattedTasks);
 
                 // Extract years from tasks for the year selector
@@ -85,11 +88,10 @@ const ManagerTaskPage: React.FC = () => {
             const updatedTasks = [...tasks];
 
             for (const task of updatedTasks) {
-                // Get subtasks for this specific task
                 const response = await getSubtask(task.taskId);
 
                 if (response.success) {
-                    // Ensure we only include subtasks that belong to this specific task
+                    // กรองแต่ไม่เรียงลำดับใหม่ คงลำดับตามที่ API ส่งมา
                     const filteredSubtasks = response.responseObject
                         .filter(subtask => subtask.task_id === task.taskId)
                         .map((subtask: any) => ({
@@ -101,8 +103,11 @@ const ManagerTaskPage: React.FC = () => {
                             endDate: subtask.end_date,
                             status: subtask.status,
                             progress: subtask.progress || 0,
+                            // เก็บวันที่สร้างเพื่อใช้อ้างอิงถ้าจำเป็น
+                            created_at: subtask.created_at
                         }));
 
+                    // กำหนด subtasks โดยไม่มีการเรียงลำดับใหม่
                     task.subtasks = filteredSubtasks;
 
                     console.log(`Fetched ${filteredSubtasks.length} subtasks for task: ${task.taskName}`);
@@ -211,14 +216,14 @@ const ManagerTaskPage: React.FC = () => {
                         )} */}
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto timeline-container">
                         <div className="min-w-[1200px]">
                             <DateTable
                                 year={selectedYear}
                                 tasks={tasks}
                                 fetchTasks={fetchTasks}
                                 fetchSubtasks={fetchSubtasks}
-                                projectId={projectId} // Add this line
+                                projectId={projectId}
                             />
                         </div>
                     </div>

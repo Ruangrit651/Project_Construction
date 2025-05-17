@@ -160,7 +160,7 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({
                             description: `Updated task progress to ${progressPercent}%`,
                         });
                         console.log("Updated task progress to:", progressPercent);
-                        
+
                         // เรียก callback เพื่ออัพเดต state ในหน้าหลัก
                         if (onProgressUpdate) {
                             onProgressUpdate(progressPercent);
@@ -214,6 +214,7 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({
             setErrorMessage("An error occurred while updating the task.");
         }
     };
+
 
     return (
         <Dialog.Root open={open} onOpenChange={setOpen}>

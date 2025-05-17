@@ -7,9 +7,9 @@ PayloadUpdateSubtaskStartDate, PayloadUpdateSubtaskEndDate, PayloadUpdateSubtask
 } from "@/types/requests/request.subtask";
 import { SubtaskResponse } from "@/types/response/response.subtask";
 
-export const getSubtask = async () => {
+export const getSubtask = async (taskId: string) => {
   const { data: response } = await mainApi.get(
-    GET_SUBTASK_ALL
+    `${GET_SUBTASK_ALL}/${taskId}`
   );
   return response;
 };
