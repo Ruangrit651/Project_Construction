@@ -76,12 +76,11 @@ const DialogEdit = ({
                 project_id,
                 project_name: patchProjectName,
                 budget: budgetNumber,
-                actual: actualNumber,
+                actual: 0, // ค่านี้จะถูก backend คำนวณจากทรัพยากรใหม่
                 status: patchStatus,
                 start_date: patchStartDate,
                 end_date: patchEndDate
             });
-
             if (response.statusCode === 200) {
                 console.log("Project updated successfully");
 
@@ -242,6 +241,21 @@ const DialogEdit = ({
                             onChange={handleBudgetChange}
                         />
                     </label>
+                    {/* <label>
+                        <Text as="div" size="2" mb="1" weight="bold">
+                            Actual (คำนวณจากทรัพยากร)
+                        </Text>
+                        <TextField.Root
+                            value={new Intl.NumberFormat("en-US").format(budget)} // แสดงค่า actual ปัจจุบัน
+                            placeholder="Calculated from resources"
+                            type="text"
+                            disabled
+                            className="bg-gray-100"
+                        />
+                        <Text as="div" size="1" mt="1" color="gray">
+                            *ค่า Actual คำนวณจากทรัพยากรที่เพิ่มในโครงการโดยอัตโนมัติ
+                        </Text>
+                    </label> */}
                     <label>
                         <Text as="div" size="2" mb="1" weight="bold">
                             Status

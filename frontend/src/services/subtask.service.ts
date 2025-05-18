@@ -1,15 +1,17 @@
-import { CREATE_SUBTASK, GET_SUBTASK_ALL, UPDATE_SUBTASK, DELETE_SUBTASK,
-   UPDATE_START_DATE_SUBTASK, UPDATE_END_DATE_SUBTASK, UPDATE_DATES_SUBTASK
- } from "@/apis/endpoint.api";
+import {
+  CREATE_SUBTASK, GET_SUBTASK_ALL, UPDATE_SUBTASK, DELETE_SUBTASK,
+  UPDATE_START_DATE_SUBTASK, UPDATE_END_DATE_SUBTASK, UPDATE_DATES_SUBTASK
+} from "@/apis/endpoint.api";
 import mainApi from "@/apis/main.api";
-import { PayloadCreateSubtask, PayloadDeleteSubtask, PayloadUpdateSubtask, 
-PayloadUpdateSubtaskStartDate, PayloadUpdateSubtaskEndDate, PayloadUpdateSubtaskDates
+import {
+  PayloadCreateSubtask, PayloadDeleteSubtask, PayloadUpdateSubtask,
+  PayloadUpdateSubtaskStartDate, PayloadUpdateSubtaskEndDate, PayloadUpdateSubtaskDates
 } from "@/types/requests/request.subtask";
 import { SubtaskResponse } from "@/types/response/response.subtask";
 
-export const getSubtask = async (taskId: string) => {
+export const getSubtask = async () => {
   const { data: response } = await mainApi.get(
-    `${GET_SUBTASK_ALL}/${taskId}`
+    GET_SUBTASK_ALL
   );
   return response;
 };

@@ -8,18 +8,23 @@ import ProjectListManager from "@/pages/projectlistManager";
 import ManagerSummary from "@/pages/ManagerSummry";
 
 //CEO
-import Dashboardceo from "@/pages/dashBoard";
+import Summary from "@/pages/CEOSummary";
+import DashboardCEO from "@/pages/CEOdashboard";
+import ProjectListCEO from "@/pages/CEOprojectlist";
+import CEOTimeline from "@/pages/CEOtimeline"; // เพิ่ม import
+import CEOTasklist from "@/pages/CEOtasklist"; // เพิ่ม import
+import CEOResource from "@/pages/CEOresouce"; // เพิ่ม import
+
 
 // Admin
 import AdminPage from "@/pages/admin";
 import AdminProjectPage from "@/pages/project";
 
 // Employee
-import EmployeePlanning from "@/pages/employeestask";
+import EmployeePlanning from "@/pages/employeestimeline";
 import EmployeeProjectList from "@/pages/projectlistemployee"; // Add this import
 import EmployeeResource from "@/pages/employeeresource";
 import EmployeeTasklist from "@/pages/employeetasklist";
-// import EmployeeReprot from "@/pages/employeereport";
 
 
 // Navbar Sidebar
@@ -72,8 +77,28 @@ const router = createBrowserRouter([
     element: <MainLayoutCEO />,
     children: [
       {
+        path: "/CEOProjectList",
+        element: <ProjectListCEO />,
+      },
+      {
+        path: "/CEOSummary",
+        element: <Summary />,
+      },
+      {
         path: "/CEODashBoard",
-        element: <Dashboardceo />,
+        element: <DashboardCEO />,
+      },
+      {
+        path: "/CEOTimeline",
+        element: <CEOTimeline />,
+      },
+      {
+        path: "/CEOTasklist", 
+        element: <CEOTasklist />,
+      },
+      {
+        path: "/CEOResource",
+        element: <CEOResource />,
       },
 
     ],

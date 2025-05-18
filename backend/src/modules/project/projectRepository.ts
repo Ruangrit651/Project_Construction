@@ -139,7 +139,7 @@ export const ProjectRepository = {
     },
 
     // ค้นหาโปรเจกต์ที่ผู้ใช้มีส่วนร่วม
-    findAvailableProjects : async (userId: string) => { 
+    findAvailableProjects: async (userId: string) => {
         return await prisma.relation.findMany({
             where: {
                 user_id: userId,
@@ -165,5 +165,26 @@ export const ProjectRepository = {
                 }
             }
         });
+    },
+
+    // ฟังก์ชันคำนวณ Actual Cost จากทรัพยากร
+    calculateActualCost: async (projectId: string) => {
+        const resources = await prisma.resource.findMany({
+            where: {
+                tasks: {
+                    project_id: projectId
+                }
+            },
+            select: {
+                total: true
+            }
+        });
+
+        // คำนวณผลรวมของ total จากทรัพยากรทั้งหมด
+        const actualCost = resources.reduce((sum, resource) => {
+            return sum + Number(resource.total || 0);
+        }, 0);
+
+        return actualCost;
     }
 }

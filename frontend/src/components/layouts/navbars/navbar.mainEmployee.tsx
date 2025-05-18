@@ -109,7 +109,7 @@ const NavbarEmployee = () => {
           </h2>
           {selectedProject.id && (
             <span className="ml-4 px-3 py-1 bg-blue-600 rounded-full text-sm">
-              โปรเจกต์: {selectedProject.name}
+              Project Selected: {selectedProject.name}
             </span>
           )}
         </div>

@@ -176,53 +176,50 @@ export default function ResourcePage() {
         return total;
     };
 
+    // Calculate grand total of all resources
+    const calculateGrandTotal = (): number => {
+        let total = 0;
+        Object.values(resourcesBySubTask).forEach(resources => {
+            resources.forEach(resource => {
+                if (typeof resource.total === 'number') {
+                    total += resource.total;
+                } else {
+                    total += Number(resource.total) || 0;
+                }
+            });
+        });
+        return total;
+    };
+
+    // Format currency for display
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('th-TH', {
+            style: 'decimal',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    };
+
     return (
         <Card variant="surface" style={{ padding: '16px' }}>
             <Flex direction="column" gap="3">
                 {/* Project Header section */}
                 <div>
                     <Flex direction="column" gap="1">
-                        <Flex align="center" gap="2">
-                            <Text
-                                size="2"
-                                className="text-blue-500 hover:underline cursor-pointer flex items-center"
-                                onClick={() => navigate('/ManagerProjectList')}
-                            >
-                                <ArrowLeftIcon className="mr-1" /> รายการโปรเจกต์
-                            </Text>
-                        </Flex>
                         <Heading size="6" className="mt-1">
-                            {project_name ? `ทรัพยากร: ${project_name}` : "ทรัพยากรทั้งหมด"}
+                            {project_name ? `Project Resources: ${project_name}` : "All Resources"}
                         </Heading>
                     </Flex>
                 </div>
 
-                {/* Navigation tabs for project views */}
-                {/* {project_id && (
-                    <Flex gap="3" className="mt-2 mb-4">
-                        <Button
-                            variant="soft"
-                            onClick={() => navigateToProjectView('tasks')}
-                        >
-                            งาน
-                        </Button>
-                        <Button
-                            variant="solid"
-                            onClick={() => navigateToProjectView('resources')}
-                        >
-                            ทรัพยากร
-                        </Button>
-                    </Flex>
-                )} */}
-
                 <Flex justify="between" align="center">
-                    <Text size="4" weight="bold">ทรัพยากรงานก่อสร้าง</Text>
+                    <Text size="4" weight="bold">Construction Resources</Text>
                     <Flex gap="2">
                         <Button variant="soft" size="2" onClick={() => expandAllSubTasks(true)}>
-                            ขยายทั้งหมด
+                            Expand All
                         </Button>
                         <Button variant="soft" size="2" onClick={() => expandAllSubTasks(false)}>
-                            ยุบทั้งหมด
+                            Collapse All
                         </Button>
                     </Flex>
                 </Flex>
@@ -260,10 +257,10 @@ export default function ResourcePage() {
                                                     </Flex>
                                                 </Table.Cell>
                                                 <Table.Cell colSpan={5} style={{ color: '#888' }}>
-                                                    ไม่มีงานย่อย
+                                                    No subtasks found
                                                 </Table.Cell>
                                                 <Table.Cell style={{ textAlign: 'right' }}>
-                                                    <Text>{new Intl.NumberFormat("en-US").format(taskTotal)}</Text>
+                                                    <Text>{formatCurrency(taskTotal)} THB</Text>
                                                 </Table.Cell>
                                             </Table.Row>
                                         );
@@ -281,12 +278,12 @@ export default function ResourcePage() {
                                                     <Flex direction="row" align="center" gap="2">
                                                         <Text weight="bold" size="3">{task.task_name}</Text>
                                                         <Badge variant="soft" color="blue" ml="2" radius="full">
-                                                            {taskSubTasks.length} งานย่อย
+                                                            {taskSubTasks.length} subtasks
                                                         </Badge>
                                                     </Flex>
                                                 </Table.Cell>
                                                 <Table.Cell style={{ textAlign: 'right', padding: '12px 16px' }}>
-                                                    <Text weight="bold" size="3">{new Intl.NumberFormat("en-US").format(taskTotal)}</Text>
+                                                    <Text weight="bold" size="3">{formatCurrency(taskTotal)} THB</Text>
                                                 </Table.Cell>
                                             </Table.Row>
 
@@ -319,14 +316,14 @@ export default function ResourcePage() {
                                                                     <Text weight="medium">{subTask.subtask_name}</Text>
                                                                     {resources.length > 0 && (
                                                                         <Badge variant="soft" size="1" color="green">
-                                                                            {resources.length} รายการ
+                                                                            {resources.length} items
                                                                         </Badge>
                                                                     )}
                                                                 </Flex>
                                                             </Table.Cell>
                                                             <Table.Cell colSpan={4}></Table.Cell>
                                                             <Table.Cell style={{ textAlign: 'right' }}>
-                                                                <Text weight="medium">{new Intl.NumberFormat("en-US").format(subTaskTotal)}</Text>
+                                                                <Text weight="medium">{formatCurrency(subTaskTotal)} THB</Text>
                                                             </Table.Cell>
                                                         </Table.Row>
 
@@ -336,7 +333,7 @@ export default function ResourcePage() {
                                                                 <Table.Row style={{ backgroundColor: '#fafafa' }}>
                                                                     <Table.Cell colSpan={2}></Table.Cell>
                                                                     <Table.Cell colSpan={5} style={{ color: '#888', fontStyle: 'italic', padding: '8px 16px' }}>
-                                                                        ไม่มีทรัพยากร
+                                                                        No resources found
                                                                     </Table.Cell>
                                                                 </Table.Row>
                                                             ) : (
@@ -354,21 +351,23 @@ export default function ResourcePage() {
                                                                                 variant="surface"
                                                                                 color={
                                                                                     resource.resource_type === 'equipment' ? 'amber' :
-                                                                                        resource.resource_type === 'material' ? 'green' :
-                                                                                            resource.resource_type === 'worker' ? 'blue' : 'gray'
+                                                                                    resource.resource_type === 'material' ? 'green' :
+                                                                                    resource.resource_type === 'worker' ? 'blue' : 'gray'
                                                                                 }
                                                                             >
                                                                                 {resource.resource_type}
                                                                             </Badge>
                                                                         </Table.Cell>
                                                                         <Table.Cell style={{ textAlign: 'right' }}>
-                                                                            {new Intl.NumberFormat("en-US").format(resource.cost)}
+                                                                            {formatCurrency(resource.cost)} THB
                                                                         </Table.Cell>
                                                                         <Table.Cell style={{ textAlign: 'center' }}>
-                                                                            {new Intl.NumberFormat("en-US").format(resource.quantity)}
+                                                                            {formatCurrency(resource.quantity)} {resource.unit}
                                                                         </Table.Cell>
                                                                         <Table.Cell style={{ textAlign: 'right' }}>
-                                                                            {new Intl.NumberFormat("en-US").format(resource.total)}
+                                                                            {formatCurrency(typeof resource.total === 'number' ? 
+                                                                                resource.total : 
+                                                                                Number(resource.total))} THB
                                                                         </Table.Cell>
                                                                     </Table.Row>
                                                                 ))
@@ -388,18 +387,7 @@ export default function ResourcePage() {
                                     </Table.Cell>
                                     <Table.Cell style={{ textAlign: 'right' }}>
                                         <Text weight="bold" size="3">
-                                            {(() => {
-                                                let allResourcesTotal = 0;
-                                                Object.values(resourcesBySubTask).forEach(resources => {
-                                                    resources.forEach(resource => {
-                                                        const resourceTotal = typeof resource.total === 'number'
-                                                            ? resource.total
-                                                            : Number(resource.total) || 0;
-                                                        allResourcesTotal += resourceTotal;
-                                                    });
-                                                });
-                                                return new Intl.NumberFormat("en-US").format(allResourcesTotal);
-                                            })()}
+                                            {formatCurrency(calculateGrandTotal())} THB
                                         </Text>
                                     </Table.Cell>
                                 </Table.Row>

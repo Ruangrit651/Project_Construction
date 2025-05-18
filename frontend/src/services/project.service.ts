@@ -1,19 +1,45 @@
-import { CREATE_PROJECT, GET_PROJECT_ALL , UPDATE_PROJECT ,DELETE_PROJECT,GET_MANAGER_PROJECTS} from "@/apis/endpoint.api";
-import { GET_PROJECT_USERS, ADD_USER_TO_PROJECT, REMOVE_USER_FROM_PROJECT,GET_PROJECT_ALL_AVAILABLE } from "@/apis/endpoint.api";
+import { CREATE_PROJECT, GET_PROJECT_ALL, UPDATE_PROJECT, DELETE_PROJECT, GET_MANAGER_PROJECTS } from "@/apis/endpoint.api";
+import { GET_PROJECT_USERS, ADD_USER_TO_PROJECT, REMOVE_USER_FROM_PROJECT, GET_PROJECT_ALL_AVAILABLE } from "@/apis/endpoint.api";
+import { GET_PROJECT_ACTUAL_COST ,UPDATE_PROJECT_ACTUAL_COST } from "@/apis/endpoint.api";
 import mainApi from "@/apis/main.api";
-import { PayloadCreateProject , PayloadDeleteProject ,PayloadUpdateProject} from "@/types/requests/request.project";
+import { PayloadCreateProject, PayloadDeleteProject, PayloadUpdateProject } from "@/types/requests/request.project";
 import { ProjectResponse } from "@/types/response/response.project";
 
 export const getProject = async () => {
-    const { data: response} = await mainApi.get(
+    const { data: response } = await mainApi.get(
         GET_PROJECT_ALL
     );
     return response;
 };
 
+// Function for CEO to get all projects
+export const getAllProjects = async () => {
+    const { data: response } = await mainApi.get(
+        GET_PROJECT_ALL
+    );
+    return response;
+};
+
+
 export const getProjectAvailable = async () => {
-    const { data: response} = await mainApi.get(
+    const { data: response } = await mainApi.get(
         GET_PROJECT_ALL_AVAILABLE
+    );
+    return response;
+};
+
+// ดึงค่า Actual Cost ที่คำนวณจากทรัพยากร
+export const getProjectActualCost = async (projectId: string) => {
+    const { data: response } = await mainApi.get(
+        `${GET_PROJECT_ACTUAL_COST}/${projectId}`
+    );
+    return response;
+};
+
+// อัปเดตค่า Actual Cost ในโครงการจากทรัพยากร
+export const updateProjectActualCost = async (projectId: string) => {
+    const { data: response } = await mainApi.post(
+        `${UPDATE_PROJECT_ACTUAL_COST}/${projectId}`
     );
     return response;
 };
@@ -53,22 +79,22 @@ export const getManagerProjects = async (managerId: string) => {
 export const getProjectUsers = async (projectId: string) => {
     const { data: response } = await mainApi.get(`${GET_PROJECT_USERS}/${projectId}`);
     return response;
-  };
-  
-  // เพิ่มผู้ใช้เข้าโปรเจค
-  export const addUserToProject = async (projectId: string, userId: string) => {
+};
+
+// เพิ่มผู้ใช้เข้าโปรเจค
+export const addUserToProject = async (projectId: string, userId: string) => {
     const { data: response } = await mainApi.post(
-      `${ADD_USER_TO_PROJECT}/${projectId}`,
-      { user_id: userId }
+        `${ADD_USER_TO_PROJECT}/${projectId}`,
+        { user_id: userId }
     );
     return response;
-  };
-  
-  // ลบผู้ใช้ออกจากโปรเจค
-  export const removeUserFromProject = async (projectId: string, userId: string) => {
+};
+
+// ลบผู้ใช้ออกจากโปรเจค
+export const removeUserFromProject = async (projectId: string, userId: string) => {
     const { data: response } = await mainApi.delete(
-      `${REMOVE_USER_FROM_PROJECT}/${projectId}`,
-      { data: { user_id: userId } }
+        `${REMOVE_USER_FROM_PROJECT}/${projectId}`,
+        { data: { user_id: userId } }
     );
     return response;
-  };
+};

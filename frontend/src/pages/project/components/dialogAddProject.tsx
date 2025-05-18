@@ -59,7 +59,7 @@ const DialogAdd = ({ getProjectData, showToast }: DialogProjectProps) => {
     };
 
     // ฟังก์ชันสำหรับสร้างโปรเจกต์
-   const handleCreateProject = async () => {
+    const handleCreateProject = async () => {
         if (!projectName || !budget || !startDate || !endDate) {
             // ใช้ showToast แทน alert
             if (showToast) {
@@ -74,7 +74,7 @@ const DialogAdd = ({ getProjectData, showToast }: DialogProjectProps) => {
             // สร้างข้อมูลโปรเจกต์
             const projectData: any = {
                 project_name: projectName,
-                actual,
+                actual: 0, // กำหนดเป็น 0 เสมอ เพราะจะคำนวณจากทรัพยากรอัตโนมัติ
                 budget,
                 status,
                 start_date: startDate,
@@ -97,7 +97,7 @@ const DialogAdd = ({ getProjectData, showToast }: DialogProjectProps) => {
                 // กรณีส่งผ่าน user_id แต่ backend ไม่ได้สร้างความสัมพันธ์ให้ เราสามารถใช้ createRelation ได้
                 if (showToast) {
                     showToast(`Project "${projectName}" created successfully`, 'success');
-                    
+
                     try {
                         await createRelation({
                             project_id: projectResponse.responseObject.project_id,
@@ -155,7 +155,7 @@ const DialogAdd = ({ getProjectData, showToast }: DialogProjectProps) => {
                     </label>
                     <label>
                         <Text as="div" size="2" mb="1" weight="bold">
-                            เจ้าของโปรเจกต์
+                            Owner
                         </Text>
                         <Select.Root
                             value={selectedUserId}
@@ -164,10 +164,10 @@ const DialogAdd = ({ getProjectData, showToast }: DialogProjectProps) => {
                                 setSelectedUserId(userId);
                             }}
                         >
-                            <Select.Trigger className="select-trigger" placeholder="เลือกเจ้าของโปรเจกต์">
+                            <Select.Trigger className="select-trigger" placeholder="Select owner">
                                 {selectedUserId ?
                                     users.find(user => user.user_id === selectedUserId)?.username :
-                                    "เลือกเจ้าของโปรเจกต์"}
+                                    "Select owner"}
                             </Select.Trigger>
                             <Select.Content>
                                 {users.map(user => (
@@ -190,18 +190,22 @@ const DialogAdd = ({ getProjectData, showToast }: DialogProjectProps) => {
                             onChange={handleBudgetChange}
                         />
                     </label>
-                    <label>
+                    {/* <label>
                         <Text as="div" size="2" mb="1" weight="bold">
-                            Actual
+                            Actual (คำนวณจากทรัพยากรอัตโนมัติ)
                         </Text>
                         <TextField.Root
-                            defaultValue=""
-                            placeholder="Enter actual"
+                            defaultValue="0"
+                            placeholder="Calculated from resources"
                             type="text"
-                            value={formmattedActual}
-                            onChange={handleActualChange}
+                            value="0"
+                            disabled
+                            className="bg-gray-100"
                         />
-                    </label>
+                        <Text as="div" size="1" mt="1" color="gray">
+                            *ค่า Actual จะคำนวณจากทรัพยากรที่เพิ่มในโครงการโดยอัตโนมัติ
+                        </Text>
+                    </label> */}
                     <label>
                         <Text as="div" size="2" mb="1" weight="bold">
                             Status

@@ -24,6 +24,7 @@ export const taskRouter = (() => {
     // เพิ่ม endpoint สำหรับดึง Task ตาม Project ID
     router.get("/getbyproject/:project_id",
         authenticateJWT,
+        rolegrop4,
         rolegrop5,
         async (req: Request, res: Response): Promise<void> => {
             const { project_id } = req.params;

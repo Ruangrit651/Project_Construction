@@ -5,7 +5,11 @@ import {
 } from "@common/models/serviceResponse";
 import { ResourceRepository } from "@modules/resource/resourceRepository";
 import { TypePayloadResource } from "@modules/resource/resourceModel";
+import { projectService } from "@modules/project/projectService";
 import { resource } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export const resourceService = {
   // อ่านข้อมูลทรัพยากรทั้งหมด
@@ -31,14 +35,29 @@ export const resourceService = {
         quantity: Number(item._sum.quantity) || 0,
         totalCost: Number(item._sum.total) || 0,
       })),
-    //   responseObject: summary,
+      //   responseObject: summary,
     };
   },
 
   // สร้างทรัพยากรใหม่
+  // สร้างทรัพยากรใหม่
   create: async (payload: TypePayloadResource) => {
     try {
       const resource = await ResourceRepository.create(payload);
+
+      // ดึงข้อมูล task เพื่อหา project_id
+      const task = await prisma.task.findUnique({
+        where: {
+          task_id: payload.task_id || undefined
+        },
+        select: { project_id: true }
+      });
+
+      // อัปเดตค่า Actual ในโปรเจค
+      if (task && task.project_id) {
+        await projectService.updateActualCost(task.project_id);
+      }
+
       return new ServiceResponse<resource>(
         ResponseStatus.Success,
         "Create resource success",
@@ -75,6 +94,20 @@ export const resourceService = {
         resource_id,
         payload
       );
+
+      // ดึงข้อมูล task เพื่อหา project_id
+      const task = await prisma.task.findUnique({
+        where: {
+          task_id: existingResource.task_id || undefined
+        },
+        select: { project_id: true }
+      });
+
+      // อัปเดตค่า Actual ในโปรเจค
+      if (task && task.project_id) {
+        await projectService.updateActualCost(task.project_id);
+      }
+
       return new ServiceResponse<resource>(
         ResponseStatus.Success,
         "Update resource success",
@@ -105,7 +138,23 @@ export const resourceService = {
         );
       }
 
+      // ดึงข้อมูล task เพื่อหา project_id ก่อนลบทรัพยากร
+      const task = await prisma.task.findUnique({
+        where: {
+          task_id: existingResource.task_id || undefined
+        },
+        select: { project_id: true }
+      });
+
+      const projectId = task?.project_id;
+
       await ResourceRepository.delete(resource_id);
+
+      // อัปเดตค่า Actual ในโปรเจคหลังจากลบทรัพยากร
+      if (projectId) {
+        await projectService.updateActualCost(projectId);
+      }
+
       return new ServiceResponse(
         ResponseStatus.Success,
         "Delete resource success",
@@ -121,5 +170,5 @@ export const resourceService = {
         StatusCodes.INTERNAL_SERVER_ERROR
       );
     }
-  },
+  }
 };

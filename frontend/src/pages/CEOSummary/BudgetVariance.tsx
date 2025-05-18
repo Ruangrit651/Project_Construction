@@ -15,7 +15,8 @@ const BudgetVariance = ({ filteredProjects }: { filteredProjects: TypeDashboard[
   const categories = filteredProjects.map((project) => project.project_name || "Unnamed Project");
   const variances = filteredProjects.map((project) => {
     const totalBudget = Number(project.totalBudget || 0);
-    const totalSpent = Number(project.amountSpent || 0);
+    // ใช้ actual แทน amountSpent
+    const totalSpent = Number(project.actual || project.amountSpent || 0);
     return totalBudget - totalSpent;
   });
 

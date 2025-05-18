@@ -399,5 +399,63 @@ export const projectService = {
                 StatusCodes.INTERNAL_SERVER_ERROR
             );
         }
+    },
+
+    // คำนวณ Actual Cost จากทรัพยากร
+    getActualCost: async (projectId: string) => {
+        try {
+            // ตรวจสอบว่าโปรเจคมีอยู่จริง
+            const project = await ProjectRepository.findById(projectId);
+            if (!project) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "Project not found",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            // คำนวณ Actual Cost จากทรัพยากรทั้งหมดในโปรเจค
+            const actualCost = await ProjectRepository.calculateActualCost(projectId);
+
+            return new ServiceResponse(
+                ResponseStatus.Success,
+                "Actual cost calculated successfully",
+                { projectId, actualCost },
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                "Error calculating actual cost: " + (ex as Error).message,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
+
+    // อัปเดตค่า Actual ในโครงการจากทรัพยากร
+    updateActualCost: async (projectId: string) => {
+        try {
+            // คำนวณ Actual Cost จากทรัพยากรทั้งหมดในโปรเจค
+            const actualCost = await ProjectRepository.calculateActualCost(projectId);
+
+            // อัปเดตค่า Actual ในโปรเจค
+            await ProjectRepository.update(projectId, { actual: actualCost });
+
+            return new ServiceResponse(
+                ResponseStatus.Success,
+                "Project actual cost updated successfully",
+                { projectId, actualCost },
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                "Error updating actual cost: " + (ex as Error).message,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 };

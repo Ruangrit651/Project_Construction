@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 type TypeDashboard = {
   project_name?: string;
   amountSpent?: number;
+  actual?: number;
 };
 import ReactApexChart from "react-apexcharts";
 
@@ -28,7 +29,8 @@ const CostBreakdown = ({ filteredProjects }: { filteredProjects: TypeDashboard[]
   useEffect(() => {
     if (filteredProjects && filteredProjects.length > 0) {
       const labels = filteredProjects.map((project) => project.project_name || "Unnamed Project");
-      const series = filteredProjects.map((project) => Number(project.amountSpent) || 0);
+      // ใช้ actual แทน amountSpent
+      const series = filteredProjects.map((project) => Number(project.actual || project.amountSpent || 0));
 
       // ใช้ชุดสีแบบขยายเพื่อให้ไม่ซ้ำง่าย
       const colorPalette = [

@@ -1,21 +1,46 @@
 import * as NavigationMenu from '@radix-ui/react-navigation-menu';
 import * as Tabs from '@radix-ui/react-tabs';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { 
-  PersonIcon, 
+import {
+  PersonIcon,
   ArchiveIcon,
   ClipboardIcon,
   CalendarIcon,
   ExitIcon,
-  DashboardIcon
+  DashboardIcon,
+  BarChartIcon
 } from '@radix-ui/react-icons';
 import { logoutUser } from '@/services/logout.service';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const NavbarCEO = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
+  // เก็บข้อมูลโปรเจกต์จาก URL parameters
+  const [selectedProject, setSelectedProject] = useState<{
+    id: string | null;
+    name: string | null;
+  }>({
+    id: null,
+    name: null
+  });
+
+  // อ่าน URL parameters เมื่อ location เปลี่ยน
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const projectId = searchParams.get('project_id');
+    const projectName = searchParams.get('project_name');
+
+    if (projectId && projectName) {
+      setSelectedProject({
+        id: projectId,
+        name: projectName
+      });
+    }
+  }, [location]);
+
   // ฟังก์ชันสำหรับ Logout
   const handleLogout = async () => {
     try {
@@ -30,18 +55,57 @@ const NavbarCEO = () => {
   // คำนวณว่า path ปัจจุบันเป็นของ tab ใด
   const getActiveTab = () => {
     const path = location.pathname;
+    if (path.includes('/CEOProjectList')) return 'projectlist';
+    if (path.includes('/CEOSummary')) return 'summary';
     if (path.includes('/CEODashBoard')) return 'dashboard';
-    if (path.includes('/CEOPlan')) return 'timeline';
-    if (path.includes('/CEOTask')) return 'tasklist';
+    if (path.includes('/CEOTimeline')) return 'timeline'; // แก้จาก CEOPlan เป็น CEOTimeline
+    if (path.includes('/CEOTasklist')) return 'tasklist'; // แก้จาก CEOTask เป็น CEOTasklist ให้ตรงกับ handleTabChange
     if (path.includes('/CEOResource')) return 'resource';
     return 'dashboard'; // Default ให้เป็น dashboard
   };
 
   const handleTabChange = (value: string) => {
-    if (value === 'dashboard') navigate('/CEODashBoard');
-    else if (value === 'timeline') navigate('/CEOPlan');
-    else if (value === 'tasklist') navigate('/CEOTask');
-    else if (value === 'resource') navigate('/CEOResource');
+    // ถ้าเปลี่ยนไปหน้า ProjectList ให้เคลียร์ค่าโปรเจกต์ที่เลือก
+    if (value === 'projectlist') {
+      navigate('/CEOProjectList');
+      return;
+    }
+
+    // ถ้าเปลี่ยนไปหน้า Summary ไม่ต้องส่งค่า project_id
+    if (value === 'summary') {
+      navigate('/CEOSummary');
+      return;
+    }
+
+    // ถ้ามีโปรเจกต์ที่เลือกอยู่แล้ว ก็นำทางไปยังหน้านั้นพร้อมข้อมูลโปรเจกต์ที่เลือก
+    if (selectedProject.id && selectedProject.name) {
+      // ตรวจสอบค่า value และกำหนด path ที่ถูกต้อง
+      let pagePath = "";
+      switch (value) {
+        case 'dashboard':
+          pagePath = "/CEODashBoard";
+          break;
+        case 'tasklist':
+          pagePath = "/CEOTasklist"; // ใช้ CEOTask ตามที่กำหนดในเราเตอร์
+          break;
+        case 'timeline':
+          pagePath = "/CEOTimeline"; // ใช้ CEOPlan ตามที่กำหนดในเราเตอร์
+          break;
+        case 'resource':
+          pagePath = "/CEOResource"; // ใช้ CEOResource ตามที่กำหนดในเราเตอร์
+          break;
+        default:
+          pagePath = `/CEO${value.charAt(0).toUpperCase() + value.slice(1)}`;
+      }
+
+      navigate(`${pagePath}?project_id=${selectedProject.id}&project_name=${encodeURIComponent(selectedProject.name)}`);
+    } else {
+      // ถ้ายังไม่มีโปรเจกต์ที่เลือกและไม่ใช่หน้า summary หรือ projectlist ให้แจ้งเตือนผู้ใช้
+      if (value !== 'summary' && value !== 'projectlist') {
+        alert('โปรดเลือกโปรเจกต์ก่อนเข้าใช้งานส่วนนี้');
+      }
+      navigate('/CEOProjectList');
+    }
   };
 
   return (
@@ -55,8 +119,13 @@ const NavbarCEO = () => {
           <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 bg-clip-text text-transparent">
             CITE Construction
           </h2>
+          {selectedProject.id && (
+            <span className="ml-4 px-3 py-1 bg-blue-600 rounded-full text-sm">
+              Project Selected: {selectedProject.name}
+            </span>
+          )}
         </div>
-        
+
         <NavigationMenu.List className="flex gap-6">
           <NavigationMenu.Item>
             <DropdownMenu.Root>
@@ -83,55 +152,80 @@ const NavbarCEO = () => {
       </NavigationMenu.Root>
 
       {/* Tabs Navigation */}
-      <Tabs.Root 
-        className="w-full bg-gray-800 text-white shadow-md" 
-        value={getActiveTab()} 
+      <Tabs.Root
+        className="w-full bg-gray-800 text-white shadow-md"
+        value={getActiveTab()}
         onValueChange={handleTabChange}
       >
-        <Tabs.List className="flex max-w-screen-lg ">
-          <Tabs.Trigger 
-            value="dashboard" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'dashboard' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
+        <Tabs.List className="flex max-w-screen-lg">
+          <Tabs.Trigger
+            value="projectlist"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'projectlist'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
+          >
+            <ArchiveIcon className={`${getActiveTab() === 'projectlist' ? 'text-blue-400' : ''}`} />
+            Project List
+          </Tabs.Trigger>
+
+          <Tabs.Trigger
+            value="summary"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'summary'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
+          >
+            <BarChartIcon className={`${getActiveTab() === 'summary' ? 'text-blue-400' : ''}`} />
+            Summary
+          </Tabs.Trigger>
+
+          <Tabs.Trigger
+            value="dashboard"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 
+              ${getActiveTab() === 'dashboard' ? 'border-blue-500 text-blue-400 font-medium' : 'border-transparent hover:bg-gray-700'}
+              ${!selectedProject.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={!selectedProject.id}
+            title={!selectedProject.id ? 'โปรดเลือกโปรเจกต์ก่อน' : 'แดชบอร์ด'}
           >
             <DashboardIcon className={`${getActiveTab() === 'dashboard' ? 'text-blue-400' : ''}`} />
             Dashboard
           </Tabs.Trigger>
 
-          <Tabs.Trigger 
-            value="timeline" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'timeline' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
-          >
-            <CalendarIcon className={`${getActiveTab() === 'timeline' ? 'text-blue-400' : ''}`} />
-            Timeline
-          </Tabs.Trigger>
-
-          <Tabs.Trigger 
-            value="tasklist" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'tasklist' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
+          <Tabs.Trigger
+            value="tasklist"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'tasklist'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
+            disabled={!selectedProject.id}
+            title={!selectedProject.id ? 'โปรดเลือกโปรเจกต์ก่อน' : 'รายการงาน'}
           >
             <ClipboardIcon className={`${getActiveTab() === 'tasklist' ? 'text-blue-400' : ''}`} />
             Tasklist
           </Tabs.Trigger>
 
-          <Tabs.Trigger 
-            value="resource" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'resource' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
+          <Tabs.Trigger
+            value="timeline"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'timeline'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
+            disabled={!selectedProject.id}
+            title={!selectedProject.id ? 'โปรดเลือกโปรเจกต์ก่อน' : 'ไทม์ไลน์'}
+          >
+            <CalendarIcon className={`${getActiveTab() === 'timeline' ? 'text-blue-400' : ''}`} />
+            Timeline
+          </Tabs.Trigger>
+
+          <Tabs.Trigger
+            value="resource"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'resource'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
+            disabled={!selectedProject.id}
+            title={!selectedProject.id ? 'โปรดเลือกโปรเจกต์ก่อน' : 'ทรัพยากร/งบประมาณ'}
           >
             <ArchiveIcon className={`${getActiveTab() === 'resource' ? 'text-blue-400' : ''}`} />
             Resource/Budget

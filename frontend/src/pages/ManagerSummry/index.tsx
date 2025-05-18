@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
-import CustomSelect from "../dashBoard/CustomSelect";
+import CustomSelect from "../CEOSummary/CustomSelect";
 import { TypeDashboard } from "@/types/response/response.dashboard";
 import { getDashboard } from "@/services/dashboard.service";
-import BudgetVariance from "../dashBoard/BudgetVariance";
-import ProjectCompletionRate from "../dashBoard/ProjectCompletionRate";
-import UtilizedDuration from "../dashBoard/UtilizedDuration";
-import CostBreakdown from "../dashBoard/CostBreakdown";
-import BudgetSummaryEAC from "../dashBoard/BudgetSummaryEAC";
+import BudgetVariance from "../CEOSummary/BudgetVariance";
+import ProjectCompletionRate from "../CEOSummary/ProjectCompletionRate";
+import UtilizedDuration from "../CEOSummary/UtilizedDuration";
+import CostBreakdown from "../CEOSummary/CostBreakdown";
+import BudgetSummaryEAC from "../CEOSummary/BudgetSummaryEAC";
 import { getResourceSummary } from "@/services/resource.service";
 import { useLocation } from "react-router-dom";
+import { getProjectActualCost } from "@/services/project.service";
 
 
 // EAC calculation function
@@ -16,7 +17,8 @@ const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
   if (!projects || projects.length === 0) return null;
 
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
-  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0); // AC
+  // ใช้ actual แทน amountSpent
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0); // AC
 
   // Calculate EV for each project
   const earnedValue = projects.reduce(
@@ -36,7 +38,8 @@ const calculatePercentOfTarget = (projects: TypeDashboard[] | null) => {
   }
 
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0);
-  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0);
+  // ใช้ actual แทน amountSpent
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0);
 
   const percent = totalBudget > 0 ? (totalAmountSpent / totalBudget) * 100 : 0;
   const isOverBudget = totalAmountSpent > totalBudget;
@@ -48,7 +51,8 @@ const calculatePercentOfTarget = (projects: TypeDashboard[] | null) => {
 // Calculate total amount spent
 const calculateTotalAmountSpent = (projects: TypeDashboard[] | null): number => {
   if (!projects || projects.length === 0) return 0;
-  return projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0);
+  // ใช้ actual แทน amountSpent
+  return projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0);
 };
 
 // Calculate budget variance
@@ -58,7 +62,8 @@ const calculateBudgetVariance = (projects: TypeDashboard[] | null) => {
   }
 
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0);
-  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent || 0), 0);
+  // ใช้ actual แทน amountSpent
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0);
 
   const variance = totalBudget - totalAmountSpent;
   const variancePercentage = totalBudget > 0 ? (variance / totalBudget) * 100 : 0;
@@ -69,7 +74,8 @@ const calculateBudgetVariance = (projects: TypeDashboard[] | null) => {
 // Calculate aggregated values
 const calculateAggregatedValues = (projects: TypeDashboard[]) => {
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget), 0);
-  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.amountSpent), 0);
+  // ใช้ actual แทน amountSpent
+  const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent), 0);
   const percentTarget = totalBudget > 0 ? (totalAmountSpent / totalBudget) * 100 : 0;
 
   return { totalBudget, totalAmountSpent, percentTarget };
@@ -108,6 +114,8 @@ export default function ManagerSummary() {
   const [showAsPercent, setShowAsPercent] = useState(true);
   const [showDetails, setShowDetails] = useState(true);
   const [resourceSummary, setResourceSummary] = useState<{ type: string; quantity: number; totalCost: number }[]>([]);
+  // เพิ่ม state เก็บค่า Actual ที่คำนวณจากทรัพยากร
+  const [calculatedActuals, setCalculatedActuals] = useState<Record<string, number>>({});
 
   // Get project ID from URL if available
   const searchParams = new URLSearchParams(location.search);
@@ -130,14 +138,38 @@ export default function ManagerSummary() {
       try {
         const data = await getDashboard();
         if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
-          setProjectDetails(data.responseObject);
+          // ดึงค่า Actual Cost ที่คำนวณจากทรัพยากร
+          const actualCostsMap: Record<string, number> = {};
+          const actualCostPromises = data.responseObject.map(async (project) => {
+            try {
+              const actualCostData = await getProjectActualCost(project.project_id);
+              if (actualCostData.success) {
+                actualCostsMap[project.project_id] = actualCostData.responseObject.actualCost;
+              }
+            } catch (error) {
+              console.error(`Error fetching actual cost for project ${project.project_id}:`, error);
+            }
+          });
+
+          await Promise.all(actualCostPromises);
+          setCalculatedActuals(actualCostsMap);
+
+          // อัปเดตข้อมูลโครงการด้วยค่า Actual ที่คำนวณจากทรัพยากร
+          const updatedProjects = data.responseObject.map(project => ({
+            ...project,
+            actual: actualCostsMap[project.project_id] || project.actual,
+            // ปรับค่า amountSpent ให้ตรงกับ actual เพื่อใช้ในการคำนวณ
+            amountSpent: actualCostsMap[project.project_id] || project.amountSpent
+          }));
+
+          setProjectDetails(updatedProjects);
 
           // If projectId is in URL, filter to show only that project
           if (projectId) {
-            const selectedProject = data.responseObject.filter(project => project.project_id === projectId);
+            const selectedProject = updatedProjects.filter(project => project.project_id === projectId);
             setFilteredProjects(selectedProject);
           } else {
-            setFilteredProjects(data.responseObject);
+            setFilteredProjects(updatedProjects);
           }
 
           const options = ["All", ...data.responseObject.map((project) => project.project_name)];
@@ -301,6 +333,11 @@ export default function ManagerSummary() {
               </p>
             )}
 
+            {/* เพิ่มข้อความอธิบายว่า Actual คำนวณจากทรัพยากร */}
+            <div className="text-xs text-gray-600 mt-2 italic">
+              *Actual costs are calculated automatically from resources assigned to projects
+            </div>
+
             {/* Budget Overview Grid */}
             {showDetails && (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-6">
@@ -433,6 +470,11 @@ export default function ManagerSummary() {
                           <p><strong>Finish:</strong> {new Date(project.end_date).toLocaleDateString()}</p>
                           <p><strong>Actual Cost:</strong> {Number(project.actual).toLocaleString()} <span className="text-xs">THB</span></p>
                           <p><strong>Budget:</strong> {Number(project.budget).toLocaleString()} <span className="text-xs">THB</span></p>
+                        </div>
+
+                        {/* เพิ่มข้อความอธิบายว่า Actual คำนวณจากทรัพยากร */}
+                        <div className="mt-1 text-xs text-gray-600 italic">
+                          *Actual cost calculated from resources
                         </div>
 
                         {/* Progress Bar */}

@@ -103,25 +103,28 @@ export default function TasklistPage() {
                 // ดึงข้อมูลแบบละเอียดทั้งหมดจาก API เดียว
                 try {
                     const detailedResponse = await getDetailedProjectProgress(project_id);
-                    if (detailedResponse.success) {
-                        const { projectProgress, taskProgress: newTaskProgress, subtaskProgress: newSubtaskProgress } = detailedResponse.responseObject;
+                    if (detailedResponse?.success) {
+                        const { projectProgress, taskProgress: newTaskProgress, subtaskProgress: newSubtaskProgress } = detailedResponse.responseObject || {};
 
-                        // อัพเดต state โดยตรงจากข้อมูล backend
-                        setTaskProgress(newTaskProgress);
-                        setSubtaskProgress(newSubtaskProgress);
-                        setProjectProgressValue(projectProgress);
+                        // Add null checks before using the response data
+                        if (newTaskProgress && newSubtaskProgress) {
+                            // อัพเดต state โดยตรงจากข้อมูล backend
+                            setTaskProgress(newTaskProgress);
+                            setSubtaskProgress(newSubtaskProgress);
+                            setProjectProgressValue(projectProgress || 0);
 
-                        console.log("Progress data loaded from backend:", {
-                            projectProgress,
-                            taskProgressCount: Object.keys(newTaskProgress).length,
-                            subtaskProgressCount: Object.keys(newSubtaskProgress).length
-                        });
+                            console.log("Progress data loaded from backend:", {
+                                projectProgress,
+                                taskProgressCount: Object.keys(newTaskProgress).length,
+                                subtaskProgressCount: Object.keys(newSubtaskProgress).length
+                            });
+                        }
                     }
                 } catch (error) {
-                    console.error("Failed to fetch detailed progress:", error);
+                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                    console.error("Failed to fetch detailed progress:", errorMessage);
                 }
             }
-
             // 1. ดึงข้อมูล tasks
             let taskData: TypeTaskAll[] = [];
             if (project_id) {
@@ -295,41 +298,71 @@ export default function TasklistPage() {
     };
 
     // ดึงข้อมูล subtasks สำหรับ task ที่กำหนด
-    const fetchSubtasks = async (taskId: string) => {
-        try {
-            console.log(`Fetching subtasks for task: ${taskId}`);
+    const fetchSubtasks = async (taskId: string, maxRetries = 2) => {
+        let attempts = 0;
 
-            const response = await getSubtask(taskId);
+        const attemptFetch = async () => {
+            attempts++;
+            try {
+                console.log(`Fetching subtasks for task: ${taskId} (Attempt ${attempts})`);
 
-            if (response.success) {
-                console.log(`Subtasks for task ${taskId}:`, response.responseObject);
+                const response = await getSubtask(taskId);
 
-                // ตรวจสอบให้แน่ใจว่า subtask ที่ได้รับเป็นของ task นี้จริง ๆ
-                const filteredSubtasks = response.responseObject.filter(subtask =>
-                    subtask.task_id === taskId
-                );
+                if (response?.success) {
+                    console.log(`Subtasks for task ${taskId}:`, response.responseObject);
 
-                // ไม่ต้องเรียงลำดับใหม่ ใช้ลำดับจาก backend ตามที่ได้รับมา
-                setSubtasks(prev => ({
-                    ...prev,
-                    [taskId]: filteredSubtasks
-                }));
+                    // ตรวจสอบให้แน่ใจว่า subtask ที่ได้รับเป็นของ task นี้จริง ๆ
+                    const filteredSubtasks = response.responseObject.filter(subtask =>
+                        subtask.task_id === taskId
+                    );
 
-                // ดึงข้อมูล progress ใหม่จาก backend หลังจากโหลด subtasks
-                await refreshProgressAfterUpdate(taskId);
-            } else {
-                console.error(`Failed to fetch subtasks for task ${taskId}:`, response.message);
-                setSubtasks(prev => ({
-                    ...prev,
-                    [taskId]: []
-                }));
+                    // ไม่ต้องเรียงลำดับใหม่ ใช้ลำดับจาก backend ตามที่ได้รับมา
+                    setSubtasks(prev => ({
+                        ...prev,
+                        [taskId]: filteredSubtasks
+                    }));
+
+                    // ดึงข้อมูล progress ใหม่จาก backend หลังจากโหลด subtasks
+                    await refreshProgressAfterUpdate(taskId);
+                    return true;
+                } else {
+                    console.warn(`Attempt ${attempts}: Failed to fetch subtasks for task ${taskId}:`, response?.message || 'Unknown error');
+                    // If we have retries left, don't set empty array yet
+                    if (attempts >= maxRetries) {
+                        setSubtasks(prev => ({
+                            ...prev,
+                            [taskId]: []
+                        }));
+                    }
+                    return false;
+                }
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                console.warn(`Attempt ${attempts}: Error fetching subtasks for task ${taskId}:`, errorMessage);
+
+                // Only set empty array on last attempt
+                if (attempts >= maxRetries) {
+                    setSubtasks(prev => ({
+                        ...prev,
+                        [taskId]: []
+                    }));
+                }
+                return false;
             }
-        } catch (error) {
-            console.error(`Error fetching subtasks for task ${taskId}:`, error);
-            setSubtasks(prev => ({
-                ...prev,
-                [taskId]: []
-            }));
+        };
+
+        // Initial attempt
+        let success = await attemptFetch();
+
+        // Retry logic
+        while (!success && attempts < maxRetries) {
+            // Wait a bit before retrying (increasing delay with each attempt)
+            await new Promise(resolve => setTimeout(resolve, attempts * 500));
+            success = await attemptFetch();
+        }
+
+        if (!success) {
+            console.error(`Failed to fetch subtasks for task ${taskId} after ${attempts} attempts`);
         }
     };
 
@@ -475,16 +508,9 @@ export default function TasklistPage() {
             {/* Project Header */}
             <div className="mb-6">
                 <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                        <span
-                            className="text-sm text-blue-500 hover:underline cursor-pointer flex items-center"
-                            onClick={() => navigate('/ManagerProjectList')}
-                        >
-                            <ArrowLeftIcon className="mr-1" /> รายการโปรเจกต์
-                        </span>
-                    </div>
+                    
                     <h1 className="text-2xl font-bold mt-1">
-                        {project_name ? `งาน: ${project_name}` : "งานทั้งหมด"}
+                        {project_name ? `Tasks: ${project_name}` : "All Tasks"}
                     </h1>
                 </div>
             </div>

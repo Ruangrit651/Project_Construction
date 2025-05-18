@@ -130,6 +130,36 @@ export const projectRouter = (() => {
         }
     );
 
+    // GET actual cost จากทรัพยากร
+    router.get("/actual-cost/:project_id",
+        authenticateJWT,
+        validateRequest(z.object({
+            params: z.object({
+                project_id: z.string().uuid(),
+            })
+        })),
+        async (req: Request, res: Response) => {
+            const { project_id } = req.params;
+            const serviceResponse = await projectService.getActualCost(project_id);
+            handleServiceResponse(serviceResponse, res);
+        }
+    );
+
+    // UPDATE actual cost จากทรัพยากร
+    router.post("/update-actual-cost/:project_id",
+        authenticateJWT,
+        validateRequest(z.object({
+            params: z.object({
+                project_id: z.string().uuid(),
+            })
+        })),
+        async (req: Request, res: Response) => {
+            const { project_id } = req.params;
+            const serviceResponse = await projectService.updateActualCost(project_id);
+            handleServiceResponse(serviceResponse, res);
+        }
+    );
+
 
     return router;
 })();
