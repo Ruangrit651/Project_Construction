@@ -1,0 +1,16 @@
+📅 Timestamp: 2025-05-19T08:58:52.238Z
+🚀 Page Load Time: 1659 ms
+🔐 Login Time: 1180 ms
+✅ Login success: http://localhost:5173/admin
+🔍 Current URL before clicking Project tab: http://localhost:5173/admin
+✅ Currently on Member page as expected
+🔄 Attempting to click on Project tab...
+⚠️ URL check failed: Waiting failed: 5000ms exceeded
+⏱️ Project Tab Click Time: 5048 ms
+🔍 Current URL after clicking Project tab: http://localhost:5173/admin
+⚠️ Failed to navigate to Project page
+📄 Project Page Content:
+  Title: CITE Construction
+  Has Table: Yes
+  Buttons: Admin, Member, Project, Create, Detail, Edit, Suspend, Delete, Detail, Edit, Suspend, Delete
+  Project Tab Active: No

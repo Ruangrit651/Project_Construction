@@ -1,57 +1,82 @@
 require('dotenv').config();
 const puppeteer = require('puppeteer');
-const { performance } = require('perf_hooks');
 const fs = require('fs');
+const { performance } = require('perf_hooks');
 
-console.log('Loaded ENV:');
-console.log('APP_URL:', process.env.APP_URL);
-console.log('USERNAME:', process.env.LOGIN_USERNAME);
-console.log('PASSWORD:', process.env.LOGIN_PASSWORD);
+function now() {
+  return new Date().toISOString();
+}
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: false });
-  const page = await browser.newPage();
+  let browser;
+  const logs = [];
 
-  const metrics = {};
+  try {
+    browser = await puppeteer.launch({
+      headless: false,
+      args: [
+        '--disable-features=PasswordManagerEnabled,AutomaticPasswordSaving',
+        '--disable-save-password-bubble'
+      ]
+    });
 
-  // จับเวลาเริ่มเข้าเว็บ
-  const gotoStart = performance.now();
-  await page.goto(process.env.APP_URL, { waitUntil: 'load' });
-  const gotoEnd = performance.now();
-  metrics.pageLoadTime = (gotoEnd - gotoStart).toFixed(2);
+    const page = await browser.newPage();
 
-  // รอให้ input username และ password ปรากฏก่อน
-  await page.waitForSelector('#username');
-  await page.waitForSelector('#password');
+    // Console log จากหน้าเว็บ
+    page.on('console', msg => console.log(`[${now()}] PAGE LOG:`, msg.text()));
 
-  // กรอกข้อมูลจาก env
-  console.log(process.env.LOGIN_USERNAME, process.env.LOGIN_PASSWORD);
-  await page.type('#username', process.env.LOGIN_USERNAME);
-  await page.type('#password', process.env.LOGIN_PASSWORD);
+    // Response errors
+    page.on('response', async response => {
+      if (!response.ok()) {
+        const body = await response.text();
+        console.log(`[${now()}] ❗ RESPONSE ERROR (${response.status()}) ${response.url()}:\n${body}`);
+      }
+    });
 
-  await new Promise(resolve => setTimeout(resolve, 1000)); // พักไว้ให้เห็นก่อน Login
+    // เริ่มวัดเวลาโหลดหน้า
+    const loadStart = performance.now();
+    await page.goto(process.env.APP_URL, { waitUntil: 'networkidle0' });
+    const loadEnd = performance.now();
+    const pageLoadTime = (loadEnd - loadStart).toFixed(2);
+    logs.push(`📅 Timestamp: ${now()}`);
+    logs.push(`🚀 Page Load Time: ${pageLoadTime} ms`);
 
-  // จับเวลา Login
-  const loginStart = performance.now();
-  await Promise.all([
-    page.click('button[type="submit"]'),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
-  const loginEnd = performance.now();
-  metrics.loginTime = (loginEnd - loginStart).toFixed(2);
+    // รอและกรอกฟอร์ม
+    await page.waitForSelector('#username');
+    await page.waitForSelector('#password');
+    await page.type('#username', process.env.LOGIN_USERNAME);
+    await page.type('#password', process.env.LOGIN_PASSWORD);
+    await new Promise(r => setTimeout(r, 800)); // ชะลอให้เห็น
 
-  // ตรวจสอบผลลัพธ์
-  const url = page.url();
-  metrics.result = url.includes('/admin') ? '✅ Login test passed!' : '❌ Login test failed!';
+    // Login
+    const loginStart = performance.now();
+    await Promise.all([
+      page.click('button[type="submit"]'),
+      page.waitForNavigation({ waitUntil: 'networkidle0' }),
+    ]);
+    const loginEnd = performance.now();
+    const loginTime = (loginEnd - loginStart).toFixed(2);
+    logs.push(`🔐 Login Time: ${loginTime} ms`);
 
-  console.log('\n📊 ผลการวัดประสิทธิภาพ:');
-  console.log(`- Page Load Time: ${metrics.pageLoadTime} ms`);
-  console.log(`- Login Time: ${metrics.loginTime} ms`);
-  console.log(`- Result: ${metrics.result}`);
+    // ตรวจสอบผลลัพธ์
+    const currentUrl = page.url();
+    const success = currentUrl.includes('/admin');
+    const result = success ? '✅ Login test passed!' : '❌ Login test failed!';
+    logs.push(`📌 Result: ${result}`);
+    logs.push(`🌐 Final URL: ${currentUrl}`);
 
-  // เขียนผลลัพธ์ลงไฟล์ (ชื่อจาก .env ถ้ามี)
-  const outputFile = process.env.OUTPUT_FILE || 'login_performance_result.json';
-  fs.writeFileSync(outputFile, JSON.stringify(metrics, null, 2));
+    // แสดงผลใน console
+    console.log('\n' + logs.join('\n') + '\n');
 
-  // await browser.close();
+    // เขียน log ลงไฟล์
+    const logFile = 'Login_performance_log.txt';
+    fs.writeFileSync(logFile, logs.join('\n'), 'utf8');
+    console.log(`📝 Log saved to ${logFile}\n`);
+  } catch (error) {
+    const errMsg = `[${now()}] ❌ Unexpected error: ${error.message}`;
+    console.error(errMsg);
+    fs.writeFileSync('login_performance_log.txt', errMsg, 'utf8');
+  } finally {
+    await browser?.close();
+  }
 })();
