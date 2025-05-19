@@ -2,7 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import { ResponseStatus, ServiceResponse } from "@common/models/serviceResponse";
 import { PlanRepository } from "@modules/plan/planRepository"; // สร้างและอ้างอิง PlanRepository
 import { TypePayloadPlan } from "@modules/plan/planModel"; // อ้างอิงจาก planModel
-import { plan } from "@prisma/client"; // อ้างอิงจาก Prisma Client
+import { Progress } from "@prisma/client"; // อ้างอิงจาก Prisma Client
 
 export const planService = {
     // อ่านข้อมูล plan ทั้งหมด
