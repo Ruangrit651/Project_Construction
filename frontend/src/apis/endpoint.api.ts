@@ -10,7 +10,7 @@ export const CREATE_USER = "/v1/user/create";
 export const UPDATE_USER = "/v1/user/update";
 export const DELETE_USER = "/v1/user/delete";
 export const TOGGLE_USER_STATUS = "/v1/user/toggle-status";
-export const GET_CURRENT_USER = "/v1/user/current"; 
+export const GET_CURRENT_USER = "/v1/user/current";
 
 // project
 export const GET_PROJECT_ALL = "/v1/project/get";

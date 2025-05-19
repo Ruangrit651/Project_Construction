@@ -11,12 +11,14 @@ import {
   BarChartIcon
 } from '@radix-ui/react-icons';
 import { logoutUser } from '@/services/logout.service';
+import { getCurrentUser } from '@/services/user.service';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
 const NavbarMain = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [currentUser, setCurrentUser] = useState({ username: 'User' });
 
   // เก็บข้อมูลโปรเจกต์จาก URL parameters
   const [selectedProject, setSelectedProject] = useState<{
@@ -26,6 +28,22 @@ const NavbarMain = () => {
     id: null,
     name: null
   });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await getCurrentUser();
+        console.log('User data received:', userData);
+
+        // Update this line to access the responseObject property
+        setCurrentUser(userData.responseObject);
+      } catch (error) {
+        console.error('Failed to fetch current user:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   // อ่าน URL parameters เมื่อ location เปลี่ยน
   useEffect(() => {
@@ -44,7 +62,7 @@ const NavbarMain = () => {
   // ฟังก์ชันสำหรับ Logout
   const handleLogout = async () => {
     try {
-      await logoutUser({ username: 'Myuser' });
+      await logoutUser({ username: currentUser.username });
       navigate('/', { state: { logoutSuccess: true } });
     } catch (err) {
       console.error('Logout failed', err);
@@ -129,11 +147,13 @@ const NavbarMain = () => {
         <NavigationMenu.List className="flex gap-6">
           <NavigationMenu.Item>
             <DropdownMenu.Root>
-              <DropdownMenu.Trigger className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-full transition-all duration-200 ease-in-out">
+              <DropdownMenu.Trigger className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg transition-all duration-200 ease-in-out">
                 <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
                   <PersonIcon className="h-5 w-5" />
                 </div>
-                <span className="font-medium">Myuser</span>
+                <span className="font-medium text-white px-3 py-1 min-w-[120px] max-w-[200px] truncate">
+                  {currentUser?.username || 'User'}
+                </span>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.Content className="bg-gray-800 text-white p-1 rounded-lg shadow-xl border border-gray-700" sideOffset={5}>
@@ -198,8 +218,10 @@ const NavbarMain = () => {
             className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'tasklist'
               ? 'border-blue-500 text-blue-400 font-medium'
               : 'border-transparent hover:bg-gray-700'
-              }`}
+              }
+    ${!selectedProject.id ? 'opacity-50 cursor-not-allowed' : ''}`}
             disabled={!selectedProject.id}
+            title={!selectedProject.id ? 'โปรดเลือกโปรเจกต์ก่อน' : 'รายการงาน'}
           >
             <ClipboardIcon className={`${getActiveTab() === 'tasklist' ? 'text-blue-400' : ''}`} />
             Tasklist
@@ -210,8 +232,10 @@ const NavbarMain = () => {
             className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'timeline'
               ? 'border-blue-500 text-blue-400 font-medium'
               : 'border-transparent hover:bg-gray-700'
-              }`}
+              }
+    ${!selectedProject.id ? 'opacity-50 cursor-not-allowed' : ''}`}
             disabled={!selectedProject.id}
+            title={!selectedProject.id ? 'โปรดเลือกโปรเจกต์ก่อน' : 'ไทม์ไลน์'}
           >
             <CalendarIcon className={`${getActiveTab() === 'timeline' ? 'text-blue-400' : ''}`} />
             Timeline
@@ -222,8 +246,10 @@ const NavbarMain = () => {
             className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'resource'
               ? 'border-blue-500 text-blue-400 font-medium'
               : 'border-transparent hover:bg-gray-700'
-              }`}
+              }
+    ${!selectedProject.id ? 'opacity-50 cursor-not-allowed' : ''}`}
             disabled={!selectedProject.id}
+            title={!selectedProject.id ? 'โปรดเลือกโปรเจกต์ก่อน' : 'ทรัพยากร/งบประมาณ'}
           >
             <ArchiveIcon className={`${getActiveTab() === 'resource' ? 'text-blue-400' : ''}`} />
             Resource/Budget

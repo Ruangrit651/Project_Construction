@@ -1,18 +1,34 @@
 import * as NavigationMenu from '@radix-ui/react-navigation-menu';
 import * as Tabs from '@radix-ui/react-tabs';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { 
-  PersonIcon, 
+import {
+  PersonIcon,
   ArchiveIcon,
   ExitIcon
 } from '@radix-ui/react-icons';
 import { logoutUser } from '@/services/logout.service';
+import { getCurrentUser } from '@/services/user.service';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const NavbarAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
+  const [currentUser, setCurrentUser] = useState({ username: 'User' });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setCurrentUser(userData.responseObject);
+      } catch (error) {
+        console.error('Failed to fetch current user:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   // ฟังก์ชันสำหรับ Logout
   const handleLogout = async () => {
     try {
@@ -49,15 +65,17 @@ const NavbarAdmin = () => {
             CITE Construction
           </h2>
         </div>
-        
+
         <NavigationMenu.List className="flex gap-6">
           <NavigationMenu.Item>
             <DropdownMenu.Root>
-              <DropdownMenu.Trigger className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-full transition-all duration-200 ease-in-out">
+              <DropdownMenu.Trigger className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg transition-all duration-200 ease-in-out">
                 <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
                   <PersonIcon className="h-5 w-5" />
                 </div>
-                <span className="font-medium">Admin</span>
+                <span className="font-medium text-white px-3 py-1 min-w-[120px] max-w-[200px] truncate">
+                  {currentUser?.username || 'Employee'}
+                </span>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.Content className="bg-gray-800 text-white p-1 rounded-lg shadow-xl border border-gray-700" sideOffset={5}>
@@ -76,31 +94,29 @@ const NavbarAdmin = () => {
       </NavigationMenu.Root>
 
       {/* Tabs Navigation */}
-      <Tabs.Root 
-        className="w-full bg-gray-800 text-white shadow-md" 
-        value={getActiveTab()} 
+      <Tabs.Root
+        className="w-full bg-gray-800 text-white shadow-md"
+        value={getActiveTab()}
         onValueChange={handleTabChange}
       >
         <Tabs.List className="flex max-w-screen-lg ">
-          <Tabs.Trigger 
-            value="members" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'members' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
+          <Tabs.Trigger
+            value="members"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'members'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
           >
             <PersonIcon className={`${getActiveTab() === 'members' ? 'text-blue-400' : ''}`} />
             Member
           </Tabs.Trigger>
 
-          <Tabs.Trigger 
-            value="projects" 
-            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${
-              getActiveTab() === 'projects' 
-                ? 'border-blue-500 text-blue-400 font-medium' 
-                : 'border-transparent hover:bg-gray-700'
-            }`}
+          <Tabs.Trigger
+            value="projects"
+            className={`flex items-center gap-2 px-8 py-4 border-b-2 transition-all duration-200 ${getActiveTab() === 'projects'
+              ? 'border-blue-500 text-blue-400 font-medium'
+              : 'border-transparent hover:bg-gray-700'
+              }`}
           >
             <ArchiveIcon className={`${getActiveTab() === 'projects' ? 'text-blue-400' : ''}`} />
             Project
