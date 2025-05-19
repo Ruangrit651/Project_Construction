@@ -6,6 +6,7 @@ import { getUserProjects } from "@/services/relation.service";
 import { TypeUserAll } from "@/types/response/response.user";
 import { TypeRelation } from "@/types/response/response.relation";
 import { Link } from "react-router-dom";
+import { formatDate } from "../../Function/FormatDate";
 
 type UserDetailProps = {
     // ถ้ามี userId ส่งเข้ามาจะใช้ userId นั้น
@@ -78,8 +79,8 @@ export default function UserDetailPage({ userId }: UserDetailProps) {
                             {user.is_active ? "Active" : "Suspended"}
                         </Badge>
                     </Flex>
-                    <Text>Created: {new Date(user.created_at).toLocaleDateString()}</Text>
-                    {user.updated_at && <Text>Last Updated: {new Date(user.updated_at).toLocaleDateString()}</Text>}
+                    <Text>Created: {formatDate(user.created_at)}</Text>
+                    {user.updated_at && <Text>Last Updated: {formatDate(user.updated_at)}</Text>}
                 </Flex>
             </Card>
 
@@ -108,7 +109,7 @@ export default function UserDetailPage({ userId }: UserDetailProps) {
                                     <Table.Cell>{relation.project?.project_name || 'Unnamed Project'}</Table.Cell>
                                     <Table.Cell>{relation.project?.status || 'Unknown'}</Table.Cell>
                                     <Table.Cell>
-                                        {new Date(relation.created_at).toLocaleDateString()}
+                                        {relation.created_at ? formatDate(relation.created_at) : 'N/A'}
                                     </Table.Cell>
                                     {/* แสดงปุ่ม View Project เฉพาะเมื่อไม่ได้อยู่ใน Dialog */}
                                     {!userId && (

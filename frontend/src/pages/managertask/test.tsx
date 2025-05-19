@@ -62,7 +62,10 @@ interface DateTableProps {
   tasks: Task[];
   fetchTasks: () => void;
   fetchSubtasks: () => void;
-  projectId?: string | null; // Add this line
+  projectId?: string | null;
+  // เพิ่ม props ใหม่
+  updateTaskStatus?: (taskId: string) => void;
+  addSubtaskToState?: (taskId: string, newSubtask: any) => void;
 }
 
 // Utility Functions
@@ -228,7 +231,8 @@ const getGridDate = (position: number, year: number): Date => {
 };
 
 // Main Component
-const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSubtasks, projectId }) => {
+const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSubtasks, projectId, updateTaskStatus,
+  addSubtaskToState }) => {
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
   const [expandedTasks, setExpandedTasks] = useState<string[]>([]);
   const [taskList, setTaskList] = useState<Task[]>([]);
@@ -981,6 +985,8 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                       taskId={task.taskId}
                       taskName={task.taskName}
                       projectId={projectId}
+                      updateTaskStatus={updateTaskStatus}
+                      addSubtaskToState={addSubtaskToState}
                     />
                   </div>
                 </div>

@@ -4,6 +4,7 @@ import { Card, Heading, Text, Tabs, Flex, Button } from "@radix-ui/themes";
 import { getProject } from "@/services/project.service";
 import { TypeProjectAll } from "@/types/response/response.project";
 import ProjectMembers from "./projectMenber";
+import { formatDate } from "../../Function/FormatDate";
 
 type ProjectDetailProps = {
     // ถ้ามี projectId ส่งเข้ามาจะใช้ projectId นั้น
@@ -61,15 +62,14 @@ export default function ProjectDetailPage({ projectId }: ProjectDetailProps) {
                 <Flex direction="column" gap="2">
                     <Text>Budget: {new Intl.NumberFormat('en-US').format(project.budget)}</Text>
                     <Text>Status: {project.status}</Text>
-                    <Text>Start Date: {project.start_date}</Text>
-                    <Text>End Date: {project.end_date || 'Not specified'}</Text>
+                    <Text>Start Date: {formatDate(project.start_date)}</Text>
+                    <Text>End Date: {project.end_date ? formatDate(project.end_date) : 'Not specified'}</Text>
                 </Flex>
             </Card>
 
             <Tabs.Root defaultValue="members">
                 <Tabs.List className="mt-4">
                     <Tabs.Trigger value="members">Members</Tabs.Trigger>
-                    <Tabs.Trigger value="tasks">Tasks</Tabs.Trigger>
                 </Tabs.List>
 
 
@@ -80,12 +80,6 @@ export default function ProjectDetailPage({ projectId }: ProjectDetailProps) {
                     />
                 </Tabs.Content>
 
-                <Tabs.Content value="tasks">
-                    <Card variant="surface" className="mt-4">
-                        <Heading size="4" mb="2">Project Tasks</Heading>
-                        <Text>Task management coming soon...</Text>
-                    </Card>
-                </Tabs.Content>
             </Tabs.Root>
 
             {/* ปุ่มย้อนกลับ - แสดงเฉพาะเมื่อเป็นหน้าเต็ม (ไม่ได้อยู่ใน Dialog) */}

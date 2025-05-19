@@ -120,6 +120,71 @@ const ManagerTaskPage: React.FC = () => {
         }
     };
 
+    const updateTaskStatus = async (taskId: string) => {
+        try {
+            const response = await getSubtask(taskId);
+            if (response.success && response.responseObject) {
+                // กรองเฉพาะ subtasks ของ task นี้
+                const subtasks = response.responseObject.filter(
+                    (subtask: any) => subtask.task_id === taskId
+                );
+
+                if (subtasks.length === 0) return;
+
+                // คำนวณสถานะใหม่
+                let newStatus = "pending";
+                const totalSubtasks = subtasks.length;
+                const completedSubtasks = subtasks.filter((s: any) => s.status === "completed").length;
+                const inProgressSubtasks = subtasks.filter((s: any) => s.status === "in progress").length;
+
+                if (completedSubtasks === totalSubtasks) {
+                    newStatus = "completed";
+                } else if (completedSubtasks > 0 || inProgressSubtasks > 0) {
+                    newStatus = "in progress";
+                }
+
+                // อัพเดตสถานะของ task ใน API
+                await patchTask({
+                    task_id: taskId,
+                    status: newStatus
+                });
+
+                // อัพเดตสถานะใน local state
+                setTasks(prevTasks =>
+                    prevTasks.map(task =>
+                        task.taskId === taskId ? { ...task, status: newStatus } : task
+                    )
+                );
+            }
+        } catch (error) {
+            console.error("Error updating task status:", error);
+        }
+    };
+
+    // เพิ่มฟังก์ชันสำหรับการเพิ่ม subtask ลงใน state โดยตรง
+    const addSubtaskToState = (taskId: string, newSubtask: any) => {
+        setTasks(prevTasks =>
+            prevTasks.map(task => {
+                if (task.taskId === taskId) {
+                    return {
+                        ...task,
+                        subtasks: [...(task.subtasks || []), {
+                            subtaskId: newSubtask.subtask_id,
+                            subtaskName: newSubtask.subtask_name,
+                            description: newSubtask.description,
+                            budget: newSubtask.budget,
+                            startDate: newSubtask.start_date,
+                            endDate: newSubtask.end_date,
+                            status: newSubtask.status,
+                            progress: newSubtask.progress || 0
+                        }]
+                    };
+                }
+                return task;
+            })
+        );
+    };
+
     // Load tasks when the component mounts or project_id changes
     useEffect(() => {
         fetchTasks();
@@ -224,6 +289,8 @@ const ManagerTaskPage: React.FC = () => {
                                 fetchTasks={fetchTasks}
                                 fetchSubtasks={fetchSubtasks}
                                 projectId={projectId}
+                                updateTaskStatus={updateTaskStatus}
+                                addSubtaskToState={addSubtaskToState}
                             />
                         </div>
                     </div>

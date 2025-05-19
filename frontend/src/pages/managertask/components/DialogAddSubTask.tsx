@@ -1,15 +1,25 @@
 import { useState } from "react";
 import { Dialog, Button, Flex, TextField, Text, Select } from "@radix-ui/themes";
 import { postSubtask } from "@/services/subtask.service";
+import { createProgress } from "@/services/progress.service";
 
 interface DialogAddSubTaskProps {
     getSubtaskData: () => void;
     taskId: string;
     taskName: string;
-    projectId?: string | null; // Add this line
+    projectId?: string | null;
+    // เพิ่ม props ใหม่
+    updateTaskStatus?: (taskId: string) => void;
+    addSubtaskToState?: (taskId: string, newSubtask: any) => void;
 }
 
-const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, taskId, taskName }) => {
+const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ 
+    getSubtaskData, 
+    taskId, 
+    taskName, 
+    updateTaskStatus,
+    addSubtaskToState
+}) => {
     const [subtaskName, setSubtaskName] = useState("");
     const [description, setDescription] = useState("");
     const [budget, setBudget] = useState(0);
@@ -19,6 +29,8 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
     const [status, setStatus] = useState("pending");
     const [errorMessage, setErrorMessage] = useState("");
     const [open, setOpen] = useState(false);
+    // เพิ่ม progress state
+    const [progressPercent, setProgressPercent] = useState(0);
 
     const formatNumber = (value: number) => {
         return new Intl.NumberFormat("en-US").format(value);
@@ -29,6 +41,20 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
         const numericValue = value === "" ? 0 : Number(value);
         setBudget(numericValue);
         setFormattedBudget(formatNumber(numericValue)); // Update the formatted budget
+    };
+
+    // เพิ่มฟังก์ชันสำหรับการเปลี่ยนสถานะ
+    const handleStatusChange = (value: string) => {
+        setStatus(value);
+        
+        // อัพเดต progress ตามสถานะ
+        if (value === "completed") {
+            setProgressPercent(100);
+        } else if (value === "in progress") {
+            setProgressPercent(50);
+        } else {
+            setProgressPercent(0);
+        }
     };
 
     const handleAddSubtask = async (e: React.MouseEvent) => {
@@ -51,19 +77,55 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
                 status: status,
             });
 
-            if (response.success) {
-                // Reset form
-                setSubtaskName("");
-                setDescription("");
-                setBudget(0);
-                setFormattedBudget("0");
-                setStartDate("");
-                setEndDate("");
-                setStatus("pending");
-
-                // สำคัญ: ต้องรอให้การดึงข้อมูลเสร็จสมบูรณ์ก่อนปิด dialog
-                await getSubtaskData();
-                setOpen(false); // Close dialog after successful save
+            if (response.success && response.responseObject?.subtask_id) {
+                // บันทึกความคืบหน้าเริ่มต้น
+                try {
+                    await createProgress({
+                        subtask_id: response.responseObject.subtask_id,
+                        percent: progressPercent,
+                        description: `Initial progress: ${progressPercent}%`,
+                    });
+                    
+                    // สร้าง object ข้อมูล subtask ใหม่
+                    const newSubtask = {
+                        subtask_id: response.responseObject.subtask_id,
+                        subtask_name: subtaskName,
+                        description,
+                        budget,
+                        start_date: startDate,
+                        end_date: endDate,
+                        status,
+                        task_id: taskId,
+                        progress: progressPercent
+                    };
+                    
+                    // ถ้ามี addSubtaskToState ให้ใช้เพื่อเพิ่ม subtask โดยตรงลงใน state
+                    if (addSubtaskToState) {
+                        addSubtaskToState(taskId, newSubtask);
+                    } else {
+                        // ถ้าไม่มี ให้ใช้วิธีดึงข้อมูลใหม่แบบเดิม
+                        await getSubtaskData();
+                    }
+                    
+                    // อัพเดตสถานะของ task หลังจากเพิ่ม subtask
+                    if (updateTaskStatus) {
+                        await updateTaskStatus(taskId);
+                    }
+                    
+                    // Reset form
+                    setSubtaskName("");
+                    setDescription("");
+                    setBudget(0);
+                    setFormattedBudget("0");
+                    setStartDate("");
+                    setEndDate("");
+                    setStatus("pending");
+                    setProgressPercent(0);
+                    
+                    setOpen(false); // Close dialog
+                } catch (error) {
+                    console.error("Failed to update progress:", error);
+                }
             } else {
                 setErrorMessage(response.message || "Failed to add subtask");
             }
@@ -73,7 +135,6 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
         }
     };
 
-    
     return (
         <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger asChild>
@@ -137,7 +198,7 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
 
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">Status</Text>
-                            <Select.Root value={status} onValueChange={setStatus}>
+                            <Select.Root value={status} onValueChange={handleStatusChange}>
                                 <Select.Trigger />
                                 <Select.Content position="popper">
                                     <Select.Item value="pending">Pending</Select.Item>
@@ -146,6 +207,8 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({ getSubtaskData, tas
                                 </Select.Content>
                             </Select.Root>
                         </label>
+                        
+                        {/* ไม่จำเป็นต้องแสดง progress slider ใน UI แต่จะคำนวณจาก status */}
                     </Flex>
 
                     <Flex gap="3" mt="4" justify="end">

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, Heading, Table, Text } from "@radix-ui/themes";
+import { formatDate } from "../../Function/FormatDate";
 
 interface ProjectMembersProps {
   projectId: string;
@@ -81,7 +82,7 @@ export default function ProjectMembers({ projectId, projectName }: ProjectMember
                 <Table.Cell>{member.user?.username || member.username || "Unknown"}</Table.Cell>
                 <Table.Cell>{member.user?.role || member.role || "Member"}</Table.Cell>
                 <Table.Cell>
-                  {member.created_at ? new Date(member.created_at).toLocaleDateString() : "N/A"}
+                  {member.created_at ? formatDate(member.created_at) : "N/A"}
                 </Table.Cell>
               </Table.Row>
             ))

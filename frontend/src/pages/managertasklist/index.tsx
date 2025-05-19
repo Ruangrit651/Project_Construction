@@ -474,6 +474,32 @@ export default function TasklistPage() {
         });
     };
 
+    const addSubtaskToState = (taskId: string, newSubtask: TypeSubTaskAll) => {
+        setSubtasks(prev => {
+            // ถ้าไม่มี subtasks สำหรับ task นี้ ให้สร้างอาร์เรย์ใหม่
+            if (!prev[taskId]) {
+                return {
+                    ...prev,
+                    [taskId]: [newSubtask]
+                };
+            }
+
+            // ถ้ามีอยู่แล้ว ให้เพิ่มต่อท้าย
+            return {
+                ...prev,
+                [taskId]: [...prev[taskId], newSubtask]
+            };
+        });
+
+        // อัพเดท subtaskProgress ด้วยถ้ามีการกำหนดค่า progress
+        if (newSubtask.progress !== undefined) {
+            setSubtaskProgress(prev => ({
+                ...prev,
+                [newSubtask.subtask_id]: newSubtask.progress
+            }));
+        }
+    };
+
     // Format date to display as dd/mm/yyyy
     const formatDate = (dateString: string | undefined) => {
         if (!dateString) return "-";
@@ -508,30 +534,13 @@ export default function TasklistPage() {
             {/* Project Header */}
             <div className="mb-6">
                 <div className="flex flex-col gap-1">
-                    
+
                     <h1 className="text-2xl font-bold mt-1">
                         {project_name ? `Tasks: ${project_name}` : "All Tasks"}
                     </h1>
                 </div>
             </div>
 
-            {/* Navigation tabs */}
-            {/* {project_id && (
-                <div className="flex gap-3 mt-2 mb-4">
-                    <Button 
-                        variant="solid" 
-                        onClick={() => navigateToProjectView('tasks')}
-                    >
-                        งาน
-                    </Button>
-                    <Button 
-                        variant="soft" 
-                        onClick={() => navigateToProjectView('resources')}
-                    >
-                        ทรัพยากร
-                    </Button>
-                </div>
-            )} */}
 
             {/* Project Progress Component */}
             <ProjectProgress
@@ -611,6 +620,7 @@ export default function TasklistPage() {
                                                             taskId={task.task_id}
                                                             taskName={task.task_name}
                                                             updateTaskStatus={() => updateTaskStatusFromSubtasks(task.task_id)}
+                                                            addSubtaskToState={addSubtaskToState}
                                                         />
                                                         <DialogEditTask
                                                             getTaskData={() => fetchAllData()}
@@ -671,6 +681,7 @@ export default function TasklistPage() {
                                                                 trigger={<Button className="cursor-pointer" size="1" variant="soft" color="orange">Edit</Button>}
                                                                 updateTaskStatus={updateTaskStatusFromSubtasks}
                                                                 onProgressUpdate={(percent) => updateProgressInState(subtask.subtask_id, percent, 'subtask')}
+                                                                updateSubtaskInPlace={(updatedSubtask) => updateSubtaskAndMaintainOrder(task.task_id, updatedSubtask)}
                                                             />
                                                             <AlertDialogDeleteSubtask
                                                                 getSubtaskData={() => {
