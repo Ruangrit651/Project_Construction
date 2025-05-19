@@ -1,0 +1,20 @@
+📅 Timestamp: 2025-05-19T07:41:12.139Z
+🚀 Page Load Time: 2168 ms
+🔐 Login Time: 357 ms
+✅ Login success: http://localhost:5173/admin
+🟢 Clicked "Create" button
+🟢 Clicked "Create" button in dialog
+👤 Create User Time: 713 ms
+👤 New Username: testuser_1747640472820
+✅ User created successfully
+👤 User ID: unknown-id
+🔴 Delete Button Click Time: 156 ms
+🟢 Clicked "Delete" button for the user
+⚠️ Dialog content issue: Dialog title is not exactly "Delete User"
+✅ Delete confirmation dialog closed after confirmation
+ℹ️ No toast notification detected (might be using alert instead)
+⏱️ Confirm Delete Processing Time: 4167 ms
+✅ User was successfully deleted and removed from the table
+⏱️ Total Delete User Time: 4374 ms
+🌐 Final URL: http://localhost:5173/admin
+📊 Delete Success: Yes

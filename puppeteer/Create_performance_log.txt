@@ -1,0 +1,9 @@
+📝 Log saved to create_performance_log.txt
+
+📅 Timestamp: 2025-05-19T07:58:57.904Z
+🚀 Page Load Time: 1608.00 ms
+🔐 Login Time: 388.00 ms
+👤 Create User Time: 1085.00 ms
+👤 New Username: testuser_1747641537212
+📌 Result: ✅ ชื่อผู้ใช้นี้มีอยู่แล้ว
+🌐 Final URL: http://localhost:5173/admin
