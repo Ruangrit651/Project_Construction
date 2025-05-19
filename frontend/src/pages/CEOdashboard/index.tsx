@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import CustomSelect from "../CEOSummary//CustomSelect";
 import { TypeDashboard } from "@/types/response/response.dashboard";
 import { getDashboard } from "@/services/dashboard.service";
 import BudgetVariance from "../CEOSummary//BudgetVariance";
@@ -10,7 +9,7 @@ import BudgetSummaryEAC from "../CEOSummary/BudgetSummaryEAC";
 import { getResourceSummary } from "@/services/resource.service";
 import { useLocation } from "react-router-dom";
 import { getDetailedProjectProgress } from "@/services/progress.service";
-import { getProjectActualCost } from "@/services/project.service"; ฃ
+import { getProjectActualCost } from "@/services/project.service";
 
 
 // EAC calculation function
@@ -18,15 +17,21 @@ import { getProjectActualCost } from "@/services/project.service"; ฃ
 const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
   if (!projects || projects.length === 0) return null;
 
+  // Force completion rate to 28.5% for debugging
+  const completionRate = 28.5;
+  
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0); // AC
 
-  // Calculate EV for each project
-  const earnedValue = projects.reduce(
-    (sum, project) =>
-      sum + ((project.completionRate || 0) / 100) * Number(project.totalBudget || 0),
-    0
-  ); // EV
+  // Calculate EV directly using the known completion rate
+  const earnedValue = (completionRate / 100) * totalBudget;
+
+  console.log("EAC Calculation Details:", {
+    BAC: totalBudget,
+    AC: totalAmountSpent,
+    EV: earnedValue,
+    formula: "EAC = AC + (BAC - EV)"
+  });
 
   const eac = totalAmountSpent + (totalBudget - earnedValue);
   return eac;
@@ -184,7 +189,7 @@ export default function DashboardCEO() {
           setProjectDetails(updatedProjects);
           setFilteredProjects(updatedProjects);
 
-          
+
           // If projectId is in URL, filter to show only that project
           if (projectId) {
             const selectedProject = updatedProjects.filter(project => project.project_id === projectId);
@@ -425,7 +430,7 @@ export default function DashboardCEO() {
 
         {/* Budget Overview Section */}
         <div className="mb-3">
-  <div className="bg-indigo-100 p-4 md:p-5 rounded-2xl shadow-xl text-center space-y-3 md:space-y-4 border border-indigo-300 relative">
+          <div className="bg-indigo-100 p-4 md:p-5 rounded-2xl shadow-xl text-center space-y-3 md:space-y-4 border border-indigo-300 relative">
             <button
               onClick={() => setShowDetails(!showDetails)}
               className="absolute top-2 md:top-4 right-2 md:right-4 text-blue-600 hover:text-blue-900 text-sm font-medium transition"

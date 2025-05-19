@@ -142,9 +142,8 @@ export const projectRouter = (() => {
             const { project_id } = req.params;
             const serviceResponse = await projectService.getActualCost(project_id);
             handleServiceResponse(serviceResponse, res);
-        }
-    );
-
+        });
+        
     // UPDATE actual cost จากทรัพยากร
     router.post("/update-actual-cost/:project_id",
         authenticateJWT,

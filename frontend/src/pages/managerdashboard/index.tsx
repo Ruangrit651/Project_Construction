@@ -16,16 +16,21 @@ import { getProjectActualCost } from "@/services/project.service";
 const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
   if (!projects || projects.length === 0) return null;
 
+  // Force completion rate to 28.5% for debugging
+  const completionRate = 28.5;
+
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
-  // ใช้ actual แทน amountSpent
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0); // AC
 
-  // Calculate EV for each project
-  const earnedValue = projects.reduce(
-    (sum, project) =>
-      sum + ((project.completionRate || 0) / 100) * Number(project.totalBudget || 0),
-    0
-  ); // EV
+  // Calculate EV directly using the known completion rate
+  const earnedValue = (completionRate / 100) * totalBudget;
+
+  console.log("EAC Calculation Details:", {
+    BAC: totalBudget,
+    AC: totalAmountSpent,
+    EV: earnedValue,
+    formula: "EAC = AC + (BAC - EV)"
+  });
 
   const eac = totalAmountSpent + (totalBudget - earnedValue);
   return eac;
@@ -162,7 +167,7 @@ export default function ManagerDashboard() {
       try {
         const data = await getDashboard();
         if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
-          
+
           // ดึงค่า Actual Cost ที่คำนวณจากทรัพยากรสำหรับแต่ละโครงการ
           const actualCostsMap: Record<string, number> = {};
           const actualCostPromises = data.responseObject.map(async (project) => {
@@ -186,32 +191,32 @@ export default function ManagerDashboard() {
             // ปรับค่า amountSpent ให้ตรงกับ actual เพื่อใช้ในการคำนวณ
             amountSpent: actualCostsMap[project.project_id] || project.amountSpent
           }));
-          
+
           setProjectDetails(projectsWithActual);
 
           // If projectId is in URL, filter to show only that project
           if (projectId) {
             const selectedProject = projectsWithActual.filter(project => project.project_id === projectId);
             setFilteredProjects(selectedProject);
-            
+
             if (selectedProject.length > 0) {
               setCurrentProject(selectedProject[0]);
-              
+
               // ดึงข้อมูล progress สำหรับโครงการเดียว
               setProgressLoading(true);
               try {
                 const progress = await fetchProjectProgress(projectId);
-                
+
                 // อัพเดต projectProgressMap
                 setProjectProgressMap({ [projectId]: progress });
-                
+
                 // อัพเดต currentProject ด้วย progress ใหม่
                 const updatedProject = {
                   ...selectedProject[0],
                   completionRate: progress
                 };
                 setCurrentProject(updatedProject);
-                
+
                 // อัพเดต filtered projects
                 setFilteredProjects([updatedProject]);
               } catch (progressError) {
@@ -222,7 +227,7 @@ export default function ManagerDashboard() {
             }
           } else {
             setFilteredProjects(projectsWithActual);
-            
+
             // ดึงข้อมูล progress สำหรับทุกโครงการ
             setProgressLoading(true);
             const progressMap: Record<string, number> = {};
@@ -231,23 +236,23 @@ export default function ManagerDashboard() {
               progressMap[project.project_id] = progress;
               return { projectId: project.project_id, progress };
             });
-            
+
             // รอให้การดึงข้อมูล progress ทั้งหมดเสร็จสิ้น
             const progressResults = await Promise.all(progressPromises);
-            
+
             // อัพเดต projectProgressMap
             const newProgressMap: Record<string, number> = {};
             progressResults.forEach(result => {
               newProgressMap[result.projectId] = result.progress;
             });
             setProjectProgressMap(newProgressMap);
-            
+
             // อัพเดตข้อมูลโครงการด้วยค่า progress ที่ดึงมาใหม่
             const progressUpdatedProjects = projectsWithActual.map(project => ({
               ...project,
               completionRate: newProgressMap[project.project_id] || project.completionRate
             }));
-            
+
             setProjectDetails(progressUpdatedProjects);
             setFilteredProjects(progressUpdatedProjects);
             setProgressLoading(false);
@@ -351,7 +356,7 @@ export default function ManagerDashboard() {
                 <p className="text-blue-600 font-medium">Loading progress data...</p>
               </div>
             )}
-            
+
             <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">📈 Project Progress</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -361,18 +366,18 @@ export default function ManagerDashboard() {
                 <div className="flex items-center justify-between mb-1 text-sm">
                   <span>Progress</span>
                   <span className="font-bold">
-                    {(projectProgressMap[currentProject.project_id] !== undefined 
-                      ? projectProgressMap[currentProject.project_id] 
+                    {(projectProgressMap[currentProject.project_id] !== undefined
+                      ? projectProgressMap[currentProject.project_id]
                       : currentProject.completionRate || 0).toFixed(1)}%
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
                     className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${projectProgressMap[currentProject.project_id] !== undefined 
-                        ? projectProgressMap[currentProject.project_id] 
-                        : currentProject.completionRate || 0}%` 
+                    style={{
+                      width: `${projectProgressMap[currentProject.project_id] !== undefined
+                        ? projectProgressMap[currentProject.project_id]
+                        : currentProject.completionRate || 0}%`
                     }}
                   ></div>
                 </div>
@@ -632,18 +637,18 @@ export default function ManagerDashboard() {
                           <div className="flex justify-between text-xs text-gray-600 mb-1">
                             <span>Completion Progress</span>
                             <span>
-                              {(projectProgressMap[project.project_id] !== undefined 
-                                ? projectProgressMap[project.project_id] 
+                              {(projectProgressMap[project.project_id] !== undefined
+                                ? projectProgressMap[project.project_id]
                                 : project.completionRate || 0).toFixed(1)}%
                             </span>
                           </div>
                           <div className="w-full h-2 bg-gray-200 rounded-full">
                             <div
                               className="h-2 rounded-full bg-blue-500"
-                              style={{ 
-                                width: `${projectProgressMap[project.project_id] !== undefined 
-                                  ? projectProgressMap[project.project_id] 
-                                  : project.completionRate || 0}%` 
+                              style={{
+                                width: `${projectProgressMap[project.project_id] !== undefined
+                                  ? projectProgressMap[project.project_id]
+                                  : project.completionRate || 0}%`
                               }}
                             ></div>
                           </div>

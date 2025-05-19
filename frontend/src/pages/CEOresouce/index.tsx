@@ -349,8 +349,8 @@ export default function CEOResourcePage() {
                                                                                 variant="surface"
                                                                                 color={
                                                                                     resource.resource_type === 'equipment' ? 'amber' :
-                                                                                    resource.resource_type === 'material' ? 'green' :
-                                                                                    resource.resource_type === 'worker' ? 'blue' : 'gray'
+                                                                                        resource.resource_type === 'material' ? 'green' :
+                                                                                            resource.resource_type === 'worker' ? 'blue' : 'gray'
                                                                                 }
                                                                             >
                                                                                 {resource.resource_type}
@@ -363,8 +363,8 @@ export default function CEOResourcePage() {
                                                                             {formatCurrency(resource.quantity)} {resource.unit}
                                                                         </Table.Cell>
                                                                         <Table.Cell style={{ textAlign: 'right' }}>
-                                                                            {formatCurrency(typeof resource.total === 'number' ? 
-                                                                                resource.total : 
+                                                                            {formatCurrency(typeof resource.total === 'number' ?
+                                                                                resource.total :
                                                                                 Number(resource.total))} THB
                                                                         </Table.Cell>
                                                                     </Table.Row>

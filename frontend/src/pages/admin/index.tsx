@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { verifyUser } from "@/services/verify.service";
 import { Card, Table, Text, Flex, Badge, Button, Dialog, Heading } from "@radix-ui/themes";
 import { getUser } from "@/services/user.service";
 import { TypeUserAll } from "@/types/response/response.user";
@@ -13,6 +15,7 @@ export default function AdminPage() {
     const [user, setUser] = useState<TypeUserAll[]>([]);
     const [selectedUserID, setSelectedUserID] = useState<string | null>(null);
     const [showUserDetail, setShowUserDetail] = useState(false);
+    const navigate = useNavigate();
 
     // State for Toast
     const [toastOpen, setToastOpen] = useState(false);
@@ -40,8 +43,21 @@ export default function AdminPage() {
     };
 
     useEffect(() => {
+        const checkAuthentication = async () => {
+            try {
+                const response = await verifyUser();
+                if (!response.success) {
+                    navigate("/"); // กลับไปหน้า Login หากไม่มี Token
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+                navigate("/"); // กลับไปหน้า Login หากเกิดข้อผิดพลาด
+            }
+        };
+
+        checkAuthentication();
         getUserData();
-    }, []);
+    }, [navigate]);
 
     return (
         <Card variant="surface">
@@ -99,10 +115,10 @@ export default function AdminPage() {
                                     </Table.Cell>
                                     <Table.Cell>
                                         <Flex gap="2" justify="center">
-                                            <Button 
+                                            <Button
                                                 className="cursor-pointer"
-                                                size="1" 
-                                                variant="soft" 
+                                                size="1"
+                                                variant="soft"
                                                 color="blue"
                                                 onClick={() => openUserDetail(user.user_id)}
                                             >
@@ -112,7 +128,7 @@ export default function AdminPage() {
                                                 getUserData={getUserData}
                                                 user_id={user.user_id}
                                                 username={user.username}
-                                                role={user.role} 
+                                                role={user.role}
                                                 project={user.projects?.project_id || ""}
                                                 showToast={showToast}
                                             />
@@ -141,13 +157,13 @@ export default function AdminPage() {
             <Dialog.Root open={showUserDetail} onOpenChange={setShowUserDetail}>
                 <Dialog.Content size="3" style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'auto' }}>
                     <Dialog.Title>User Details</Dialog.Title>
-                    
+
                     {selectedUserID && (
                         <div className="mt-3">
                             <UserDetailPage userId={selectedUserID} />
                         </div>
                     )}
-                    
+
                     <Flex gap="3" mt="4" justify="end">
                         <Dialog.Close>
                             <Button variant="soft">Close</Button>

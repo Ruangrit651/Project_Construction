@@ -219,6 +219,36 @@ const CEOTimeline = () => {
       today.getFullYear() === year;
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'bg-green-500';
+      case 'in progress':
+        return 'bg-blue-500';
+      case 'delayed':
+        return 'bg-red-500';
+      case 'pending':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getStatusTextColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'text-green-700';
+      case 'in progress':
+        return 'text-blue-700';
+      case 'delayed':
+        return 'text-red-700';
+      case 'pending':
+        return 'text-yellow-700';
+      default:
+        return 'text-gray-700';
+    }
+  };
+
   // ฟังก์ชั่น calculate start column and span for task bar
   const calculateStartColAndSpan = (startDate: string, endDate: string, year: number) => {
     const start = new Date(startDate);
@@ -247,7 +277,7 @@ const CEOTimeline = () => {
   const renderTaskBar = (task: Task | Subtask, isSubtask: boolean = false) => {
     const { startCol, span } = calculateStartColAndSpan(task.startDate, task.endDate, year);
     const progress = task.progress || 0;
-    
+
     return (
       <TaskBar
         status={task.status}
@@ -260,7 +290,7 @@ const CEOTimeline = () => {
         <div className="px-2 py-1 text-white text-xs truncate flex items-center justify-between">
           <span>{isSubtask ? (task as Subtask).subtaskName : (task as Task).taskName}</span>
           {!isSubtask && (
-            <button 
+            <button
               onClick={() => toggleSubtasks((task as Task).taskId)}
               className="ml-1 text-white hover:text-yellow-200"
             >
@@ -286,6 +316,7 @@ const CEOTimeline = () => {
     );
   };
 
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       {/* Header */}
@@ -302,7 +333,7 @@ const CEOTimeline = () => {
         <TimelineHeader>
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold text-gray-900">{year} Project Timeline</h2>
-            
+
             {/* Today Button - เพิ่มปุ่ม Today */}
             <button
               onClick={(e) => {
@@ -340,18 +371,32 @@ const CEOTimeline = () => {
                           <ChevronRightIcon className="w-4 h-4" />
                         )}
                       </button>
-                      <span className="text-sm font-medium text-gray-900">{task.taskName}</span>
+                      <div className="flex items-center">
+                        <span className="text-sm font-medium text-gray-900">{task.taskName}</span>
+                        {task.status && (
+                          <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getStatusTextColor(task.status)} bg-opacity-20 ${getStatusColor(task.status)}`}>
+                            {task.status}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Subtask Rows */}
                   {expandedTasks.includes(task.taskId) && task.subtasks && task.subtasks.map(subtask => (
-                    <div 
-                      key={subtask.subtaskId} 
-                      className="pl-6 pr-4 py-4 border-b border-gray-200 bg-gray-50" 
+                    <div
+                      key={subtask.subtaskId}
+                      className="pl-6 pr-4 py-4 border-b border-gray-200 bg-gray-50"
                       style={{ height: "40px" }}
                     >
-                      <span className="text-sm text-gray-700">• {subtask.subtaskName}</span>
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-700">• {subtask.subtaskName}</span>
+                        {subtask.status && (
+                          <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getStatusTextColor(subtask.status)} bg-opacity-20 ${getStatusColor(subtask.status)}`}>
+                            {subtask.status}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </React.Fragment>
@@ -436,8 +481,8 @@ const CEOTimeline = () => {
                 {taskList.map(task => (
                   <React.Fragment key={task.taskId}>
                     {/* Main Task */}
-                    <TaskRow 
-                      id={`task-${task.taskId}`} 
+                    <TaskRow
+                      id={`task-${task.taskId}`}
                       style={{ width: 'max-content', minWidth: '100%' }}
                     >
                       {renderTaskBar(task)}
@@ -446,7 +491,7 @@ const CEOTimeline = () => {
                     {/* Subtasks */}
                     {expandedTasks.includes(task.taskId) && task.subtasks && task.subtasks.map(subtask => (
                       <SubtaskRow
-                        key={subtask.subtaskId} 
+                        key={subtask.subtaskId}
                         id={`subtask-${subtask.subtaskId}`}
                         style={{ width: 'max-content', minWidth: '100%' }}
                       >

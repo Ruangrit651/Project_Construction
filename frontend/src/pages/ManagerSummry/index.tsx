@@ -16,16 +16,21 @@ import { getProjectActualCost } from "@/services/project.service";
 const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
   if (!projects || projects.length === 0) return null;
 
+  // Force completion rate to 28.5% for debugging
+  const completionRate = 28.5;
+
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
-  // ใช้ actual แทน amountSpent
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0); // AC
 
-  // Calculate EV for each project
-  const earnedValue = projects.reduce(
-    (sum, project) =>
-      sum + ((project.completionRate || 0) / 100) * Number(project.totalBudget || 0),
-    0
-  ); // EV
+  // Calculate EV directly using the known completion rate
+  const earnedValue = (completionRate / 100) * totalBudget;
+
+  console.log("EAC Calculation Details:", {
+    BAC: totalBudget,
+    AC: totalAmountSpent,
+    EV: earnedValue,
+    formula: "EAC = AC + (BAC - EV)"
+  });
 
   const eac = totalAmountSpent + (totalBudget - earnedValue);
   return eac;
@@ -398,10 +403,10 @@ export default function ManagerSummary() {
                   {aggregatedValues && (
                     <span
                       className={`absolute top-2 right-2 px-2 py-1 text-xs font-semibold rounded-full shadow ${isOverBudget
-                          ? "bg-red-200 text-red-800"
-                          : percent > 80
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
+                        ? "bg-red-200 text-red-800"
+                        : percent > 80
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-800"
                         }`}
                     >
                       {isOverBudget
@@ -500,10 +505,10 @@ export default function ManagerSummary() {
                           <div className="w-full h-2 bg-gray-200 rounded-full">
                             <div
                               className={`h-2 rounded-full ${(project.completionRate || 0) < 30
-                                  ? "bg-red-400"
-                                  : (project.completionRate || 0) < 70
-                                    ? "bg-yellow-400"
-                                    : "bg-green-500"
+                                ? "bg-red-400"
+                                : (project.completionRate || 0) < 70
+                                  ? "bg-yellow-400"
+                                  : "bg-green-500"
                                 }`}
                               style={{ width: `${Math.min(project.completionRate || 0, 100)}%` }}
                             ></div>

@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { handleServiceResponse, validateRequest } from "@common/utils/httpHandlers";
 import { authService } from "@modules/auth/authService";
 import { LoginUserSchema, LogoutUserSchema } from "@modules/auth/authModel";
-
+import { authenticateJWT } from "@common/middleware/authMiddleware";
 
 export const authRouter = (() => {
     const router = express.Router();
@@ -23,7 +23,12 @@ export const authRouter = (() => {
             handleServiceResponse(serviceResponse, res); // ส่ง serviceResponse และ res ไปให้ handleServiceResponse จัดการ 
         });
 
-    
+    router.get("/verify",
+        authenticateJWT, async (req: Request, res: Response) => {
+            const serviceResponse = await authService.verifyToken(req.user, res); // เรียกใช้งานฟังก์ชัน verify จาก authService และส่ง req.user ไปด้วย
+            handleServiceResponse(serviceResponse, res); // ส่ง serviceResponse และ res ไปให้ handleServiceResponse จัดการ
+        }
+    )
 
 
     return router;

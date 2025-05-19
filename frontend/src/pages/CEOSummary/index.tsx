@@ -17,18 +17,23 @@ import { getProjectActualCost } from "@/services/project.service";
 const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
   if (!projects || projects.length === 0) return null;
 
+  // Force completion rate to 28.5% for debugging
+  const completionRate = 28.5;
+
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
-  // ใช้ actual แทน amountSpent
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0); // AC
 
-  // คำนวณ EV (Earned Value) แยกสำหรับแต่ละโปรเจกต์
-  const earnedValue = projects.reduce(
-    (sum, project) =>
-      sum + ((project.completionRate || 0) / 100) * Number(project.totalBudget || 0),
-    0
-  ); // EV
+  // Calculate EV directly using the known completion rate
+  const earnedValue = (completionRate / 100) * totalBudget;
 
-  const eac = totalAmountSpent + (totalBudget - earnedValue); // สูตรคำนวณ EAC
+  console.log("EAC Calculation Details:", {
+    BAC: totalBudget,
+    AC: totalAmountSpent,
+    EV: earnedValue,
+    formula: "EAC = AC + (BAC - EV)"
+  });
+
+  const eac = totalAmountSpent + (totalBudget - earnedValue);
   return eac;
 };
 

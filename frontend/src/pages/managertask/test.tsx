@@ -963,9 +963,16 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                         fetchTasks={fetchTasks}
                         taskId={task.taskId}
                         trigger={
-                          <Text className="text-sm font-medium text-gray-900 hover:text-blue-600 cursor-pointer">
-                            {task.taskName}
-                          </Text>
+                          <div className="flex items-center">
+                            <Text className="text-sm font-medium text-gray-900 hover:text-blue-600 cursor-pointer">
+                              {task.taskName}
+                            </Text>
+                            {task.status && (
+                              <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getStatusTextColor(task.status)} bg-opacity-20 ${getStatusColor(task.status)}`}>
+                                {task.status}
+                              </span>
+                            )}
+                          </div>
                         }
                       />
                     </div>
@@ -973,7 +980,7 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                       getSubtaskData={fetchSubtasks}
                       taskId={task.taskId}
                       taskName={task.taskName}
-                      projectId={projectId} // Add this line
+                      projectId={projectId}
                     />
                   </div>
                 </div>
@@ -985,9 +992,16 @@ const DateTable: React.FC<DateTableProps> = ({ year, tasks, fetchTasks, fetchSub
                         getSubtaskData={fetchSubtasks}
                         subtaskId={subtask.subtaskId}
                         trigger={
-                          <Text className="text-sm text-gray-700 hover:text-blue-600 cursor-pointer">
-                            {subtask.subtaskName}
-                          </Text>
+                          <div className="flex items-center">
+                            <Text className="text-sm text-gray-700 hover:text-blue-600 cursor-pointer">
+                              {subtask.subtaskName}
+                            </Text>
+                            {subtask.status && (
+                              <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getStatusTextColor(subtask.status)} bg-opacity-20 ${getStatusColor(subtask.status)}`}>
+                                {subtask.status}
+                              </span>
+                            )}
+                          </div>
                         }
                       />
                     </div>

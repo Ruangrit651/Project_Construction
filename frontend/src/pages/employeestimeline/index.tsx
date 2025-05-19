@@ -75,17 +75,17 @@ export default function EmployeeTimelinePage() {
     try {
       // ดึง user_id จาก localStorage หรือจากที่เก็บ session ของคุณ
       const userId = localStorage.getItem('user_id');
-      
+
       if (!userId) {
         console.error("User ID not found");
         return;
       }
-      
+
       const response = await getProject(userId);
-      
+
       if (response.success && response.responseObject) {
         setProjects(response.responseObject);
-        
+
         // ถ้ายังไม่ได้เลือกโปรเจกต์ ให้เลือกโปรเจกต์แรกอัตโนมัติ
         if (!selectedProject && response.responseObject.length > 0) {
           setSelectedProject(response.responseObject[0].project_id);
@@ -110,7 +110,7 @@ export default function EmployeeTimelinePage() {
       }
 
       const response = await getTaskProject(selectedProject);
-      
+
       if (response.success) {
         // แปลงข้อมูลจาก API ให้เข้ากับรูปแบบที่ต้องการ
         const formattedTasks = response.responseObject.map((task: any) => ({
@@ -126,7 +126,7 @@ export default function EmployeeTimelinePage() {
         }));
 
         setTasks(formattedTasks);
-        
+
         // ดึงปีจากงานทั้งหมดเพื่อสร้าง selector
         const years = new Set<number>();
         formattedTasks.forEach(task => {
@@ -264,6 +264,36 @@ export default function EmployeeTimelinePage() {
       today.getFullYear() === year;
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'bg-green-500';
+      case 'in progress':
+        return 'bg-blue-500';
+      case 'delayed':
+        return 'bg-red-500';
+      case 'pending':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getStatusTextColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'text-green-700';
+      case 'in progress':
+        return 'text-blue-700';
+      case 'delayed':
+        return 'text-red-700';
+      case 'pending':
+        return 'text-yellow-700';
+      default:
+        return 'text-gray-700';
+    }
+  };
+
   // ฟังก์ชั่น calculate start column and span for task bar
   const calculateStartColAndSpan = (startDate: string, endDate: string, year: number) => {
     const start = new Date(startDate);
@@ -292,7 +322,7 @@ export default function EmployeeTimelinePage() {
   const renderTaskBar = (task: Task | Subtask, isSubtask: boolean = false) => {
     const { startCol, span } = calculateStartColAndSpan(task.startDate, task.endDate, year);
     const progress = task.progress || 0;
-    
+
     return (
       <TaskBar
         status={task.status}
@@ -305,7 +335,7 @@ export default function EmployeeTimelinePage() {
         <div className="px-2 py-1 text-white text-xs truncate flex items-center justify-between">
           <span>{isSubtask ? (task as Subtask).subtaskName : (task as Task).taskName}</span>
           {!isSubtask && (
-            <button 
+            <button
               onClick={() => toggleSubtasks((task as Task).taskId)}
               className="ml-1 text-white hover:text-yellow-200"
             >
@@ -349,12 +379,12 @@ export default function EmployeeTimelinePage() {
             <h1 className="text-2xl font-bold">{projectName ? `${projectName} - Timeline` : "Project Timeline"}</h1>
             <p className="text-gray-600 mt-1">View and manage your assigned tasks and subtasks</p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             {/* Project Selector */}
             {projects.length > 0 && (
-              <Select.Root 
-                value={selectedProject || ''} 
+              <Select.Root
+                value={selectedProject || ''}
                 onValueChange={handleProjectChange}
               >
                 <Select.Trigger placeholder="Select a project" />
@@ -367,11 +397,11 @@ export default function EmployeeTimelinePage() {
                 </Select.Content>
               </Select.Root>
             )}
-            
+
             {/* Year Selector */}
             {availableYears.length > 0 && (
-              <Select.Root 
-                value={year.toString()} 
+              <Select.Root
+                value={year.toString()}
                 onValueChange={(value) => setYear(parseInt(value))}
               >
                 <Select.Trigger placeholder="Select year" />
@@ -398,7 +428,7 @@ export default function EmployeeTimelinePage() {
           <TimelineHeader>
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold text-gray-900">{year} Project Timeline</h2>
-              
+
               {/* Today Button */}
               <Button
                 onClick={(e) => {
@@ -442,18 +472,32 @@ export default function EmployeeTimelinePage() {
                               <ChevronRightIcon className="w-4 h-4" />
                             )}
                           </button>
-                          <span className="text-sm font-medium text-gray-900">{task.taskName}</span>
+                          <div className="flex items-center">
+                            <span className="text-sm font-medium text-gray-900">{task.taskName}</span>
+                            {task.status && (
+                              <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getStatusTextColor(task.status)} bg-opacity-20 ${getStatusColor(task.status)}`}>
+                                {task.status}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       {/* Subtask Rows */}
                       {expandedTasks.includes(task.taskId) && task.subtasks && task.subtasks.map(subtask => (
-                        <div 
-                          key={subtask.subtaskId} 
-                          className="pl-6 pr-4 py-4 border-b border-gray-200 bg-gray-50" 
+                        <div
+                          key={subtask.subtaskId}
+                          className="pl-6 pr-4 py-4 border-b border-gray-200 bg-gray-50"
                           style={{ height: "40px" }}
                         >
-                          <span className="text-sm text-gray-700">• {subtask.subtaskName}</span>
+                          <div className="flex items-center">
+                            <span className="text-sm text-gray-700">• {subtask.subtaskName}</span>
+                            {subtask.status && (
+                              <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getStatusTextColor(subtask.status)} bg-opacity-20 ${getStatusColor(subtask.status)}`}>
+                                {subtask.status}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </React.Fragment>
@@ -544,8 +588,8 @@ export default function EmployeeTimelinePage() {
                     tasks.map(task => (
                       <React.Fragment key={task.taskId}>
                         {/* Main Task */}
-                        <TaskRow 
-                          id={`task-${task.taskId}`} 
+                        <TaskRow
+                          id={`task-${task.taskId}`}
                           style={{ width: 'max-content', minWidth: '100%' }}
                         >
                           {renderTaskBar(task)}
@@ -554,7 +598,7 @@ export default function EmployeeTimelinePage() {
                         {/* Subtasks */}
                         {expandedTasks.includes(task.taskId) && task.subtasks && task.subtasks.map(subtask => (
                           <SubtaskRow
-                            key={subtask.subtaskId} 
+                            key={subtask.subtaskId}
                             id={`subtask-${subtask.subtaskId}`}
                             style={{ width: 'max-content', minWidth: '100%' }}
                           >

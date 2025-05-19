@@ -2,7 +2,7 @@ export type User = {
     user_id: string;
     username: string;
     role: string;
-    
+
 };
 
 // export type LoginResponse = {
@@ -20,7 +20,8 @@ export interface LoginResponse {
     success: boolean;
     message?: string;
     responseObject?: {
+        user_id: string;
+        username: string;
         role: string;
-        // other properties of responseObject
     };
 }

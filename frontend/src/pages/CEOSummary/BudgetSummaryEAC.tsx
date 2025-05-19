@@ -19,7 +19,7 @@ const BudgetSummaryEAC = ({ actualBudget, estimatedEAC }: { actualBudget: number
       horizontalAlign: 'center',
     },
     tooltip: {
-      y: {
+      y: {  
         formatter: (val: number) => `${val.toLocaleString()} THB`,
       },
     },
