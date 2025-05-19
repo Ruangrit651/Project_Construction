@@ -14,11 +14,8 @@ import { formatDate } from '../Function/FormatDate';
 import { calculateTotalDuration } from '../Function/TotalDuration';
 
 // EAC calculation function
-const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
+const calculateLocalEAC = (projects: TypeDashboard[] | null, completionRate: number) => {
   if (!projects || projects.length === 0) return null;
-
-  // Force completion rate to 28.5% for debugging
-  const completionRate = 28.5;
 
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0); // AC
@@ -135,7 +132,7 @@ export default function ManagerSummary() {
   const actualBudget = filteredProjects
     ? filteredProjects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0)
     : 0;
-  const estimatedEAC = calculateLocalEAC(filteredProjects) || 0;
+  const estimatedEAC = calculateLocalEAC(filteredProjects, completionRate) || 0;
   const { percent, isOverBudget, overBudgetPercent } = calculatePercentOfTarget(filteredProjects);
   const totalDays = filteredProjects ? calculateTotalDuration(filteredProjects) : 0;
 
@@ -544,7 +541,7 @@ export default function ManagerSummary() {
                   <p className="text-4xl font-extrabold text-blue-900 tracking-wide">
                     {filteredProjects && filteredProjects.length > 0 ? (
                       <>
-                        {calculateLocalEAC(filteredProjects)?.toLocaleString() || "N/A"}{" "}
+                        {calculateLocalEAC(filteredProjects, completionRate)?.toLocaleString() || "N/A"}
                         <span className="text-xl font-medium">THB</span>
                       </>
                     ) : (
@@ -625,7 +622,7 @@ export default function ManagerSummary() {
               </div>
 
               {/* Utilized Duration */}
-              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-lg border border-yellow-200 p-4 hover:shadow-xl transition-shadow">
+              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-2xl border border-yellow-200 p-3 md:p-4 hover:shadow-xl transition-shadow">
                 <div className="text-sm font-semibold text-yellow-800 mb-2">Utilized Duration</div>
                 <UtilizedDuration utilizedDays={utilizedDays} totalDays={totalDays} />
                 <div className="text-center text-xl md:text-2xl font-bold text-yellow-900 mt-2 md:mt-3">

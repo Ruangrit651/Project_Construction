@@ -16,22 +16,23 @@ import { calculateTotalDuration } from '../Function/TotalDuration'; // Ensure th
 
 // ฟังก์ชันคำนวณ Estimate At Completion (EAC)
 // EAC = AC + (BAC - EV)
-const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
+const calculateLocalEAC = (projects: TypeDashboard[] | null, completionRate: number) => {
   if (!projects || projects.length === 0) return null;
 
-  // Force completion rate to 28.5% for debugging
-  const completionRate = 28.5;
+  // ใช้ค่า completionRate ที่ส่งเข้ามาแทนค่าคงที่
+  // const completionRate = 28.5; // ลบบรรทัดนี้ออก
 
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0); // AC
 
-  // Calculate EV directly using the known completion rate
+  // Calculate EV using the actual completion rate
   const earnedValue = (completionRate / 100) * totalBudget;
 
   console.log("EAC Calculation Details:", {
     BAC: totalBudget,
     AC: totalAmountSpent,
     EV: earnedValue,
+    completionRate: completionRate,
     formula: "EAC = AC + (BAC - EV)"
   });
 
@@ -131,7 +132,7 @@ const Summary = () => {
     ? filteredProjects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0)
     : 0;
 
-  const estimatedEAC = calculateLocalEAC(filteredProjects) || 0;
+  const estimatedEAC = calculateLocalEAC(filteredProjects, completionRate) || 0;
   const { percent, isOverBudget, overBudgetPercent } = calculatePercentOfTarget(filteredProjects);
   const [showDetails, setShowDetails] = useState(true);
   const [resourceSummary, setResourceSummary] = useState<{ type: string; quantity: number; totalCost: number }[]>([]);
@@ -499,7 +500,7 @@ const Summary = () => {
                   <p className="text-4xl font-extrabold text-sky-900 tracking-wide">
                     {filteredProjects && filteredProjects.length > 0 ? (
                       <>
-                        {calculateLocalEAC(filteredProjects)?.toLocaleString() || "No Data Available"}{" "}
+                        {calculateLocalEAC(filteredProjects, completionRate)?.toLocaleString() || "No Data Available"}
                         <span className="text-xl font-medium">THB</span>
                       </>
                     ) : (
@@ -581,12 +582,10 @@ const Summary = () => {
 
               {/* Utilized Duration */}
               <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-2xl border border-yellow-200 p-3 md:p-4 hover:shadow-xl transition-shadow">
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-lg border border-yellow-200 p-4 hover:shadow-xl transition-shadow">
-                  <div className="text-sm font-semibold text-yellow-800 mb-2">Utilized Duration</div>
-                  <UtilizedDuration utilizedDays={utilizedDays} totalDays={totalDays} />
-                  <div className="text-center text-xl md:text-2xl font-bold text-yellow-900 mt-2 md:mt-3">
-                    {utilizedDays} days
-                  </div>
+                <div className="text-sm font-semibold text-yellow-800 mb-2">Utilized Duration</div>
+                <UtilizedDuration utilizedDays={utilizedDays} totalDays={totalDays} />
+                <div className="text-center text-xl md:text-2xl font-bold text-yellow-900 mt-2 md:mt-3">
+                  {utilizedDays} days
                 </div>
               </div>
             </div>
