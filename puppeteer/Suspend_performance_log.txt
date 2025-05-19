@@ -1,0 +1,21 @@
+📅 Timestamp: 2025-05-19T06:08:29.935Z
+🚀 Page Load Time: 1455 ms
+🔐 Login Time: 383 ms
+✅ Login success: http://localhost:5173/admin
+🟢 Clicked "Create" button
+🟢 Clicked "Create" button in dialog
+👤 Create User Time: 700 ms
+👤 New Username: testuser_1747634910659
+✅ User created successfully
+🔴 Suspend Button Click Time: 120 ms
+🟢 Clicked "Suspend" button for the user
+⚠️ Dialog content issue: Dialog title does not contain "Suspend"
+🟢 Clicked "Suspend User" button in confirmation dialog
+✅ Suspend confirmation dialog closed after confirmation
+ℹ️ No toast notification detected (might be using alert instead)
+⏱️ Confirm Suspend Processing Time: 4208 ms
+✅ User status changed: "Suspend" button changed to "Activate"
+✅ User status indicator shows "Suspended" or "Inactive"
+⏱️ Total Suspend User Time: 4339 ms
+🌐 Final URL: http://localhost:5173/admin
+📊 Suspend Success: Yes
