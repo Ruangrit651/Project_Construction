@@ -11,6 +11,8 @@ import { getResourceSummary } from "@/services/resource.service";
 import { useLocation } from "react-router-dom";
 import { getDetailedProjectProgress } from "@/services/progress.service";
 import { getProjectActualCost } from "@/services/project.service";
+import { formatDate, } from '../Function/FormatDate';
+import { calculateTotalDuration } from "../Function/TotalDuration";
 
 // EAC calculation function
 const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
@@ -108,6 +110,7 @@ const calculateUtilizedDuration = (projects: TypeDashboard[] | null): number => 
   return totalDays;
 };
 
+
 export default function ManagerDashboard() {
   const location = useLocation();
   const [projectDetails, setProjectDetails] = useState<TypeDashboard[] | null>(null);
@@ -124,6 +127,7 @@ export default function ManagerDashboard() {
   const [projectProgressMap, setProjectProgressMap] = useState<Record<string, number>>({});
   // เพิ่ม state เก็บค่า Actual ที่คำนวณจากทรัพยากร
   const [calculatedActuals, setCalculatedActuals] = useState<Record<string, number>>({});
+  const totalDays = filteredProjects ? calculateTotalDuration(filteredProjects) : 0;
 
   // Get project ID from URL if available
   const searchParams = new URLSearchParams(location.search);
@@ -389,13 +393,14 @@ export default function ManagerDashboard() {
                 <div className="flex flex-col">
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="font-medium">Start Date:</div>
-                    <div>{new Date(currentProject.start_date).toLocaleDateString()}</div>
+                    <div>{formatDate(currentProject.start_date)}</div>
                     <div className="font-medium">End Date:</div>
-                    <div>{new Date(currentProject.end_date).toLocaleDateString()}</div>
+                    <div>{formatDate(currentProject.end_date)}</div>
                   </div>
                   <div className="mt-2 text-xs px-2 py-1 rounded-full bg-green-200 text-green-800 font-medium inline-block text-center w-auto self-center">
                     {new Date() < new Date(currentProject.end_date) ? "On Schedule" : "Past Due"}
                   </div>
+
                 </div>
               </div>
 
@@ -607,8 +612,8 @@ export default function ManagerDashboard() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 md:gap-4 text-sm text-gray-700">
-                          <p><strong>Start:</strong> {new Date(project.start_date).toLocaleDateString()}</p>
-                          <p><strong>Finish:</strong> {new Date(project.end_date).toLocaleDateString()}</p>
+                          <p><strong>Start:</strong> {formatDate(project.start_date)}</p>
+                          <p><strong>Finish:</strong> {formatDate(project.end_date)}</p>
                           <p><strong>Actual Cost:</strong> {Number(project.actual).toLocaleString()} <span className="text-xs">THB</span></p>
                           <p><strong>Budget:</strong> {Number(project.budget).toLocaleString()} <span className="text-xs">THB</span></p>
                         </div>
@@ -766,7 +771,7 @@ export default function ManagerDashboard() {
               {/* Utilized Duration */}
               <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-lg border border-yellow-200 p-4 hover:shadow-xl transition-shadow">
                 <div className="text-sm font-semibold text-yellow-800 mb-2">Utilized Duration</div>
-                <UtilizedDuration utilizedDays={utilizedDays} />
+                <UtilizedDuration utilizedDays={utilizedDays} totalDays={totalDays} />
                 <div className="text-center text-xl md:text-2xl font-bold text-yellow-900 mt-2 md:mt-3">
                   {utilizedDays} days
                 </div>

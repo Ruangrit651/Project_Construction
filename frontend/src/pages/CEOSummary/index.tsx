@@ -10,6 +10,8 @@ import CostBreakdown from "./CostBreakdown";
 import BudgetSummaryEAC from "./BudgetSummaryEAC"; // Ensure this path is correct
 import { getResourceSummary } from "@/services/resource.service";
 import { getProjectActualCost } from "@/services/project.service";
+import { formatDate } from '../Function/FormatDate';
+import { calculateTotalDuration } from '../Function/TotalDuration'; // Ensure this path is correct
 
 
 // ฟังก์ชันคำนวณ Estimate At Completion (EAC)
@@ -134,6 +136,7 @@ const Summary = () => {
   const [showDetails, setShowDetails] = useState(true);
   const [resourceSummary, setResourceSummary] = useState<{ type: string; quantity: number; totalCost: number }[]>([]);
   const [calculatedActuals, setCalculatedActuals] = useState<Record<string, number>>({});
+  const totalDays = filteredProjects ? calculateTotalDuration(filteredProjects) : 0;
 
   useEffect(() => {
     const fetchResourceSummary = async () => {
@@ -445,8 +448,8 @@ const Summary = () => {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 md:gap-4 text-sm text-gray-700">
-                          <p><strong>Start:</strong> {new Date(project.start_date).toLocaleDateString()}</p>
-                          <p><strong>Finish:</strong> {new Date(project.end_date).toLocaleDateString()}</p>
+                          <p><strong>Start:</strong> {formatDate(project.start_date)}</p>
+                          <p><strong>Finish:</strong> {formatDate(project.end_date)}</p>
                           <p><strong>Actual Cost:</strong> {Number(project.actual).toLocaleString()} <span className="text-xs">THB</span></p>
                           <p><strong>Budget:</strong> {Number(project.budget).toLocaleString()} <span className="text-xs">THB</span></p>
                         </div>
@@ -578,10 +581,12 @@ const Summary = () => {
 
               {/* Utilized Duration */}
               <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-2xl border border-yellow-200 p-3 md:p-4 hover:shadow-xl transition-shadow">
-                <div className="text-sm font-semibold text-yellow-800 mb-2">Utilized Duration</div>
-                <UtilizedDuration utilizedDays={utilizedDays} />
-                <div className="text-center text-xl md:text-2xl font-bold text-yellow-900 mt-2 md:mt-3">
-                  {utilizedDays} days
+                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-lg border border-yellow-200 p-4 hover:shadow-xl transition-shadow">
+                  <div className="text-sm font-semibold text-yellow-800 mb-2">Utilized Duration</div>
+                  <UtilizedDuration utilizedDays={utilizedDays} totalDays={totalDays} />
+                  <div className="text-center text-xl md:text-2xl font-bold text-yellow-900 mt-2 md:mt-3">
+                    {utilizedDays} days
+                  </div>
                 </div>
               </div>
             </div>

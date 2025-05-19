@@ -10,7 +10,8 @@ import BudgetSummaryEAC from "../CEOSummary/BudgetSummaryEAC";
 import { getResourceSummary } from "@/services/resource.service";
 import { useLocation } from "react-router-dom";
 import { getProjectActualCost } from "@/services/project.service";
-
+import { formatDate } from '../Function/FormatDate';
+import { calculateTotalDuration } from '../Function/TotalDuration';
 
 // EAC calculation function
 const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
@@ -136,6 +137,7 @@ export default function ManagerSummary() {
     : 0;
   const estimatedEAC = calculateLocalEAC(filteredProjects) || 0;
   const { percent, isOverBudget, overBudgetPercent } = calculatePercentOfTarget(filteredProjects);
+  const totalDays = filteredProjects ? calculateTotalDuration(filteredProjects) : 0;
 
   // Fetch project data
   useEffect(() => {
@@ -471,8 +473,8 @@ export default function ManagerSummary() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 md:gap-4 text-sm text-gray-700">
-                          <p><strong>Start:</strong> {new Date(project.start_date).toLocaleDateString()}</p>
-                          <p><strong>Finish:</strong> {new Date(project.end_date).toLocaleDateString()}</p>
+                          <p><strong>Start:</strong> {formatDate(project.start_date)}</p>
+                          <p><strong>Finish:</strong> {formatDate(project.end_date)}</p>
                           <p><strong>Actual Cost:</strong> {Number(project.actual).toLocaleString()} <span className="text-xs">THB</span></p>
                           <p><strong>Budget:</strong> {Number(project.budget).toLocaleString()} <span className="text-xs">THB</span></p>
                         </div>
@@ -625,7 +627,7 @@ export default function ManagerSummary() {
               {/* Utilized Duration */}
               <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-lg border border-yellow-200 p-4 hover:shadow-xl transition-shadow">
                 <div className="text-sm font-semibold text-yellow-800 mb-2">Utilized Duration</div>
-                <UtilizedDuration utilizedDays={utilizedDays} />
+                <UtilizedDuration utilizedDays={utilizedDays} totalDays={totalDays} />
                 <div className="text-center text-xl md:text-2xl font-bold text-yellow-900 mt-2 md:mt-3">
                   {utilizedDays} days
                 </div>

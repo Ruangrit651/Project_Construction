@@ -1,14 +1,19 @@
-import { CREATE_USER, GET_USER_ALL , UPDATE_USER ,DELETE_USER,TOGGLE_USER_STATUS} from "@/apis/endpoint.api";
+import { CREATE_USER, GET_USER_ALL, UPDATE_USER, DELETE_USER, TOGGLE_USER_STATUS, GET_CURRENT_USER } from "@/apis/endpoint.api";
 import { GET_USER_PROJECTS } from "@/apis/endpoint.api";
 import mainApi from "@/apis/main.api";
-import { PayloadCreateUser , PayloadDeleteUser ,PayloadUpdateUser} from "@/types/requests/request.user";
+import { PayloadCreateUser, PayloadDeleteUser, PayloadUpdateUser } from "@/types/requests/request.user";
 import { UserResponse } from "@/types/response/response.user";
 import axios from "axios";
 
 export const getUser = async () => {
-    const { data: response} = await mainApi.get(
+    const { data: response } = await mainApi.get(
         GET_USER_ALL
     );
+    return response;
+};
+
+export const getCurrentUser = async () => {
+    const { data: response } = await mainApi.get(GET_CURRENT_USER);
     return response;
 };
 
@@ -47,4 +52,4 @@ export const toggleUserStatus = async (userId: string, isActive: boolean) => {
 export const getUserProjects = async (userId: string) => {
     const { data: response } = await mainApi.get(`${GET_USER_PROJECTS}/${userId}`);
     return response;
-  };
+};

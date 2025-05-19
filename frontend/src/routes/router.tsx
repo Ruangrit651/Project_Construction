@@ -2,7 +2,6 @@
 import Dashboard from "@/pages/managerdashboard";
 import Planning from "@/pages/managertask";
 import Resource from "@/pages/managerresource";
-import Report from "@/pages/managerreport";
 import Tasklist from "@/pages/managertasklist";
 import ProjectListManager from "@/pages/projectlistManager";
 import ManagerSummary from "@/pages/ManagerSummry";
@@ -131,10 +130,6 @@ const router = createBrowserRouter([
       {
         path: "/ManagerResource",
         element: <Resource />,
-      },
-      {
-        path: "/ManagerReport",
-        element: <Report />,
       },
     ],
   },

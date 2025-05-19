@@ -34,7 +34,7 @@ export const userService = {
 
             // ดึงข้อมูลความสัมพันธ์ทั้งหมดของผู้ใช้
             const relations = await RelationRepository.findByUserId(user_id);
-            
+
             return new ServiceResponse(
                 ResponseStatus.Success,
                 "User projects retrieved successfully",
@@ -45,6 +45,35 @@ export const userService = {
             return new ServiceResponse(
                 ResponseStatus.Failed,
                 "Error retrieving user projects: " + (ex as Error).message,
+                null,
+                StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
+
+    getCurrentUser: async (userId: string) => {
+        try {
+            // Get user info based on the token's user ID
+            const user = await UserRepository.findById(userId);
+            if (!user) {
+                return new ServiceResponse(
+                    ResponseStatus.Failed,
+                    "User not found",
+                    null,
+                    StatusCodes.NOT_FOUND
+                );
+            }
+
+            return new ServiceResponse(
+                ResponseStatus.Success,
+                "Current user retrieved successfully",
+                user,
+                StatusCodes.OK
+            );
+        } catch (ex) {
+            return new ServiceResponse(
+                ResponseStatus.Failed,
+                "Error retrieving current user: " + (ex as Error).message,
                 null,
                 StatusCodes.INTERNAL_SERVER_ERROR
             );

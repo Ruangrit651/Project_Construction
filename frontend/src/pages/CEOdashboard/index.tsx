@@ -10,6 +10,8 @@ import { getResourceSummary } from "@/services/resource.service";
 import { useLocation } from "react-router-dom";
 import { getDetailedProjectProgress } from "@/services/progress.service";
 import { getProjectActualCost } from "@/services/project.service";
+import { formatDate } from '../Function/FormatDate';
+import { calculateTotalDuration } from '../Function/TotalDuration';
 
 
 // EAC calculation function
@@ -19,7 +21,7 @@ const calculateLocalEAC = (projects: TypeDashboard[] | null) => {
 
   // Force completion rate to 28.5% for debugging
   const completionRate = 28.5;
-  
+
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0); // AC
 
@@ -141,6 +143,7 @@ export default function DashboardCEO() {
     : 0;
   const estimatedEAC = calculateLocalEAC(filteredProjects) || 0;
   const { percent, isOverBudget, overBudgetPercent } = calculatePercentOfTarget(filteredProjects);
+  const totalDays = filteredProjects ? calculateTotalDuration(filteredProjects) : 0;
 
   // เพิ่ม function สำหรับดึงข้อมูล progress
   const fetchProjectProgress = async (projectId: string) => {
@@ -386,13 +389,14 @@ export default function DashboardCEO() {
                 <div className="flex flex-col">
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="font-medium">Start Date:</div>
-                    <div>{new Date(currentProject.start_date).toLocaleDateString()}</div>
+                    <div>{formatDate(currentProject.start_date)}</div>
                     <div className="font-medium">End Date:</div>
-                    <div>{new Date(currentProject.end_date).toLocaleDateString()}</div>
+                    <div>{formatDate(currentProject.end_date)}</div>
                   </div>
                   <div className="mt-2 text-xs px-2 py-1 rounded-full bg-green-200 text-green-800 font-medium inline-block text-center w-auto self-center">
                     {new Date() < new Date(currentProject.end_date) ? "On Schedule" : "Past Due"}
                   </div>
+
                 </div>
               </div>
 
@@ -598,8 +602,8 @@ export default function DashboardCEO() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 md:gap-4 text-sm text-gray-700">
-                          <p><strong>Start:</strong> {new Date(project.start_date).toLocaleDateString()}</p>
-                          <p><strong>Finish:</strong> {new Date(project.end_date).toLocaleDateString()}</p>
+                          <p><strong>Start:</strong> {formatDate(project.start_date)}</p>
+                          <p><strong>Finish:</strong> {formatDate(project.end_date)}</p>
                           <p><strong>Actual Cost:</strong> {Number(project.actual).toLocaleString()} <span className="text-xs">THB</span></p>
                           <p><strong>Budget:</strong> {Number(project.budget).toLocaleString()} <span className="text-xs">THB</span></p>
                         </div>
@@ -751,10 +755,12 @@ export default function DashboardCEO() {
 
               {/* Utilized Duration */}
               <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-lg border border-yellow-200 p-4 hover:shadow-xl transition-shadow">
-                <div className="text-sm font-semibold text-yellow-800 mb-2">Utilized Duration</div>
-                <UtilizedDuration utilizedDays={utilizedDays} />
-                <div className="text-center text-xl md:text-2xl font-bold text-yellow-900 mt-2 md:mt-3">
-                  {utilizedDays} days
+                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 shadow-lg rounded-lg border border-yellow-200 p-4 hover:shadow-xl transition-shadow">
+                  <div className="text-sm font-semibold text-yellow-800 mb-2">Utilized Duration</div>
+                  <UtilizedDuration utilizedDays={utilizedDays} totalDays={totalDays} />
+                  <div className="text-center text-xl md:text-2xl font-bold text-yellow-900 mt-2 md:mt-3">
+                    {utilizedDays} days
+                  </div>
                 </div>
               </div>
             </div>

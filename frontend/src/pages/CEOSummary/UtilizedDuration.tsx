@@ -1,7 +1,16 @@
 import React from "react";
 import ReactApexChart from "react-apexcharts";
 
-const UtilizedDuration = ({ utilizedDays }: { utilizedDays: number }) => {
+const UtilizedDuration = ({ 
+  utilizedDays, 
+  totalDays 
+}: { 
+  utilizedDays: number;
+  totalDays: number;
+}) => {
+  // คำนวณจำนวนวันที่เหลือ
+  const remainingDays = Math.max(0, totalDays - utilizedDays);
+  
   const chartData = {
     series: [utilizedDays],
     options: {
@@ -25,8 +34,8 @@ const UtilizedDuration = ({ utilizedDays }: { utilizedDays: number }) => {
             },
             total: {
               show: true,
-              label: "Target",
-              formatter: () => "?",
+              label: "Remaining",
+              formatter: () => `${remainingDays} day(s)`,
             },
           },
         },
