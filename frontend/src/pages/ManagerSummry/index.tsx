@@ -12,6 +12,7 @@ import { useLocation } from "react-router-dom";
 import { getProjectActualCost } from "@/services/project.service";
 import { formatDate } from '../Function/FormatDate';
 import { calculateTotalDuration } from '../Function/TotalDuration';
+import { getDetailedProjectProgress } from "@/services/progress.service"; // Added import for progress service
 
 // EAC calculation function
 const calculateLocalEAC = (projects: TypeDashboard[] | null, completionRate: number) => {
@@ -27,6 +28,7 @@ const calculateLocalEAC = (projects: TypeDashboard[] | null, completionRate: num
     BAC: totalBudget,
     AC: totalAmountSpent,
     EV: earnedValue,
+    completionRate: completionRate,
     formula: "EAC = AC + (BAC - EV)"
   });
 
@@ -74,6 +76,20 @@ const calculateBudgetVariance = (projects: TypeDashboard[] | null) => {
   return { variance, variancePercentage };
 };
 
+const calculateUtilizedDuration = (projects: TypeDashboard[] | null): number => {
+  if (!projects || projects.length === 0) return 0;
+
+  const today = new Date();
+  const totalDays = projects.reduce((sum, project) => {
+    const startDate = new Date(project.start_date); // วันที่เริ่มต้นของโปรเจกต์
+    const duration = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))); // จำนวนวันตั้งแต่เริ่มจนถึงวันนี้
+    return sum + duration;
+  }, 0);
+
+  return totalDays;
+};
+
+
 // Calculate aggregated values
 const calculateAggregatedValues = (projects: TypeDashboard[]) => {
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget), 0);
@@ -84,26 +100,18 @@ const calculateAggregatedValues = (projects: TypeDashboard[]) => {
   return { totalBudget, totalAmountSpent, percentTarget };
 };
 
-// Calculate average completion rate
-const calculateCompletionRate = (projects: TypeDashboard[] | null): number => {
-  if (!projects || projects.length === 0) return 0;
-
-  const totalCompletion = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0);
-  return projects.length > 0 ? totalCompletion / projects.length : 0;
-};
-
-// Calculate utilized days
-const calculateUtilizedDuration = (projects: TypeDashboard[] | null): number => {
-  if (!projects || projects.length === 0) return 0;
-
-  const today = new Date();
-  const totalDays = projects.reduce((sum, project) => {
-    const startDate = new Date(project.start_date);
-    const duration = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-    return sum + duration;
-  }, 0);
-
-  return totalDays;
+// เพิ่มฟังก์ชันสำหรับดึงข้อมูล progress ของแต่ละโปรเจกต์
+const fetchProjectProgress = async (projectId: string) => {
+  try {
+    const progressData = await getDetailedProjectProgress(projectId);
+    if (progressData.success) {
+      return progressData.responseObject.projectProgress || 0;
+    }
+    return 0;
+  } catch (error) {
+    console.error(`Error fetching progress for project ${projectId}:`, error);
+    return 0;
+  }
 };
 
 export default function ManagerSummary() {
@@ -117,8 +125,9 @@ export default function ManagerSummary() {
   const [showAsPercent, setShowAsPercent] = useState(true);
   const [showDetails, setShowDetails] = useState(true);
   const [resourceSummary, setResourceSummary] = useState<{ type: string; quantity: number; totalCost: number }[]>([]);
-  // เพิ่ม state เก็บค่า Actual ที่คำนวณจากทรัพยากร
   const [calculatedActuals, setCalculatedActuals] = useState<Record<string, number>>({});
+  const [projectProgressMap, setProjectProgressMap] = useState<Record<string, number>>({}); // Add state for progress data
+  const [progressLoading, setProgressLoading] = useState(false); // Add state for progress loading
 
   // Get project ID from URL if available
   const searchParams = new URLSearchParams(location.search);
@@ -126,7 +135,15 @@ export default function ManagerSummary() {
 
   // Calculate metrics based on filtered projects
   const aggregatedValues = filteredProjects ? calculateAggregatedValues(filteredProjects) : null;
-  const completionRate = filteredProjects ? calculateCompletionRate(filteredProjects) : 0;
+  
+  // Update completionRate calculation to use API progress data
+  const completionRate = filteredProjects ? 
+    filteredProjects.reduce((sum, project) => {
+      // Use progress from API if available, or fall back to project.completionRate
+      const projectProgress = projectProgressMap[project.project_id] || project.completionRate || 0;
+      return sum + projectProgress;
+    }, 0) / (filteredProjects.length || 1) : 0;
+    
   const totalAmountSpent = filteredProjects ? calculateTotalAmountSpent(filteredProjects) : 0;
   const utilizedDays = filteredProjects ? calculateUtilizedDuration(filteredProjects) : 0;
   const actualBudget = filteredProjects
@@ -135,6 +152,28 @@ export default function ManagerSummary() {
   const estimatedEAC = calculateLocalEAC(filteredProjects, completionRate) || 0;
   const { percent, isOverBudget, overBudgetPercent } = calculatePercentOfTarget(filteredProjects);
   const totalDays = filteredProjects ? calculateTotalDuration(filteredProjects) : 0;
+
+  // Add useEffect to fetch progress data
+  useEffect(() => {
+    const fetchAllProjectsProgress = async () => {
+      if (!filteredProjects || filteredProjects.length === 0) return;
+      
+      setProgressLoading(true);
+      const progressMap: Record<string, number> = {};
+      const progressPromises = filteredProjects.map(async (project) => {
+        const progress = await fetchProjectProgress(project.project_id);
+        progressMap[project.project_id] = progress;
+        return { projectId: project.project_id, progress };
+      });
+
+      // Wait for all progress fetching to complete
+      await Promise.all(progressPromises);
+      setProjectProgressMap(progressMap);
+      setProgressLoading(false);
+    };
+
+    fetchAllProjectsProgress();
+  }, [filteredProjects]);
 
   // Fetch project data
   useEffect(() => {
@@ -434,7 +473,7 @@ export default function ManagerSummary() {
                 className="grid gap-4 p-3 md:p-4 mt-2 md:mt-3 overflow-y-auto"
                 style={{ minHeight: "250px", maxHeight: "280px" }}
               >
-                {loading ? (
+                {loading || progressLoading ? (
                   <p className="text-gray-500 text-center">Loading...</p>
                 ) : filteredProjects && filteredProjects.length > 0 ? (
                   filteredProjects.map((project) => {
@@ -453,6 +492,9 @@ export default function ManagerSummary() {
                       "Suspend operations": "bg-yellow-100 text-yellow-800",
                       "Project Cancellation": "bg-red-100 text-red-800",
                     };
+                    
+                    // Get completion progress from progress map or fallback to project.completionRate
+                    const completionProgress = projectProgressMap[project.project_id] || project.completionRate || 0;
 
                     return (
                       <div
@@ -481,7 +523,7 @@ export default function ManagerSummary() {
                           *Actual cost calculated from resources
                         </div>
 
-                        {/* Progress Bar */}
+                        {/* Budget Usage Progress Bar */}
                         <div className="mt-3">
                           <div className="flex justify-between text-xs text-gray-600 mb-1">
                             <span>Budget Usage</span>
@@ -495,26 +537,25 @@ export default function ManagerSummary() {
                           </div>
                         </div>
 
-                        {/* Completion Progress - Added new section */}
+                        {/* Completion Progress - Use data from API */}
                         <div className="mt-2">
                           <div className="flex justify-between text-xs text-gray-600 mb-1">
                             <span>Completion Progress</span>
-                            <span>{(project.completionRate || 0).toFixed(1)}%</span>
+                            <span>{completionProgress.toFixed(1)}%</span>
                           </div>
                           <div className="w-full h-2 bg-gray-200 rounded-full">
                             <div
-                              className={`h-2 rounded-full ${(project.completionRate || 0) < 30
+                              className={`h-2 rounded-full ${completionProgress < 30
                                 ? "bg-red-400"
-                                : (project.completionRate || 0) < 70
+                                : completionProgress < 70
                                   ? "bg-yellow-400"
                                   : "bg-green-500"
                                 }`}
-                              style={{ width: `${Math.min(project.completionRate || 0, 100)}%` }}
+                              style={{ width: `${Math.min(completionProgress, 100)}%` }}
                             ></div>
                           </div>
                         </div>
                       </div>
-
                     );
                   })
                 ) : (

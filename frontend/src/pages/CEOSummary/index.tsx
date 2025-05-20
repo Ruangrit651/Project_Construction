@@ -1,26 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom"; // เพิ่ม import
-import CustomSelect from "./CustomSelect"; // Ensure this path is correct
-import { TypeDashboard } from "@/types/response/response.dashboard"; // Ensure this path is correct
+import { useLocation } from "react-router-dom";
+import CustomSelect from "./CustomSelect";
+import { TypeDashboard } from "@/types/response/response.dashboard";
 import { getDashboard } from "@/services/dashboard.service";
 import BudgetVariance from "./BudgetVariance";
 import ProjectCompletionRate from "./ProjectCompletionRate";
 import UtilizedDuration from "./UtilizedDuration";
 import CostBreakdown from "./CostBreakdown";
-import BudgetSummaryEAC from "./BudgetSummaryEAC"; // Ensure this path is correct
+import BudgetSummaryEAC from "./BudgetSummaryEAC";
 import { getResourceSummary } from "@/services/resource.service";
 import { getProjectActualCost } from "@/services/project.service";
 import { formatDate } from '../Function/FormatDate';
-import { calculateTotalDuration } from '../Function/TotalDuration'; // Ensure this path is correct
-
+import { calculateTotalDuration } from '../Function/TotalDuration';
+import { getDetailedProjectProgress } from "@/services/progress.service"; // Added import for progress service
 
 // ฟังก์ชันคำนวณ Estimate At Completion (EAC)
 // EAC = AC + (BAC - EV)
 const calculateLocalEAC = (projects: TypeDashboard[] | null, completionRate: number) => {
   if (!projects || projects.length === 0) return null;
-
-  // ใช้ค่า completionRate ที่ส่งเข้ามาแทนค่าคงที่
-  // const completionRate = 28.5; // ลบบรรทัดนี้ออก
 
   const totalBudget = projects.reduce((sum, project) => sum + Number(project.totalBudget || 0), 0); // BAC
   const totalAmountSpent = projects.reduce((sum, project) => sum + Number(project.actual || project.amountSpent || 0), 0); // AC
@@ -91,14 +88,6 @@ const calculateAggregatedValues = (projects: TypeDashboard[]) => {
   return { totalBudget, totalAmountSpent, percentTarget };
 };
 
-// ฟังก์ชันคำนวณอัตราความสำเร็จเฉลี่ย (Completion Rate)
-const calculateCompletionRate = (projects: TypeDashboard[] | null): number => {
-  if (!projects || projects.length === 0) return 0;
-
-  const totalCompletion = projects.reduce((sum, project) => sum + (project.completionRate || 0), 0);
-  return projects.length > 0 ? totalCompletion / projects.length : 0; // ตรวจสอบจำนวนโปรเจกต์ก่อนหาร
-};
-
 // ฟังก์ชันคำนวณจำนวนวันรวมที่ใช้งานไปแล้ว (นับจากวันที่เริ่มจนถึงวันนี้)
 const calculateUtilizedDuration = (projects: TypeDashboard[] | null): number => {
   if (!projects || projects.length === 0) return 0;
@@ -113,6 +102,20 @@ const calculateUtilizedDuration = (projects: TypeDashboard[] | null): number => 
   return totalDays;
 };
 
+// เพิ่มฟังก์ชันสำหรับดึงข้อมูล progress ของแต่ละโปรเจกต์
+const fetchProjectProgress = async (projectId: string) => {
+  try {
+    const progressData = await getDetailedProjectProgress(projectId);
+    if (progressData.success) {
+      return progressData.responseObject.projectProgress || 0;
+    }
+    return 0;
+  } catch (error) {
+    console.error(`Error fetching progress for project ${projectId}:`, error);
+    return 0;
+  }
+};
+
 // =========================================================================================
 
 const Summary = () => {
@@ -124,8 +127,23 @@ const Summary = () => {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["All"]);
   const [loading, setLoading] = useState(true);
   const [showAsPercent, setShowAsPercent] = useState(true);
+  const [showDetails, setShowDetails] = useState(true);
+  const [resourceSummary, setResourceSummary] = useState<{ type: string; quantity: number; totalCost: number }[]>([]);
+  const [calculatedActuals, setCalculatedActuals] = useState<Record<string, number>>({});
+  const [projectProgressMap, setProjectProgressMap] = useState<Record<string, number>>({}); // เพิ่ม state เก็บข้อมูล progress
+  const [progressLoading, setProgressLoading] = useState(false); // เพิ่ม state แสดงสถานะการโหลด progress
+  
+  // คำนวณค่าต่างๆ โดยใช้ข้อมูลโปรเจกต์
   const aggregatedValues = filteredProjects ? calculateAggregatedValues(filteredProjects) : null;
-  const completionRate = filteredProjects ? calculateCompletionRate(filteredProjects) : 0;
+  
+  // ปรับการคำนวณ completionRate ให้ใช้ข้อมูลจาก API (เหมือนหน้า Dashboard)
+  const completionRate = filteredProjects ? 
+    filteredProjects.reduce((sum, project) => {
+      // ใช้ progress จาก API ถ้ามี หรือใช้ค่าจาก project.completionRate
+      const projectProgress = projectProgressMap[project.project_id] || project.completionRate || 0;
+      return sum + projectProgress;
+    }, 0) / (filteredProjects.length || 1) : 0;
+  
   const totalAmountSpent = filteredProjects ? calculateTotalAmountSpent(filteredProjects) : 0;
   const utilizedDays = filteredProjects ? calculateUtilizedDuration(filteredProjects) : 0;
   const actualBudget = filteredProjects
@@ -134,10 +152,29 @@ const Summary = () => {
 
   const estimatedEAC = calculateLocalEAC(filteredProjects, completionRate) || 0;
   const { percent, isOverBudget, overBudgetPercent } = calculatePercentOfTarget(filteredProjects);
-  const [showDetails, setShowDetails] = useState(true);
-  const [resourceSummary, setResourceSummary] = useState<{ type: string; quantity: number; totalCost: number }[]>([]);
-  const [calculatedActuals, setCalculatedActuals] = useState<Record<string, number>>({});
   const totalDays = filteredProjects ? calculateTotalDuration(filteredProjects) : 0;
+
+  // เพิ่ม useEffect สำหรับดึงข้อมูล progress เมื่อ filteredProjects เปลี่ยนแปลง
+  useEffect(() => {
+    const fetchAllProjectsProgress = async () => {
+      if (!filteredProjects || filteredProjects.length === 0) return;
+      
+      setProgressLoading(true);
+      const progressMap: Record<string, number> = {};
+      const progressPromises = filteredProjects.map(async (project) => {
+        const progress = await fetchProjectProgress(project.project_id);
+        progressMap[project.project_id] = progress;
+        return { projectId: project.project_id, progress };
+      });
+
+      // รอให้การดึงข้อมูล progress ทั้งหมดเสร็จสิ้น
+      await Promise.all(progressPromises);
+      setProjectProgressMap(progressMap);
+      setProgressLoading(false);
+    };
+
+    fetchAllProjectsProgress();
+  }, [filteredProjects]);
 
   useEffect(() => {
     const fetchResourceSummary = async () => {
@@ -147,15 +184,12 @@ const Summary = () => {
       }
       try {
         let params = {};
-        // console.log("Selected projects:", selectedProjects);
         if (selectedProjects.length > 0) {
           params = {
             project_ids: filteredProjects.map((p) => p.project_id).join(","),
           };
         }
-        // console.log("Fetching resource summary with params:", params);
         const res = await getResourceSummary(params);
-        // console.log("Resource summary response:", res);
         if (res.success) setResourceSummary(res.responseObject);
         else setResourceSummary([]);
       } catch (e) {
@@ -413,7 +447,7 @@ const Summary = () => {
                 className="grid gap-4 p-3 md:p-4 mt-2 md:mt-3 overflow-y-auto"
                 style={{ minHeight: "250px", maxHeight: "280px" }}
               >
-                {loading ? (
+                {loading || progressLoading ? (
                   <p className="text-gray-500 text-center">Loading...</p>
                 ) : filteredProjects && filteredProjects.length > 0 ? (
                   filteredProjects.map((project) => {
@@ -432,6 +466,9 @@ const Summary = () => {
                       "Suspend operations": "bg-yellow-100 text-yellow-800",
                       "Project Cancellation": "bg-red-100 text-red-800",
                     };
+
+                    // ดึงค่า completion progress จาก projectProgressMap
+                    const completionProgress = projectProgressMap[project.project_id] || project.completionRate || 0;
 
                     return (
                       <div
@@ -459,7 +496,8 @@ const Summary = () => {
                         <div className="mt-1 text-xs text-gray-600 italic">
                           *Actual cost calculated from resources
                         </div>
-                        {/* Progress Bar */}
+                        
+                        {/* Budget Usage Progress Bar */}
                         <div className="mt-3">
                           <div className="flex justify-between text-xs text-gray-600 mb-1">
                             <span>Budget Usage</span>
@@ -469,6 +507,20 @@ const Summary = () => {
                             <div
                               className={`h-2 rounded-full ${progressColor}`}
                               style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        
+                        {/* Completion Progress Bar - เพิ่มส่วนนี้ */}
+                        <div className="mt-3">
+                          <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Completion Progress</span>
+                            <span>{completionProgress.toFixed(1)}%</span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-200 rounded-full">
+                            <div
+                              className="h-2 rounded-full bg-blue-500"
+                              style={{ width: `${Math.min(completionProgress, 100)}%` }}
                             ></div>
                           </div>
                         </div>
@@ -601,6 +653,5 @@ const Summary = () => {
     </div>
   );
 };
-
 
 export default Summary;
