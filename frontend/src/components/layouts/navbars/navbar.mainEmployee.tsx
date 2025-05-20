@@ -70,7 +70,6 @@ const NavbarEmployee = () => {
     if (path.includes('/employeePlan')) return 'timeline';
     if (path.includes('/employeeTask')) return 'tasklist';
     if (path.includes('/employeeResource')) return 'resource';
-    if (path.includes('/employeeReport')) return 'report';
     if (path.includes('/employeeProjectList')) return 'projectlist';
     return 'projectlist'; // Default ให้เป็น projectlist
   };

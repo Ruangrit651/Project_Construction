@@ -7,3 +7,4 @@ export const formatDate = (dateString: string | undefined) => {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
 };
+

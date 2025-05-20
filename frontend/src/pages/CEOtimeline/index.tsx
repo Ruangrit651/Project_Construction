@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getTask, getTaskProject } from "@/services/task.service";
 import { getSubtask } from "@/services/subtask.service";
-import CEOTimeline from "./test";
+import CEOTimeline from "./Table";
 
 const CEOTaskPage: React.FC = () => {
     const [searchParams] = useSearchParams();

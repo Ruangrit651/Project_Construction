@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getTask, getTaskProject } from "@/services/task.service";
 import { getSubtask } from "@/services/subtask.service";
-import DateTable from "./test";
+import DateTable from "./Table";
 import DialogAddTask from "./components/DialogAddTask";
 
 const ManagerTaskPage: React.FC = () => {
