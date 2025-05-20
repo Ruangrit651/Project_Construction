@@ -1,0 +1,28 @@
+📅 เวลา: 20/05/2025 13:49:34
+🚀 Page Load Time: 1346 ms
+🔐 Login Time: 656 ms
+✅ Login success: http://localhost:5173/admin
+📅 เวลา: 20/05/2025 13:49:34
+🔄 Navigating to Project page...
+🔍 Current URL: http://localhost:5173/adminproject
+✅ Successfully navigated to Project page
+📅 เวลา: 20/05/2025 13:49:36
+🔄 Testing Delete Project functionality...
+✅ Project table loaded
+📋 Testing delete on project: Edited Project 1747723758843
+📋 Project ID: Unknown ID
+📊 Project count before delete: 1
+🟢 Clicked Delete button
+✅ Delete confirmation dialog opened
+✅ Dialog shows correct project name
+✅ Dialog has Cancel button
+✅ Dialog has Delete button
+🟢 Clicked Delete button in confirmation dialog
+✅ Dialog closed after delete
+✅ Toast notification appeared: "Project "Edited Project 1747723758843" deleted successfully×Operation completed successfully."
+✅ Project table reloaded
+✅ Project was successfully deleted and removed from table
+📊 Project count after delete: 0
+✅ Number of projects decreased as expected
+⏱️ Total Delete Testing Time: 231 ms
+🌐 Final URL: http://localhost:5173/adminproject

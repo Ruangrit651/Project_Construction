@@ -1,22 +1,22 @@
-📅 Timestamp: 2025-05-19T08:07:37.816Z
-🚀 Page Load Time: 1230 ms
-🔐 Login Time: 410 ms
+📅 Timestamp: 20/05/2025 13:42:32
+🚀 Page Load Time: 1430 ms
+🔐 Login Time: 562 ms
 ✅ Login success: http://localhost:5173/admin
 🟢 Clicked "Create" button
 🟢 Clicked "Create" button in dialog
-👤 Create User Time: 770 ms
-👤 New Username: testuser_1747642058625
+👤 Create User Time: 1105 ms
+👤 New Username: testuser_1747723353613
 ✅ User created successfully
-🖊️ Edit Button Click Time: 69 ms
+🖊️ Edit Button Click Time: 64 ms
 🟢 Clicked "Edit" button for the user
 ✅ Edit dialog shows correct initial data
-👤 Changed username to: edited_testuser_1747642058625
+👤 Changed username to: edited_testuser_1747723353613
 ✅ Changed role selection
-⌨️ Form Edit Time: 349 ms
+⌨️ Form Edit Time: 616 ms
 🟢 Clicked "Update" button to save changes
 ✅ Edit dialog closed after update
 ✅ User updated successfully in table
-💾 Save and Update Time: 3076 ms
-⏱️ Total Edit User Time: 3514 ms
+💾 Save and Update Time: 3103 ms
+⏱️ Total Edit User Time: 3832 ms
 🌐 Final URL: http://localhost:5173/admin
 📊 Update Success: Yes

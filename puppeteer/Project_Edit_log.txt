@@ -1,0 +1,32 @@
+📅 เวลา: 20/05/2025 13:49:16
+🚀 Page Load Time: 1366 ms
+🔐 Login Time: 718 ms
+✅ Login success: http://localhost:5173/admin
+📅 เวลา: 20/05/2025 13:49:17
+🔄 Navigating to Project page...
+🔍 Current URL: http://localhost:5173/adminproject
+✅ Successfully navigated to Project page
+📅 เวลา: 20/05/2025 13:49:18
+🔄 Looking for Edit button...
+✅ Project table loaded
+📋 Testing project: Test Project 1747723671643
+📋 Current budget: 10,000
+📋 Current status: In progress
+🟢 Clicked Edit button
+✅ Edit Project dialog opened
+✅ Form shows current project name: Yes
+📝 Changed Project Name to: Edited Project 1747723758843
+📝 Changed Budget to: 20000
+📝 Changed Status to: Completed
+🟢 Clicked Update button
+✅ Dialog closed after update
+✅ Project table reloaded
+✅ Updated project found in table
+📋 Updated project name: Edited Project 1747723758843
+📋 Updated budget: 20,000
+📋 Updated status: Completed
+✅ Project name was updated correctly
+✅ Budget was updated correctly
+✅ Status was updated correctly
+⏱️ Total Edit Testing Time: 1060 ms
+🌐 Final URL: http://localhost:5173/adminproject

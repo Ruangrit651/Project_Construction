@@ -1,11 +1,11 @@
-📅 Timestamp: 2025-05-19T05:07:55.511Z
-🚀 Page Load Time: 2180 ms
-🔐 Login Time: 505 ms
+📅 Timestamp: 20/05/2025 13:41:01
+🚀 Page Load Time: 1653 ms
+🔐 Login Time: 745 ms
 ✅ Login success: http://localhost:5173/admin
 🟢 Clicked "Create" button
 🟢 Clicked "Create" button in dialog
-👤 Create User Time: 715 ms
-👤 New Username: testuser_1747631276342
+👤 Create User Time: 1163 ms
+👤 New Username: testuser_1747723263198
 ✅ User created successfully
-🔎 Detail Button Click Time: 137 ms
+🔎 Detail Button Click Time: 55 ms
 🌐 Final URL: http://localhost:5173/admin
