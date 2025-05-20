@@ -75,6 +75,7 @@ function now() {
   } catch (error) {
     const errMsg = `[${now()}] ❌ Unexpected error: ${error.message}`;
     console.error(errMsg);
+    
     fs.writeFileSync('login_performance_log.txt', errMsg, 'utf8');
   } finally {
     await browser?.close();

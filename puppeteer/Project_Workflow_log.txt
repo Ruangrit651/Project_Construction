@@ -1,0 +1,82 @@
+📅 เวลาเริ่มทดสอบทั้งหมด: 20/05/2025 16:22:28
+🧪 เริ่มการทดสอบการทำงานของโปรเจกต์แบบครบวงจร (Detail → Edit → Delete)
+🚀 Page Load Time: 1074 ms
+🔐 Login Time: 310 ms
+✅ Login success: http://localhost:5173/admin
+📅 เวลา: 20/05/2025 16:22:30
+🔄 Navigating to Project page...
+🔍 Current URL: http://localhost:5173/adminproject
+✅ Successfully navigated to Project page
+📅 เวลา: 20/05/2025 16:22:32
+🔄 Looking for Detail button...
+✅ Project table loaded
+📋 Testing project: Edited Project 1747725221243
+🟢 Clicked Detail button
+✅ Project details loaded
+✅ Project name shown: Yes
+✅ Budget shown: Yes
+✅ Status shown: Yes
+✅ Start Date shown: Yes
+✅ End Date shown: Yes
+✅ Members tab shown: Yes
+✅ Tasks tab shown: No
+✅ Members tab active by default: No
+🟢 Clicked Close/Back button
+✅ Returned to projects page
+⏱️ Total Detail Testing Time: 3336 ms
+🌐 Final URL: http://localhost:5173/adminproject
+✅ STEP 1 COMPLETE: Detail testing successful
+📅 เวลา: 20/05/2025 16:22:35
+🔄 Looking for Edit button...
+✅ Project table loaded
+📋 Testing project: Edited Project 1747725221243
+📋 Current budget: 20,000
+📋 Current status: Completed
+🟢 Clicked Edit button
+✅ Edit Project dialog opened
+✅ Form shows current project name: Yes
+📝 Changed Project Name to: Edited Project 1747732955420
+📝 Changed Budget to: 20000
+📝 Changed Status to: Completed
+🟢 Clicked Update button
+✅ Dialog closed after update
+✅ Project table reloaded
+✅ Updated project found in table
+📋 Updated project name: Edited Project 1747732955420
+📋 Updated budget: 20,000
+📋 Updated status: Completed
+✅ Project name was updated correctly
+✅ Budget was updated correctly
+✅ Status was updated correctly
+⏱️ Total Edit Testing Time: 746 ms
+🌐 Final URL: http://localhost:5173/adminproject
+✅ STEP 2 COMPLETE: Edit testing successful
+📅 เวลา: 20/05/2025 16:22:36
+🔄 Testing Delete Project functionality...
+✅ Project table loaded
+📋 Testing delete on project: Test Project 1747726295053
+📋 Project ID: Unknown ID
+📊 Project count before delete: 9
+🟢 Clicked Delete button
+✅ Delete confirmation dialog opened
+✅ Dialog shows correct project name
+✅ Dialog has Cancel button
+✅ Dialog has Delete button
+🟢 Clicked Delete button in confirmation dialog
+✅ Dialog closed after delete
+✅ Toast notification appeared: "Project "Test Project 1747726295053" deleted successfully×Operation completed successfully."
+✅ Project table reloaded
+✅ Project was successfully deleted and removed from table
+📊 Project count after delete: 8
+✅ Number of projects decreased as expected
+⏱️ Total Delete Testing Time: 183 ms
+🌐 Final URL: http://localhost:5173/adminproject
+✅ STEP 3 COMPLETE: Delete testing successful
+📅 เวลาสิ้นสุดการทดสอบ: 20/05/2025 16:22:36
+⏱️ ระยะเวลาทดสอบทั้งหมด: 7483 ms
+🔍 สรุปเวลาในแต่ละขั้นตอน:
+   - Detail: 3336 ms
+   - Edit: 746 ms
+   - Delete: 183 ms
+🌐 Final URL: http://localhost:5173/adminproject
+✅ การทดสอบครบวงจรเสร็จสิ้น (Detail → Edit → Delete)
