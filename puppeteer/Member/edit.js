@@ -2,8 +2,16 @@ require('dotenv').config(); // โหลดไฟล์ .env เพื่อใ�
 const puppeteer = require('puppeteer'); // เรียกใช้ Puppeteer สำหรับควบคุม browser
 const fs = require('fs'); // ใช้สำหรับเขียนไฟล์ log
 
+// 🔧 ฟังก์ชันคืนวันที่และเวลาในรูปแบบ วัน/เดือน/ปี ชั่วโมง:นาที:วินาที
 function now() {
-  return new Date().toISOString(); // ฟังก์ชันสำหรับ timestamp
+  const date = new Date();
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มที่ 0
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 }
 
 const logFilename = 'Edit_performance_log.txt'; // ชื่อไฟล์ log ที่จะบันทึกข้อมูล

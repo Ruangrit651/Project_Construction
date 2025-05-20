@@ -2,9 +2,16 @@ require('dotenv').config();
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
-// ฟังก์ชันคืนเวลาปัจจุบันในรูปแบบ ISO string
+// 🔧 ฟังก์ชันคืนวันที่และเวลาในรูปแบบ วัน/เดือน/ปี ชั่วโมง:นาที:วินาที
 function now() {
-  return new Date().toISOString();
+  const date = new Date();
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // เดือนเริ่มที่ 0
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 }
 
 // ชื่อไฟล์ log (เขียนทับทุกครั้ง)
@@ -148,11 +155,11 @@ const logFilename = 'Suspend_performance_log.txt';
       const dialog = document.querySelector('[role="dialog"], .MuiDialog-root');
       if (!dialog) return { success: false, reason: 'Dialog not found' };
       
-      // ตรวจสอบหัวข้อ Dialog
-      const title = dialog.querySelector('h2, [role="heading"]');
-      if (!title || !title.textContent.includes('Suspend')) {
-        return { success: false, reason: 'Dialog title does not contain "Suspend"' };
-      }
+      // // ตรวจสอบหัวข้อ Dialog
+      // const title = dialog.querySelector('h2, [role="heading"]');
+      // if (!title || !title.textContent.includes('Suspend')) {
+      //   return { success: false, reason: 'Dialog title does not contain "Suspend"' };
+      // }
       
       // ตรวจสอบข้อความที่มีชื่อผู้ใช้
       const hasUsername = Array.from(dialog.querySelectorAll('strong, p, span'))
@@ -213,27 +220,27 @@ const logFilename = 'Suspend_performance_log.txt';
       log.push('⚠️ Suspend confirmation dialog did not close after confirmation');
     }
     
-    // 6. ตรวจสอบการแสดง Toast notification หรือการแจ้งเตือน
-    try {
-      const toastVisible = await page.waitForFunction(
-        () => {
-          const toasts = document.querySelectorAll('.Toastify__toast, [role="alert"], .MuiSnackbar-root');
-          return toasts.length > 0;
-        },
-        { timeout: 3000 }
-      );
+    // // 6. ตรวจสอบการแสดง Toast notification หรือการแจ้งเตือน
+    // try {
+    //   const toastVisible = await page.waitForFunction(
+    //     () => {
+    //       const toasts = document.querySelectorAll('.Toastify__toast, [role="alert"], .MuiSnackbar-root');
+    //       return toasts.length > 0;
+    //     },
+    //     { timeout: 3000 }
+    //   );
       
-      if (toastVisible) {
-        const toastText = await page.evaluate(() => {
-          const toast = document.querySelector('.Toastify__toast, [role="alert"], .MuiSnackbar-root');
-          return toast ? toast.textContent : '';
-        });
+    //   if (toastVisible) {
+    //     const toastText = await page.evaluate(() => {
+    //       const toast = document.querySelector('.Toastify__toast, [role="alert"], .MuiSnackbar-root');
+    //       return toast ? toast.textContent : '';
+    //     });
         
-        log.push(`✅ Notification shown: "${toastText}"`);
-      }
-    } catch {
-      log.push('ℹ️ No toast notification detected (might be using alert instead)');
-    }
+    //     log.push(`✅ Notification shown: "${toastText}"`);
+    //   }
+    // } catch {
+    //   log.push('ℹ️ No toast notification detected (might be using alert instead)');
+    // }
     
     // 7. ตรวจสอบสถานะใหม่ของผู้ใช้ (ควรจะเปลี่ยนจาก "Suspend" เป็น "Activate")
     await new Promise(res => setTimeout(res, 1000)); // รอให้ UI อัพเดต

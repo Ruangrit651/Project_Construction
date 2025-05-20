@@ -1,7 +1,0 @@
-📅 Timestamp: 2025-05-19T08:54:50.131Z
-🚀 Page Load Time: 1564 ms
-🔐 Login Time: 841 ms
-✅ Login success: http://localhost:5173/admin
-🟢 Clicked on "Project" tab
-⚠️ No full page navigation detected, checking URL changes instead
-[2025-05-19T08:54:56.013Z] ❌ Unexpected error: startProjectTabClick is not defined
