@@ -15,12 +15,20 @@ export default function AdminPage() {
     const [user, setUser] = useState<TypeUserAll[]>([]);
     const [selectedUserID, setSelectedUserID] = useState<string | null>(null);
     const [showUserDetail, setShowUserDetail] = useState(false);
+    const [roleFilter, setRoleFilter] = useState<string>("all");
     const navigate = useNavigate();
 
     // State for Toast
     const [toastOpen, setToastOpen] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState<'success' | 'error'>('success');
+    // State for unique roles
+    const uniqueRoles = Array.from(new Set(user.map(u => u.role)));
+
+    // Function to filter users by role
+    const filteredUsers = roleFilter === "all"
+        ? user
+        : user.filter(u => u.role === roleFilter);
 
     // Function to show Toast
     const showToast = (message: string, type: 'success' | 'error') => {
@@ -90,6 +98,21 @@ export default function AdminPage() {
                     Member
                 </Text>
                 <DialogAdd getUserData={getUserData} showToast={showToast} />
+
+                {/* Add role filter dropdown */}
+                <Flex className="ml-auto" align="center" gap="2">
+                    <Text size="2">Filter by role:</Text>
+                    <select
+                        className="px-2 py-1 border rounded text-sm"
+                        value={roleFilter}
+                        onChange={(e) => setRoleFilter(e.target.value)}
+                    >
+                        <option value="all">All Roles</option>
+                        {uniqueRoles.map(role => (
+                            <option key={role} value={role}>{role}</option>
+                        ))}
+                    </select>
+                </Flex>
             </Flex>
             <div className="w-full mt-2">
                 <Table.Root variant="surface">
