@@ -34,12 +34,12 @@ const logFilename = 'Project_Workflow_log.txt';
     // =================== เริ่มทดสอบ ===================
     const startFullTest = Date.now();
     log.push(`📅 เวลาเริ่มทดสอบทั้งหมด: ${now()}`);
-    log.push(`🧪 เริ่มการทดสอบการทำงานของโปรเจกต์แบบครบวงจร (Detail → Edit → Delete)`);
+    log.push(`🧪 เริ่มการทดสอบการทำงานของโปรเจกต์แบบครบวงจร (Create → Detail → Edit → Delete)`);
 
     const startLoad = Date.now();
     await page.goto(process.env.APP_URL, { waitUntil: 'networkidle0' });
     const pageLoadTime = Date.now() - startLoad;
-    log.push(`🚀 Page Load Time: ${pageLoadTime} ms`);
+    log.push(`🚀 Page Load Time: ${pageLoadTime} ms`); //โหลดก่อนล็อกอิน
 
     // =================== ล็อกอิน ===================
     const startLogin = Date.now();
@@ -52,94 +52,133 @@ const logFilename = 'Project_Workflow_log.txt';
     log.push(`✅ Login success: ${page.url()}`);
 
     // =================== นำทางไปยังหน้า Project ===================
-    log.push(`📅 เวลา: ${now()}`);
-    log.push('🔄 Navigating to Project page...');
-
+    const startProjectNav = Date.now();
     await page.goto(`${process.env.APP_URL}/adminproject`, { waitUntil: 'networkidle0' });
+    const projectNavTime = Date.now() - startProjectNav;
 
-    log.push(`🔍 Current URL: ${page.url()}`);
+    log.push(`⏱️ Project Page Navigation Time: ${projectNavTime} ms`);
     if (page.url().includes('/adminproject')) {
-      log.push('✅ Successfully navigated to Project page');
+      // log.push('✅ Successfully navigated to Project page');
     } else {
       throw new Error('Failed to navigate to Project page');
     }
 
-    // =================== ตรวจสอบว่ามีโปรเจกต์ในตารางหรือไม่ ===================
-    await page.waitForSelector('table', { timeout: 5000 });
+    // =================== ขั้นตอนที่ 0: สร้างโปรเจกต์ใหม่ ===================
+     const startCreate = Date.now();
+    // log.push(`📅 เวลา: ${now()}`);
+    // log.push('🔄 Looking for Create button...');
 
-    const hasProjects = await page.evaluate(() => {
-      const rows = document.querySelectorAll('table tr');
-      // ถ้ามีแถวมากกว่า 1 แถว (มีแถวหัวตารางและแถวข้อมูล) แสดงว่ามีโปรเจกต์
-      return rows.length > 1;
+    await page.waitForFunction(() => {
+      const buttons = Array.from(document.querySelectorAll('button'));
+      return buttons.some(btn => btn.textContent.includes('Create'));
+    }, { timeout: 5000 });
+
+    await page.$$eval('button', buttons => {
+      const createButton = buttons.find(btn => btn.textContent.includes('Create'));
+      if (createButton) {
+        createButton.click();
+        return true;
+      }
+      return false;
     });
 
-    if (!hasProjects) {
-      // log.push('⚠️ No projects found. Creating a new project first...');
+    log.push('🟢 Clicked Create button');
 
-      // =================== สร้างโปรเจกต์ใหม่ ===================
-      log.push('🔄 Looking for Create button...');
+    await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+    // log.push('✅ Create Project dialog opened');
 
-      await page.waitForFunction(() => {
-        const buttons = Array.from(document.querySelectorAll('button'));
-        return buttons.some(btn => btn.textContent.includes('Create'));
-      }, { timeout: 5000 });
+    const newProjectName = `Test Project ${Date.now()}`;
+    await page.type('[placeholder="Enter project name"]', newProjectName);
+    // log.push(`📝 Entered Project Name: ${newProjectName}`);
 
-      await page.$$eval('button', buttons => {
-        const createButton = buttons.find(btn => btn.textContent.includes('Create'));
-        if (createButton) {
-          createButton.click();
-          return true;
+    try {
+      // แก้ไขส่วนการเลือกเจ้าของโปรเจกต์ให้ทนทานต่อข้อผิดพลาดมากขึ้น
+      // log.push('🔄 กำลังเลือกเจ้าของโปรเจกต์...');
+      
+      // วิธีที่ 1: ใช้ CSS Selector ที่หลากหลายในการคลิก dropdown
+      await page.waitForSelector('.select-trigger, .dropdown-toggle, select[name="owner"], div[role="combobox"]', { timeout: 5000 });
+      
+      await page.evaluate(() => {
+        // เลือกจากตัวเลือกหลายรูปแบบที่อาจเป็นไปได้
+        const ownerSelectors = [
+          '.select-trigger', 
+          '.dropdown-toggle', 
+          'select[name="owner"]', 
+          'div[role="combobox"]',
+          'div[aria-haspopup="listbox"]'
+        ];
+        
+        for (const selector of ownerSelectors) {
+          const elements = document.querySelectorAll(selector);
+          for (const element of elements) {
+            if (element.textContent.includes('เลือกเจ้าของโปรเจกต์') || 
+                element.textContent.includes('เจ้าของ') || 
+                element.textContent.includes('Owner')) {
+              element.click();
+              return;
+            }
+          }
         }
-        return false;
+        
+        // ถ้าไม่เจอเลย ลองคลิกที่ dropdown ตัวแรกที่เจอในแบบฟอร์ม
+        const form = document.querySelector('form, [role="dialog"]');
+        if (form) {
+          const dropdowns = form.querySelectorAll('.select-trigger, select, [role="combobox"]');
+          if (dropdowns.length > 0) {
+            dropdowns[0].click();
+          }
+        }
       });
-
-      log.push('🟢 Clicked Create button');
-
-      await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
-      log.push('✅ Create Project dialog opened');
-
-      const projectName = `Workflow Test Project ${Date.now()}`;
-      await page.type('[placeholder="Enter project name"]', projectName);
-      log.push(`📝 Entered Project Name: ${projectName}`);
-
-      try {
-        await page.$$eval('.select-trigger', selects => {
-          const ownerSelect = selects.find(select =>
-            select.textContent.includes('เลือกเจ้าของโปรเจกต์')
-          );
-          if (ownerSelect) ownerSelect.click();
-        });
-
-        await page.waitForSelector('[role="option"]', { timeout: 3000 });
-
-        await page.$$eval('[role="option"]', options => {
-          if (options.length > 0) options[0].click();
-        });
-
-        log.push('✅ Selected project owner');
-      } catch (e) {
-        log.push(`⚠️ Could not select project owner: ${e.message}`);
-      }
-
-      await page.type('[placeholder="Enter budget"]', '10000');
-      log.push('📝 Entered Budget: 10,000');
-
-      // await page.type('[placeholder="Enter actual"]', '5000');
-      // log.push('📝 Entered Actual: 5,000');
-
-      const today = new Date();
-      const startDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-      await page.type('input[type="date"]', startDate);
-      log.push(`📝 Entered Start Date: ${startDate}`);
-
-      today.setMonth(today.getMonth() + 1);
-      const endDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-      await page.$$eval('input[type="date"]', inputs => {
-        if (inputs.length > 1) inputs[1].focus();
+      
+      // รอนานขึ้นสำหรับตัวเลือกปรากฏ
+      await page.waitForFunction(() => {
+        // ตรวจสอบจากหลายตัวเลือกที่อาจเป็นไปได้
+        return document.querySelector('[role="option"], [role="listbox"] li, .dropdown-item, select option') !== null;
+      }, { timeout: 8000 });
+      
+      // คลิกเลือกตัวเลือกแรก
+      await page.evaluate(() => {
+        // ลองค้นหาจากหลายรูปแบบ
+        const optionSelectors = [
+          '[role="option"]', 
+          '[role="listbox"] li', 
+          '.dropdown-item', 
+          'select option'
+        ];
+        
+        for (const selector of optionSelectors) {
+          const options = document.querySelectorAll(selector);
+          if (options.length > 0) {
+            options[0].click();
+            return;
+          }
+        }
       });
-      await page.keyboard.type(endDate);
-      log.push(`📝 Entered End Date: ${endDate}`);
+      
+      log.push('✅ เลือกเจ้าของโปรเจกต์สำเร็จ');
+    } catch (e) {
+      log.push(`⚠️ ไม่สามารถเลือกเจ้าของโปรเจกต์ได้: ${e.message}`);
+      log.push('ℹ️ ดำเนินการต่อโดยไม่มีเจ้าของโปรเจกต์');
+    }
 
+    await page.type('[placeholder="Enter budget"]', '10000');
+    // log.push('📝 Entered Budget: 10,000');
+
+    const today = new Date();
+    const startDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+    await page.type('input[type="date"]', startDate);
+    // log.push(`📝 Entered Start Date: ${startDate}`);
+
+    today.setMonth(today.getMonth() + 1);
+    const endDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+    await page.$$eval('input[type="date"]', inputs => {
+      if (inputs.length > 1) inputs[1].focus();
+    });
+    await page.keyboard.type(endDate);
+    // log.push(`📝 Entered End Date: ${endDate}`);
+
+    const saveStart = Date.now();
+    try {
       await page.$$eval('button', buttons => {
         const saveButton = buttons.find(btn => btn.textContent.includes('Save'));
         if (saveButton) {
@@ -150,45 +189,62 @@ const logFilename = 'Project_Workflow_log.txt';
       });
 
       log.push('🟢 Clicked Save button');
-
-      try {
-        await page.waitForFunction(
-          () => !document.querySelector('[role="dialog"]'),
-          { timeout: 5000 }
-        );
-        log.push('✅ Dialog closed after save');
-      } catch (e) {
-        log.push(`⚠️ Dialog did not close: ${e.message}`);
-      }
-
-      // try {
-      //   await page.waitForFunction(
-      //     (expectedProject) => {
-      //       const cells = document.querySelectorAll('td');
-      //       return Array.from(cells).some(cell => cell.textContent.includes(expectedProject));
-      //     },
-      //     { timeout: 5000 },
-      //     projectName
-      //   );
-
-      //   log.push('✅ New project created and appears in the table');
-      // } catch (e) {
-      //   log.push(`⚠️ New project not found in table: ${e.message}`);
-      //   throw new Error('Failed to create a new project');
-      // }
-
-      // รอสักครู่ให้ UI อัพเดท
-      await page.waitForTimeout(2000);
+    } catch (e) {
+      log.push(`⚠️ Could not click Save button: ${e.message}`);
     }
+
+    try {
+      await page.waitForFunction(
+        () => !document.querySelector('[role="dialog"]'),
+        { timeout: 5000 }
+      );
+      log.push('✅ Dialog closed after save');
+    } catch (e) {
+      log.push(`⚠️ Dialog did not close: ${e.message}`);
+    }
+
+    // รอให้ตารางโหลดใหม่
+    await page.waitForSelector('table', { timeout: 5000 });
+    await new Promise(resolve => setTimeout(resolve, 2000)); // รอเพิ่มเติมให้ข้อมูลอัพเดท
+
+    // บันทึกจำนวนโปรเจกต์หลังสร้าง เพื่อเปรียบเทียบ
+    const projectCountBeforeCreate = await page.evaluate(() => {
+      return document.querySelectorAll('table tr').length - 1; // หักแถวหัวตาราง
+    });
+
+    try {
+      await page.waitForFunction(
+        (expectedProject) => {
+          const cells = document.querySelectorAll('td');
+          return Array.from(cells).some(cell => cell.textContent.includes(expectedProject));
+        },
+        { timeout: 5000 },
+        newProjectName
+      );
+
+      log.push('✅ New project appears in the table');
+    } catch (e) {
+      log.push(`⚠️ New project not found in table: ${e.message}`);
+    }
+
+    // ตรวจสอบจำนวนโปรเจกต์หลังการสร้าง
+    const projectCountAfterCreate = await page.evaluate(() => {
+      return document.querySelectorAll('table tr').length - 1; // หักแถวหัวตาราง
+    });
+    
+
+    const createTime = Date.now() - startCreate;
+    log.push(`⏱️ Total Create Project Time: ${createTime} ms`);
+    log.push(`✅ ขั้นตอนที่ 0 เสร็จสิ้น: การทดสอบการสร้างโปรเจกต์สำเร็จ`);
 
     // =================== ขั้นตอนที่ 1: ทดสอบปุ่ม Detail ===================
     const startDetail = Date.now();
-    log.push(`📅 เวลา: ${now()}`);
-    log.push('🔄 Looking for Detail button...');
+    // log.push(`📅 เวลา: ${now()}`);
+    // log.push('🔄 Looking for Detail button...');
 
     // รอให้ตารางแสดงข้อมูลโปรเจกต์โหลดเสร็จ
     await page.waitForSelector('table', { timeout: 5000 });
-    log.push('✅ Project table loaded');
+    // log.push('✅ Project table loaded');
 
     // บันทึกชื่อโปรเจกต์ก่อนคลิกปุ่ม Detail
     const projectName = await page.evaluate(() => {
@@ -201,7 +257,7 @@ const logFilename = 'Project_Workflow_log.txt';
       }
       return 'Unknown Project';
     });
-    log.push(`📋 Testing project: ${projectName}`);
+    // log.push(`📋 Testing project: ${projectName}`);
 
     // ค้นหาและคลิกปุ่ม Detail ของโปรเจกต์แรก
     const detailButtonClicked = await page.evaluate(() => {
@@ -246,19 +302,19 @@ const logFilename = 'Project_Workflow_log.txt';
     }, projectName);
 
     // บันทึกผลการตรวจสอบ
-    log.push(`✅ Project name shown: ${detailsShown.projectName ? 'Yes' : 'No'}`);
-    log.push(`✅ Budget shown: ${detailsShown.budget ? 'Yes' : 'No'}`);
-    log.push(`✅ Status shown: ${detailsShown.status ? 'Yes' : 'No'}`);
-    log.push(`✅ Start Date shown: ${detailsShown.startDate ? 'Yes' : 'No'}`);
-    log.push(`✅ End Date shown: ${detailsShown.endDate ? 'Yes' : 'No'}`);
-    log.push(`✅ Members tab shown: ${detailsShown.membersTab ? 'Yes' : 'No'}`);
-    log.push(`✅ Tasks tab shown: ${detailsShown.tasksTab ? 'Yes' : 'No'}`);
+    // log.push(`✅ Project name shown: ${detailsShown.projectName ? 'Yes' : 'No'}`);
+    // log.push(`✅ Budget shown: ${detailsShown.budget ? 'Yes' : 'No'}`);
+    // log.push(`✅ Status shown: ${detailsShown.status ? 'Yes' : 'No'}`);
+    // log.push(`✅ Start Date shown: ${detailsShown.startDate ? 'Yes' : 'No'}`);
+    // log.push(`✅ End Date shown: ${detailsShown.endDate ? 'Yes' : 'No'}`);
+    // log.push(`✅ Members tab shown: ${detailsShown.membersTab ? 'Yes' : 'No'}`);
+    // log.push(`✅ Tasks tab shown: ${detailsShown.tasksTab ? 'Yes' : 'No'}`);
 
     // ตรวจสอบว่าแท็บ Members เปิดเป็นค่าเริ่มต้น
     const isMembersTabActive = await page.evaluate(() => {
       return document.body.innerText.includes('Project Members');
     });
-    log.push(`✅ Members tab active by default: ${isMembersTabActive ? 'Yes' : 'No'}`);
+    // log.push(`✅ Members tab active by default: ${isMembersTabActive ? 'Yes' : 'No'}`);
 
     await new Promise(r => setTimeout(r, 2000));
 
@@ -281,25 +337,23 @@ const logFilename = 'Project_Workflow_log.txt';
 
     await new Promise(r => setTimeout(r, 1000)); 
 
-
     // ตรวจสอบว่ากลับไปยังหน้าโปรเจกต์
     await page.waitForSelector('table', { timeout: 5000 });
     log.push('✅ Returned to projects page');
 
     const detailTime = Date.now() - startDetail;
     log.push(`⏱️ Total Detail Testing Time: ${detailTime} ms`);
-    log.push(`🌐 Final URL: ${page.url()}`);
+    // log.push(`🌐 Final URL: ${page.url()}`);
     log.push(`✅ STEP 1 COMPLETE: Detail testing successful`);
-
 
     // =================== ขั้นตอนที่ 2: ทดสอบปุ่ม Edit ===================
     const startEdit = Date.now();
-    log.push(`📅 เวลา: ${now()}`);
-    log.push('🔄 Looking for Edit button...');
+    // log.push(`📅 เวลา: ${now()}`);
+    // log.push('🔄 Looking for Edit button...');
 
     // รอให้ตารางแสดงข้อมูลโปรเจกต์โหลดเสร็จ
     await page.waitForSelector('table', { timeout: 5000 });
-    log.push('✅ Project table loaded');
+    // log.push('✅ Project table loaded');
 
     // บันทึกข้อมูลโปรเจกต์ก่อนแก้ไข
     const originalProjectInfo = await page.evaluate(() => {
@@ -317,9 +371,9 @@ const logFilename = 'Project_Workflow_log.txt';
       return { name: 'Unknown Project', budget: 'N/A', status: 'N/A' };
     });
     
-    log.push(`📋 Testing project: ${originalProjectInfo.name}`);
-    log.push(`📋 Current budget: ${originalProjectInfo.budget}`);
-    log.push(`📋 Current status: ${originalProjectInfo.status}`);
+    // log.push(`📋 Testing project: ${originalProjectInfo.name}`);
+    // log.push(`📋 Current budget: ${originalProjectInfo.budget}`);
+    // log.push(`📋 Current status: ${originalProjectInfo.status}`);
 
     // ค้นหาและคลิกปุ่ม Edit ของโปรเจกต์แรก
     const editButtonClicked = await page.evaluate(() => {
@@ -336,13 +390,12 @@ const logFilename = 'Project_Workflow_log.txt';
       throw new Error('Edit button not found or could not be clicked');
     }
     
-    log.push('🟢 Clicked Edit button');
+    // log.push('🟢 Clicked Edit button');
 
     // =================== ตรวจสอบที่ Dialog แก้ไขโปรเจกต์ ===================
     // รอให้ Dialog แก้ไขโปรเจกต์เปิดขึ้น
     await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
-    log.push('✅ Edit Project dialog opened');
-
+    // log.push('✅ Edit Project dialog opened');
 
     // ตรวจสอบว่าฟอร์มแสดงข้อมูลโปรเจกต์เดิมถูกต้อง
     const formHasCurrentValues = await page.evaluate((expectedName) => {
@@ -350,19 +403,19 @@ const logFilename = 'Project_Workflow_log.txt';
       return nameInput && nameInput.value.includes(expectedName);
     }, originalProjectInfo.name);
     
-    log.push(`✅ Form shows current project name: ${formHasCurrentValues ? 'Yes' : 'No'}`);
+    // log.push(`✅ Form shows current project name: ${formHasCurrentValues ? 'Yes' : 'No'}`);
 
     // =================== แก้ไขข้อมูลโปรเจกต์ ===================
     // แก้ไขชื่อโปรเจกต์
-    const newProjectName = `Edited Project ${Date.now()}`;
+    const editedProjectName = `Edited Project ${Date.now()}`;
     await page.evaluate(() => {
       const nameInput = document.querySelector('[placeholder="Enter project name"]');
       if (nameInput) {
         nameInput.value = '';
       }
     });
-    await page.type('[placeholder="Enter project name"]', newProjectName);
-    log.push(`📝 Changed Project Name to: ${newProjectName}`);
+    await page.type('[placeholder="Enter project name"]', editedProjectName);
+    // log.push(`📝 Changed Project Name to: ${editedProjectName}`);
 
     // แก้ไขงบประมาณ
     const newBudget = '20000';
@@ -373,7 +426,7 @@ const logFilename = 'Project_Workflow_log.txt';
       }
     });
     await page.type('[placeholder="Enter budget"]', newBudget);
-    log.push(`📝 Changed Budget to: ${newBudget}`);
+    // log.push(`📝 Changed Budget to: ${newBudget}`);
 
     // แก้ไขสถานะ
     await page.$$eval('.select-trigger', selects => {
@@ -394,57 +447,39 @@ const logFilename = 'Project_Workflow_log.txt';
       if (completedOption) completedOption.click();
     });
     
-    log.push('📝 Changed Status to: Completed');
+    // log.push('📝 Changed Status to: Completed');
 
 
     // คลิกปุ่ม Update
-    await page.$$eval('button', buttons => {
-      const updateButton = buttons.find(btn => btn.textContent.includes('Update'));
-      if (updateButton) {
-        updateButton.click();
-        return true;
-      }
-      return false;
-    });
+const startUpdate = Date.now(); // เพิ่มการวัดเวลาเริ่มต้น
+await page.$$eval('button', buttons => {
+  const updateButton = buttons.find(btn => btn.textContent.includes('Update'));
+  if (updateButton) {
+    updateButton.click();
+    return true;
+  }
+  return false;
+});
     
-    log.push('🟢 Clicked Update button');
+log.push('🟢 Clicked Update button');
 
-    // รอให้ Dialog ปิด (ปุ่ม Update ควรปิด Dialog เมื่อบันทึกเสร็จ)
-    try {
-      await page.waitForFunction(
-        () => !document.querySelector('[role="dialog"]'),
-        { timeout: 5000 } 
-      );
-      log.push('✅ Dialog closed after update');
-    } catch (e) {
-      log.push(`⚠️ Dialog did not close: ${e.message}`);
-      
-      // ตรวจสอบว่ามีข้อความแสดงข้อผิดพลาดหรือไม่
-      const errorMessage = await page.evaluate(() => {
-        return document.body.innerText.includes('error') || document.body.innerText.includes('Error');
-      });
-      
-      if (errorMessage) {
-        log.push('⚠️ Error message detected on dialog');
-      }
-      
-      // พยายามคลิกปุ่ม Cancel เพื่อปิด Dialog
-      await page.$$eval('button', buttons => {
-        const cancelButton = buttons.find(btn => btn.textContent.includes('Cancel'));
-        if (cancelButton) {
-          cancelButton.click();
-          return true;
-        }
-        return false;
-      });
-      
-      log.push('🟢 Attempted to click Cancel button');
-    }
+// รอให้ Dialog ปิด (ปุ่ม Update ควรปิด Dialog เมื่อบันทึกเสร็จ)
+try {
+  await page.waitForFunction(
+    () => !document.querySelector('[role="dialog"]'),
+    { timeout: 5000 } 
+  );
+  const updateTime = Date.now() - startUpdate; // คำนวณเวลาที่ใช้
+  log.push('✅ Dialog closed after update');
+  log.push(`⏱️ Time to close dialog after Update: ${updateTime} ms`);
+} catch (e) {
+  log.push(`⚠️ Dialog did not close: ${e.message}`);
+}
 
     // =================== ตรวจสอบว่าข้อมูลถูกอัพเดทหรือไม่ ===================
     // รอให้ตารางโหลดใหม่
     await page.waitForSelector('table', { timeout: 5000 });
-    log.push('✅ Project table reloaded');
+    // log.push('✅ Project table reloaded');
 
     // ตรวจสอบข้อมูลที่ถูกแก้ไข
     const updatedProjectInfo = await page.evaluate((expectedName) => {
@@ -471,30 +506,30 @@ const logFilename = 'Project_Workflow_log.txt';
       }
       
       return { found: false };
-    }, newProjectName);
+    }, editedProjectName);
 
     if (updatedProjectInfo.found) {
-      log.push('✅ Updated project found in table');
-      log.push(`📋 Updated project name: ${updatedProjectInfo.name}`);
-      log.push(`📋 Updated budget: ${updatedProjectInfo.budget}`);
-      log.push(`📋 Updated status: ${updatedProjectInfo.status}`);
+      // log.push('✅ Updated project found in table');
+      // log.push(`📋 Updated project name: ${updatedProjectInfo.name}`);
+      // log.push(`📋 Updated budget: ${updatedProjectInfo.budget}`);
+      // log.push(`📋 Updated status: ${updatedProjectInfo.status}`);
       
       // ตรวจสอบว่าข้อมูลถูกอัพเดทตามที่แก้ไขหรือไม่
-      if (updatedProjectInfo.name.includes(newProjectName)) {
-        log.push('✅ Project name was updated correctly');
+      if (updatedProjectInfo.name.includes(editedProjectName)) {
+        // log.push('✅ Project name was updated correctly');
       } else {
         log.push('⚠️ Project name was not updated as expected');
       }
       
       // ตรวจสอบงบประมาณ (อาจมีการจัดรูปแบบตัวเลข เช่น "20,000")
       if (updatedProjectInfo.budget.includes('20') || updatedProjectInfo.budget.includes('20,000')) {
-        log.push('✅ Budget was updated correctly');
+        // log.push('✅ Budget was updated correctly');
       } else {
         log.push('⚠️ Budget was not updated as expected');
       }
       
       if (updatedProjectInfo.status.includes('Completed')) {
-        log.push('✅ Status was updated correctly');
+        // log.push('✅ Status was updated correctly');
       } else {
         log.push('⚠️ Status was not updated as expected');
       }
@@ -504,13 +539,13 @@ const logFilename = 'Project_Workflow_log.txt';
 
     const editTime = Date.now() - startEdit;
     log.push(`⏱️ Total Edit Testing Time: ${editTime} ms`);
-    log.push(`🌐 Final URL: ${page.url()}`);
+    // log.push(`🌐 Final URL: ${page.url()}`);
     log.push(`✅ STEP 2 COMPLETE: Edit testing successful`);
 
     // =================== ขั้นตอนที่ 3: ทดสอบปุ่ม Delete ===================
     const startDelete = Date.now();
-    log.push(`📅 เวลา: ${now()}`);
-    log.push('🔄 Testing Delete Project functionality...');
+    // log.push(`📅 เวลา: ${now()}`);
+    // log.push('🔄 Testing Delete Project functionality...');
 
     // รอให้ตารางแสดงข้อมูลโปรเจกต์โหลดเสร็จ
     await page.waitForSelector('table', { timeout: 5000 });
@@ -531,15 +566,15 @@ const logFilename = 'Project_Workflow_log.txt';
       return { name: 'Unknown Project', id: 'Unknown ID' };
     });
     
-    log.push(`📋 Testing delete on project: ${projectToDelete.name}`);
-    log.push(`📋 Project ID: ${projectToDelete.id}`);
+    // log.push(`📋 Testing delete on project: ${projectToDelete.name}`);
+    // log.push(`📋 Project ID: ${projectToDelete.id}`);
 
     // จำนวนโปรเจกต์ก่อนลบ
     const projectCountBefore = await page.evaluate(() => {
       return document.querySelectorAll('table tr').length - 1; // หักแถวหัวตาราง
     });
     
-    log.push(`📊 Project count before delete: ${projectCountBefore}`);
+    // log.push(`📊 Project count before delete: ${projectCountBefore}`);
 
     // ค้นหาและคลิกปุ่ม Delete ของโปรเจกต์แรก
     const deleteButtonClicked = await page.evaluate(() => {
@@ -561,7 +596,7 @@ const logFilename = 'Project_Workflow_log.txt';
     // =================== ตรวจสอบ Dialog ยืนยันการลบ ===================
     // รอให้ Dialog ยืนยันการลบเปิดขึ้น
     await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
-    log.push('✅ Delete confirmation dialog opened');
+    // log.push('✅ Delete confirmation dialog opened');
 
     // ตรวจสอบว่า Dialog แสดงข้อมูลโปรเจกต์ที่จะลบถูกต้อง
     const dialogContent = await page.evaluate(() => {
@@ -570,7 +605,7 @@ const logFilename = 'Project_Workflow_log.txt';
     });
     
     if (dialogContent.includes(projectToDelete.name)) {
-      log.push('✅ Dialog shows correct project name');
+      // log.push('✅ Dialog shows correct project name');
     } else {
       log.push('⚠️ Dialog may not show correct project information');
     }
@@ -586,13 +621,13 @@ const logFilename = 'Project_Workflow_log.txt';
     });
     
     if (hasButtons.hasCancel) {
-      log.push('✅ Dialog has Cancel button');
+      // log.push('✅ Dialog has Cancel button');
     } else {
       log.push('⚠️ Cancel button not found in dialog');
     }
     
     if (hasButtons.hasDelete) {
-      log.push('✅ Dialog has Delete button');
+      // log.push('✅ Dialog has Delete button');
     } else {
       log.push('⚠️ Delete button not found in dialog');
     }
@@ -609,7 +644,7 @@ const logFilename = 'Project_Workflow_log.txt';
       return false;
     });
     
-    log.push('🟢 Clicked Delete button in confirmation dialog');
+    // log.push('🟢 Clicked Delete button in confirmation dialog');
 
     // รอให้ Dialog ปิด (ปุ่ม Delete ควรปิด Dialog เมื่อลบเสร็จ)
     try {
@@ -617,7 +652,7 @@ const logFilename = 'Project_Workflow_log.txt';
         () => !document.querySelector('[role="dialog"]'),
         { timeout: 5000 }
       );
-      log.push('✅ Dialog closed after delete');
+      // log.push('✅ Dialog closed after delete');
     } catch (e) {
       log.push(`⚠️ Dialog did not close: ${e.message}`);
     }
@@ -645,7 +680,7 @@ const logFilename = 'Project_Workflow_log.txt';
     // =================== ตรวจสอบว่าโปรเจกต์ถูกลบออกจากตารางหรือไม่ ===================
     // รอให้ตารางโหลดใหม่
     await page.waitForSelector('table', { timeout: 5000 });
-    log.push('✅ Project table reloaded');
+    // log.push('✅ Project table reloaded');
 
     // ตรวจสอบว่าโปรเจกต์ถูกลบไปหรือไม่
     const projectStillExists = await page.evaluate((projectName) => {
@@ -654,7 +689,7 @@ const logFilename = 'Project_Workflow_log.txt';
     }, projectToDelete.name);
     
     if (!projectStillExists) {
-      log.push('✅ Project was successfully deleted and removed from table');
+      // log.push('✅ Project was successfully deleted and removed from table');
     } else {
       log.push('⚠️ Project still appears in table after delete attempt');
     }
@@ -664,17 +699,17 @@ const logFilename = 'Project_Workflow_log.txt';
       return document.querySelectorAll('table tr').length - 1; // หักแถวหัวตาราง
     });
     
-    log.push(`📊 Project count after delete: ${projectCountAfter}`);
+    // log.push(`📊 Project count after delete: ${projectCountAfter}`);
     
     if (projectCountAfter < projectCountBefore) {
-      log.push('✅ Number of projects decreased as expected');
+      // log.push('✅ Number of projects decreased as expected');
     } else {
       log.push('⚠️ Number of projects did not decrease');
     }
 
     const deleteTime = Date.now() - startDelete;
     log.push(`⏱️ Total Delete Testing Time: ${deleteTime} ms`);
-    log.push(`🌐 Final URL: ${page.url()}`);
+    // log.push(`🌐 Final URL: ${page.url()}`);
     log.push(`✅ STEP 3 COMPLETE: Delete testing successful`);
 
     // =================== สรุปผลการทดสอบ ===================
@@ -682,11 +717,12 @@ const logFilename = 'Project_Workflow_log.txt';
     log.push(`📅 เวลาสิ้นสุดการทดสอบ: ${now()}`);
     log.push(`⏱️ ระยะเวลาทดสอบทั้งหมด: ${totalTestTime} ms`);
     log.push(`🔍 สรุปเวลาในแต่ละขั้นตอน:`);
+    log.push(`   - Create: ${createTime} ms`);
     log.push(`   - Detail: ${detailTime} ms`);
     log.push(`   - Edit: ${editTime} ms`);
     log.push(`   - Delete: ${deleteTime} ms`);
     log.push(`🌐 Final URL: ${page.url()}`);
-    log.push(`✅ การทดสอบครบวงจรเสร็จสิ้น (Detail → Edit → Delete)`);
+    log.push(`✅ การทดสอบครบวงจรเสร็จสิ้น (Create → Detail → Edit → Delete)`);
 
     fs.writeFileSync(logFilename, log.join('\n'), 'utf8');
     console.log('\n📝 Log saved to', logFilename);

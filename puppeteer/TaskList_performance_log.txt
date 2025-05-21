@@ -1,23 +1,23 @@
-📅 Timestamp: 20/05/2025 20:01:55
-🚀 Login Page Load Time: 1661.78 ms
-🔐 Login Time: 92.92 ms
-📅 Timestamp: 20/05/2025 20:01:58
-🧭 Navigation to Project List Time: 1443.51 ms
+📅 Timestamp: 20/05/2025 23:51:32
+🚀 Login Page Load Time: 1684.13 ms
+🔐 Login Time: 153.14 ms
+📅 Timestamp: 20/05/2025 23:51:35
+🧭 Navigation to Project List Time: 1284.05 ms
 ✅ พบโปรเจกต์ในระบบ
-🧭 Navigation to Task List Time: 94.54 ms
+🧭 Navigation to Task List Time: 95.71 ms
 ✅ เข้าสู่หน้ารายการงานเรียบร้อย
-📅 Timestamp: 20/05/2025 20:02:00
+📅 Timestamp: 20/05/2025 23:51:36
 🔄 เริ่มทดสอบการเพิ่มงาน
 ✅ พบปุ่ม Add Task
 ✅ Dialog สำหรับเพิ่มงานแสดงขึ้นเรียบร้อย
-✅ กรอกชื่องาน: Test Task 1747746120801
+✅ กรอกชื่องาน: Test Task 1747759896997
 ✅ กรอกรายละเอียดงาน
 ✅ กรอกงบประมาณ: 10,000
 🕒 dropdown เปิดแล้ว
 ✅ เลือกสถานะเป็น In Progress
 🕒 ยืนยันว่าปิด dropdown แล้ว
 ✅ พบปุ่ม Save
-✅ งานถูกบันทึกเรียบร้อยใน 196.74 ms
+✅ งานถูกบันทึกเรียบร้อยใน 194.58 ms
 ✅ งานที่เพิ่มแสดงอยู่ในรายการเรียบร้อย
-⏱️ Total Test Time: 9592.65 ms
+⏱️ Total Test Time: 8798.07 ms
 🌐 Final URL: http://localhost:5173/ManagerTask?project_id=cfd4a399-a0e6-41ba-b94f-5ebe376a1bbc&project_name=%E0%B9%82%E0%B8%84%E0%B8%A3%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A3%201
