@@ -13,12 +13,16 @@
     "member-edit": "node Member/edit.js",
     "member-delete": "node Member/delete.js",
     "member-Suspend": "node Member/suspend.js",
+
     "project-buttonProject": "node Project/buttonProject.js",
     "project-create": "node Project/create.js",
     "project-details": "node Project/detail.js",
     "project-edit": "node Project/edit.js",
     "project-delete": "node Project/delete.js",
     "project-workflow": "node Project/projectWorkflow.js",
+
+    "project-list": "node Manager/projectList.js",
+    "project-tasklist": "node Manager/tasklist.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

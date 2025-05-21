@@ -215,6 +215,7 @@ const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData, projectId })
                         <TextField.Root
                             value={startDate}
                             type="date"
+                            id="start-date-input"
                             onChange={(e) => setStartDate(e.target.value)}
                         />
                     </label>
@@ -224,6 +225,7 @@ const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData, projectId })
                         <TextField.Root
                             value={endDate}
                             type="date"
+                            id="end-date-input"
                             onChange={(e) => setEndDate(e.target.value)}
                         />
                     </label>
