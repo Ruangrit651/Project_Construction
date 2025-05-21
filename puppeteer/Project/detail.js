@@ -297,6 +297,7 @@ const logFilename = 'Project_Detail_log.txt';
     log.push(errorLog);
     fs.writeFileSync(logFilename, log.join('\n'), 'utf8');
   } finally {
+    
     // ปิดเบราว์เซอร์
     await browser?.close();
   }

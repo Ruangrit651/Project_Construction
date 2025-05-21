@@ -3,8 +3,16 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const { performance } = require('perf_hooks');
 
+// ฟังก์ชันช่วยแปลงเวลาปัจจุบันให้อยู่ในรูปแบบวัน/เดือน/ปี ชั่วโมง:นาที:วินาที
 function now() {
-  return new Date().toISOString();
+  const date = new Date();
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 }
 
 (async () => {
