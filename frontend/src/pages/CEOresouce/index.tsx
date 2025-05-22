@@ -108,15 +108,36 @@ export default function CEOResourcePage() {
                     const filteredResources = resourceList.filter(resource =>
                         resource.subtask_id && resource.subtask_id === subtask.subtask_id
                     );
-                    acc[subtask.subtask_id] = filteredResources;
+
+                    // เรียงลำดับตาม created_at หรือ resource_id
+                    const sortedResources = [...filteredResources].sort((a, b) => {
+                        if (a.created_at && b.created_at) {
+                            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                        }
+                        return a.resource_id.localeCompare(b.resource_id);
+                    });
+
+                    acc[subtask.subtask_id] = sortedResources;
                     return acc;
                 }, {});
 
                 // Group subtasks by task
                 const subTasksByTask = filteredTasks.reduce<{ [task_id: string]: TypeSubTask[] }>((acc, task) => {
-                    acc[task.task_id] = filteredSubTasks.filter(subtask =>
+                    // ดึง subtasks ที่อยู่ภายใต้ task นี้
+                    const taskSubtasks = filteredSubTasks.filter(subtask =>
                         subtask.task_id === task.task_id
                     );
+
+                    // เรียงลำดับตาม created_at เพื่อป้องกันการสลับตำแหน่ง
+                    const sortedSubtasks = [...taskSubtasks].sort((a, b) => {
+                        if (a.created_at && b.created_at) {
+                            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                        }
+                        return a.subtask_id.localeCompare(b.subtask_id);
+                    });
+
+                    // เก็บข้อมูลที่เรียงลำดับแล้ว
+                    acc[task.task_id] = sortedSubtasks;
                     return acc;
                 }, {});
 

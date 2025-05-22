@@ -181,7 +181,15 @@ export default function EmployeeTimelinePage() {
               created_at: subtask.created_at
             }));
 
-          task.subtasks = filteredSubtasks;
+          // เรียงลำดับตาม created_at เพื่อป้องกันการสลับตำแหน่ง
+          const sortedSubtasks = [...filteredSubtasks].sort((a, b) => {
+            if (a.created_at && b.created_at) {
+              return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+            }
+            return a.subtaskId.localeCompare(b.subtaskId);
+          });
+
+          task.subtasks = sortedSubtasks;
         }
       }
 
@@ -491,7 +499,7 @@ export default function EmployeeTimelinePage() {
                           style={{ height: "40px" }}
                         >
                           <div className="flex items-center">
-                            <span className="text-sm text-gray-700">• {subtask.subtaskName}</span>
+                            <span className="text-sm text-gray-700">{subtask.subtaskName}</span>
                             {subtask.status && (
                               <span className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getStatusTextColor(subtask.status)} bg-opacity-20 ${getStatusColor(subtask.status)}`}>
                                 {subtask.status}
@@ -536,7 +544,7 @@ export default function EmployeeTimelinePage() {
                   <div className="flex flex-col h-full">
                     <div className="flex h-[20px]">
                       {Array.from({ length: 12 }, (_, monthIndex) => {
-                        const month = new Date(year, monthIndex).toLocaleString("default", { month: "short" });
+                        const month = new Date(year, monthIndex).toLocaleString("en-US", { month: "short" });
                         const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
                         return (
                           <MonthHeader

@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Dialog, Button, Flex, TextField, Text, Select } from "@radix-ui/themes";
 import { postResource } from "@/services/resource.service";
+import { TypeResourceAll } from "@/types/response/response.resource";
 
 interface DialogAddResourceProps {
     getResourceData: () => void;
+    addResourceToState: (newResource: TypeResourceAll) => void; // เพิ่ม prop ใหม่
     task_id: string;
-    subtask_id?: string; // เพิ่ม subtask_id เป็น optional parameter
+    subtask_id?: string;
 }
 
-const DialogAddResource: React.FC<DialogAddResourceProps> = ({ getResourceData, task_id, subtask_id }) => {
+const DialogAddResource: React.FC<DialogAddResourceProps> = ({ getResourceData, addResourceToState, task_id, subtask_id }) => {
     const [resourceName, setResourceName] = useState("");
     const [resourceType, setResourceType] = useState("material");
     const [cost, setCost] = useState(0);
@@ -33,37 +35,45 @@ const DialogAddResource: React.FC<DialogAddResourceProps> = ({ getResourceData, 
 
     const handleAddResource = async () => {
         if (!resourceName || resourceType === '' || cost <= 0 || quantity <= 0) {
-            // Add validation to prevent submitting invalid data
-            alert("Please fill in all required fields with valid values");
+            alert("กรุณากรอกข้อมูลให้ครบทุกช่องและถูกต้อง");
             return;
         }
-    
+
         try {
-            const response = await postResource({ 
-                task_id, 
+            const response = await postResource({
+                task_id,
                 subtask_id,
-                resource_name: resourceName, 
-                resource_type: resourceType, 
-                cost, 
-                quantity, 
-                total: cost * quantity 
+                resource_name: resourceName,
+                resource_type: resourceType,
+                cost,
+                quantity,
+                total: cost * quantity
             });
-    
+
             if (response.success) {
-                // Reset form fields after successful submission
+                // เพิ่มข้อมูลลงใน state โดยตรง ไม่ต้องโหลดข้อมูลใหม่
+                addResourceToState({
+                    resource_id: response.responseObject.resource_id,
+                    task_id,
+                    subtask_id,
+                    resource_name: resourceName,
+                    resource_type: resourceType,
+                    cost,
+                    quantity,
+                    total: cost * quantity
+                });
+
+                // รีเซ็ตฟอร์ม
                 setResourceName("");
                 setResourceType("material");
                 setCost(0);
                 setQuantity(0);
-                
-                // Refresh the resource data
-                getResourceData();
             } else {
-                alert(`Error: ${response.message}`);
+                alert(`เกิดข้อผิดพลาด: ${response.message}`);
             }
         } catch (error) {
-            console.error("Failed to add resource:", error);
-            alert("An error occurred while adding the resource.");
+            console.error("เพิ่มข้อมูลไม่สำเร็จ:", error);
+            alert("เกิดข้อผิดพลาดในการเพิ่มข้อมูล");
         }
     };
 
@@ -79,10 +89,10 @@ const DialogAddResource: React.FC<DialogAddResourceProps> = ({ getResourceData, 
                         <Text as="div" size="2" mb="3" weight="bold">
                             Resource Name
                         </Text>
-                        <TextField.Root 
-                        value={resourceName} 
-                        type="text"
-                        onChange={(e) => setResourceName(e.target.value)} placeholder="Enter Resource Name" />
+                        <TextField.Root
+                            value={resourceName}
+                            type="text"
+                            onChange={(e) => setResourceName(e.target.value)} placeholder="Enter Resource Name" />
                     </label>
                     <label>
                         <Text as="div" size="2" mb="3" mt="3" weight="bold">
@@ -105,18 +115,18 @@ const DialogAddResource: React.FC<DialogAddResourceProps> = ({ getResourceData, 
                             Cost
                         </Text>
                         <TextField.Root
-                        value={formatNumber(cost)}
-                        type="text"
-                        onChange={handleCostChange} placeholder="Enter Cost" />
+                            value={formatNumber(cost)}
+                            type="text"
+                            onChange={handleCostChange} placeholder="Enter Cost" />
                     </label>
                     <label>
                         <Text as="div" size="2" mb="3" mt="3" weight="bold">
                             Quantity
                         </Text>
                         <TextField.Root
-                        value={formatNumber(quantity)}
-                        type="text"
-                        onChange={handleQuantityChange} placeholder="Enter Quantity" />
+                            value={formatNumber(quantity)}
+                            type="text"
+                            onChange={handleQuantityChange} placeholder="Enter Quantity" />
                     </label>
                 </Flex>
                 <Flex gap="3" mt="4" justify="end">

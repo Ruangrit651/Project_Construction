@@ -110,15 +110,34 @@ export default function ResourcePage() {
                     const filteredResources = resourceList.filter(resource =>
                         resource.subtask_id && resource.subtask_id === subtask.subtask_id
                     );
-                    acc[subtask.subtask_id] = filteredResources;
+
+                    // เรียงลำดับตาม created_at หรือ resource_id
+                    const sortedResources = [...filteredResources].sort((a, b) => {
+                        if (a.created_at && b.created_at) {
+                            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                        }
+                        return a.resource_id.localeCompare(b.resource_id);
+                    });
+
+                    acc[subtask.subtask_id] = sortedResources;
                     return acc;
                 }, {});
 
                 // Group subtasks by task
                 const subTasksByTask = filteredTasks.reduce<{ [task_id: string]: TypeSubTask[] }>((acc, task) => {
-                    acc[task.task_id] = filteredSubTasks.filter(subtask =>
+                    const taskSubtasks = filteredSubTasks.filter(subtask =>
                         subtask.task_id === task.task_id
                     );
+
+                    // เรียงลำดับตาม created_at เพื่อป้องกันการสลับตำแหน่ง
+                    const sortedSubtasks = [...taskSubtasks].sort((a, b) => {
+                        if (a.created_at && b.created_at) {
+                            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                        }
+                        return a.subtask_id.localeCompare(b.subtask_id);
+                    });
+
+                    acc[task.task_id] = sortedSubtasks;
                     return acc;
                 }, {});
 
@@ -351,8 +370,8 @@ export default function ResourcePage() {
                                                                                 variant="surface"
                                                                                 color={
                                                                                     resource.resource_type === 'equipment' ? 'amber' :
-                                                                                    resource.resource_type === 'material' ? 'green' :
-                                                                                    resource.resource_type === 'worker' ? 'blue' : 'gray'
+                                                                                        resource.resource_type === 'material' ? 'green' :
+                                                                                            resource.resource_type === 'worker' ? 'blue' : 'gray'
                                                                                 }
                                                                             >
                                                                                 {resource.resource_type}
@@ -365,8 +384,8 @@ export default function ResourcePage() {
                                                                             {formatCurrency(resource.quantity)} {resource.unit}
                                                                         </Table.Cell>
                                                                         <Table.Cell style={{ textAlign: 'right' }}>
-                                                                            {formatCurrency(typeof resource.total === 'number' ? 
-                                                                                resource.total : 
+                                                                            {formatCurrency(typeof resource.total === 'number' ?
+                                                                                resource.total :
                                                                                 Number(resource.total))} THB
                                                                         </Table.Cell>
                                                                     </Table.Row>

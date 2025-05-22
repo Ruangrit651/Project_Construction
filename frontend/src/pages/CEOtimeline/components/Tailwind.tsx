@@ -17,7 +17,7 @@ export const TimelineHeader = ({ children }: { children: React.ReactNode }) => (
 
 // Timeline Grid
 export const TimelineGrid = ({ children }: { children: React.ReactNode }) => (
-    <div className="grid grid-cols-[300px_1fr] min-h-[600px]">
+    <div className="grid grid-cols-[400px_1fr] min-h-[600px]">
         {children}
     </div>
 );

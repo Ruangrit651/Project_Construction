@@ -166,18 +166,30 @@ const ManagerTaskPage: React.FC = () => {
         setTasks(prevTasks =>
             prevTasks.map(task => {
                 if (task.taskId === taskId) {
+                    // สร้าง subtask ใหม่พร้อมข้อมูล created_at
+                    const newSubtaskObject = {
+                        subtaskId: newSubtask.subtask_id,
+                        subtaskName: newSubtask.subtask_name,
+                        description: newSubtask.description,
+                        budget: newSubtask.budget,
+                        startDate: newSubtask.start_date,
+                        endDate: newSubtask.end_date,
+                        status: newSubtask.status,
+                        progress: newSubtask.progress || 0,
+                        created_at: newSubtask.created_at || new Date().toISOString() // ใส่ created_at ถ้าไม่มี
+                    };
+
+                    // เพิ่ม subtask แล้วเรียงลำดับตาม created_at
+                    const updatedSubtasks = [...(task.subtasks || []), newSubtaskObject].sort((a, b) => {
+                        if (a.created_at && b.created_at) {
+                            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                        }
+                        return a.subtaskId.localeCompare(b.subtaskId);
+                    });
+
                     return {
                         ...task,
-                        subtasks: [...(task.subtasks || []), {
-                            subtaskId: newSubtask.subtask_id,
-                            subtaskName: newSubtask.subtask_name,
-                            description: newSubtask.description,
-                            budget: newSubtask.budget,
-                            startDate: newSubtask.start_date,
-                            endDate: newSubtask.end_date,
-                            status: newSubtask.status,
-                            progress: newSubtask.progress || 0
-                        }]
+                        subtasks: updatedSubtasks
                     };
                 }
                 return task;

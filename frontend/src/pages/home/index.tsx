@@ -2,7 +2,7 @@ export default function HomePage() {
 
   return (
     <div>
-      CK
+      Hello
     </div>
   );
 }

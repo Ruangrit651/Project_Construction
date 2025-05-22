@@ -90,7 +90,7 @@ const CEOTaskPage: React.FC = () => {
                 const response = await getSubtask(task.taskId);
 
                 if (response.success) {
-                    // กรองแต่ไม่เรียงลำดับใหม่ คงลำดับตามที่ API ส่งมา
+                    // กรองเฉพาะ subtask ที่เป็นของ task นี้
                     const filteredSubtasks = response.responseObject
                         .filter(subtask => subtask.task_id === task.taskId)
                         .map((subtask: any) => ({
@@ -102,14 +102,21 @@ const CEOTaskPage: React.FC = () => {
                             endDate: subtask.end_date,
                             status: subtask.status,
                             progress: subtask.progress || 0,
-                            // เก็บวันที่สร้างเพื่อใช้อ้างอิงถ้าจำเป็น
                             created_at: subtask.created_at
                         }));
 
-                    // กำหนด subtasks โดยไม่มีการเรียงลำดับใหม่
-                    task.subtasks = filteredSubtasks;
+                    // เรียงลำดับตาม created_at เพื่อรักษาลำดับการแสดงผล
+                    const sortedSubtasks = [...filteredSubtasks].sort((a, b) => {
+                        if (a.created_at && b.created_at) {
+                            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                        }
+                        return a.subtaskId.localeCompare(b.subtaskId);
+                    });
 
-                    console.log(`Fetched ${filteredSubtasks.length} subtasks for task: ${task.taskName}`);
+                    // กำหนด subtasks ที่เรียงลำดับแล้ว
+                    task.subtasks = sortedSubtasks;
+
+                    console.log(`Fetched ${sortedSubtasks.length} subtasks for task: ${task.taskName}`);
                 }
             }
 

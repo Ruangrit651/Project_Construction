@@ -54,6 +54,58 @@ export default function ResourcePage() {
         }).format(amount);
     };
 
+    // เพิ่มฟังก์ชันใหม่สำหรับอัพเดทข้อมูลโดยตรงที่ state แทนการโหลดข้อมูลใหม่ทั้งหมด
+    const addResourceToState = (newResource: TypeResourceAll) => {
+        setResourcesBySubTask(prevState => {
+            const subtaskId = newResource.subtask_id || '';
+            const currentResources = [...(prevState[subtaskId] || [])];
+            return {
+                ...prevState,
+                [subtaskId]: [...currentResources, newResource]
+            };
+        });
+    };
+
+    const updateResourceInState = (updatedResource: TypeResourceAll) => {
+        setResourcesBySubTask(prevState => {
+            const subtaskId = updatedResource.subtask_id || '';
+            const currentResources = [...(prevState[subtaskId] || [])];
+
+            // อัพเดทเฉพาะรายการที่ต้องการ โดยรักษาลำดับเดิมไว้
+            const updatedResources = currentResources.map(resource =>
+                resource.resource_id === updatedResource.resource_id ? updatedResource : resource
+            );
+
+            return {
+                ...prevState,
+                [subtaskId]: updatedResources
+            };
+        });
+    };
+
+    const removeResourceFromState = (resourceId: string) => {
+        setResourcesBySubTask(prevState => {
+            const newState = { ...prevState };
+
+            // ค้นหาว่า resource นี้อยู่ใน subtask ไหน
+            for (const subtaskId in newState) {
+                const resources = newState[subtaskId];
+                const resourceIndex = resources.findIndex(r => r.resource_id === resourceId);
+
+                if (resourceIndex !== -1) {
+                    // ลบ resource โดยยังคงรักษาลำดับของ resources อื่นๆ
+                    newState[subtaskId] = [
+                        ...resources.slice(0, resourceIndex),
+                        ...resources.slice(resourceIndex + 1)
+                    ];
+                    break;
+                }
+            }
+
+            return newState;
+        });
+    };
+
     const getResourceData = async () => {
         setIsLoading(true);
         try {
@@ -105,15 +157,36 @@ export default function ResourcePage() {
                     const filteredResources = resourceList.filter(resource =>
                         resource.subtask_id && resource.subtask_id === subtask.subtask_id
                     );
-                    acc[subtask.subtask_id] = filteredResources;
+
+                    // เรียงลำดับตาม created_at หรือ resource_id
+                    const sortedResources = [...filteredResources].sort((a, b) => {
+                        if (a.created_at && b.created_at) {
+                            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                        }
+                        return a.resource_id.localeCompare(b.resource_id);
+                    });
+
+                    acc[subtask.subtask_id] = sortedResources;
                     return acc;
                 }, {});
 
                 // Group subtasks by task
                 const subTasksByTask = filteredTasks.reduce<{ [task_id: string]: TypeSubTask[] }>((acc, task) => {
-                    acc[task.task_id] = filteredSubTasks.filter(subtask =>
+                    // ดึง subtasks ที่อยู่ภายใต้ task นี้
+                    const taskSubtasks = filteredSubTasks.filter(subtask =>
                         subtask.task_id === task.task_id
                     );
+
+                    // เรียงลำดับตาม created_at เพื่อป้องกันการสลับตำแหน่ง
+                    const sortedSubtasks = [...taskSubtasks].sort((a, b) => {
+                        if (a.created_at && b.created_at) {
+                            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                        }
+                        return a.subtask_id.localeCompare(b.subtask_id);
+                    });
+
+                    // เก็บข้อมูลที่เรียงลำดับแล้ว
+                    acc[task.task_id] = sortedSubtasks;
                     return acc;
                 }, {});
 
@@ -281,17 +354,16 @@ export default function ResourcePage() {
                                                         <Table.Row
                                                             style={{
                                                                 backgroundColor: '#ffffff',
-                                                                cursor: 'pointer',
                                                                 borderBottom: '1px solid #eee'
                                                             }}
-                                                            onClick={() => toggleSubTaskExpansion(subTask.subtask_id)}
                                                         >
                                                             <Table.Cell></Table.Cell>
                                                             <Table.Cell>
                                                                 <Flex direction="row" align="center" gap="2">
                                                                     <Button
                                                                         variant="ghost"
-                                                                        style={{ padding: '2px' }}
+                                                                        style={{ padding: '2px', cursor: 'pointer' }}
+                                                                        onClick={() => toggleSubTaskExpansion(subTask.subtask_id)}
                                                                     >
                                                                         {isExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
                                                                     </Button>
@@ -311,6 +383,7 @@ export default function ResourcePage() {
                                                                 <Tooltip content="Add Resource">
                                                                     <DialogAddResource
                                                                         getResourceData={getResourceData}
+                                                                        addResourceToState={addResourceToState}
                                                                         task_id={task.task_id}
                                                                         subtask_id={subTask.subtask_id}
                                                                     />
@@ -364,12 +437,14 @@ export default function ResourcePage() {
                                                                                 <Tooltip content="Edit Resource">
                                                                                     <DialogEditResource
                                                                                         getResourceData={getResourceData}
+                                                                                        updateResourceInState={updateResourceInState}
                                                                                         resource={resource}
                                                                                     />
                                                                                 </Tooltip>
                                                                                 <Tooltip content="Delete Resource">
                                                                                     <AlertDialogDeleteResource
                                                                                         getResourceData={getResourceData}
+                                                                                        removeResourceFromState={removeResourceFromState}
                                                                                         resource_id={resource.resource_id}
                                                                                         task_name={task.task_name}
                                                                                         resource_name={resource.resource_name}

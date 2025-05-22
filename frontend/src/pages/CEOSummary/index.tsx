@@ -132,18 +132,18 @@ const Summary = () => {
   const [calculatedActuals, setCalculatedActuals] = useState<Record<string, number>>({});
   const [projectProgressMap, setProjectProgressMap] = useState<Record<string, number>>({}); // เพิ่ม state เก็บข้อมูล progress
   const [progressLoading, setProgressLoading] = useState(false); // เพิ่ม state แสดงสถานะการโหลด progress
-  
+
   // คำนวณค่าต่างๆ โดยใช้ข้อมูลโปรเจกต์
   const aggregatedValues = filteredProjects ? calculateAggregatedValues(filteredProjects) : null;
-  
+
   // ปรับการคำนวณ completionRate ให้ใช้ข้อมูลจาก API (เหมือนหน้า Dashboard)
-  const completionRate = filteredProjects ? 
+  const completionRate = filteredProjects ?
     filteredProjects.reduce((sum, project) => {
       // ใช้ progress จาก API ถ้ามี หรือใช้ค่าจาก project.completionRate
       const projectProgress = projectProgressMap[project.project_id] || project.completionRate || 0;
       return sum + projectProgress;
     }, 0) / (filteredProjects.length || 1) : 0;
-  
+
   const totalAmountSpent = filteredProjects ? calculateTotalAmountSpent(filteredProjects) : 0;
   const utilizedDays = filteredProjects ? calculateUtilizedDuration(filteredProjects) : 0;
   const actualBudget = filteredProjects
@@ -158,7 +158,7 @@ const Summary = () => {
   useEffect(() => {
     const fetchAllProjectsProgress = async () => {
       if (!filteredProjects || filteredProjects.length === 0) return;
-      
+
       setProgressLoading(true);
       const progressMap: Record<string, number> = {};
       const progressPromises = filteredProjects.map(async (project) => {
@@ -496,7 +496,7 @@ const Summary = () => {
                         <div className="mt-1 text-xs text-gray-600 italic">
                           *Actual cost calculated from resources
                         </div>
-                        
+
                         {/* Budget Usage Progress Bar */}
                         <div className="mt-3">
                           <div className="flex justify-between text-xs text-gray-600 mb-1">
@@ -510,7 +510,7 @@ const Summary = () => {
                             ></div>
                           </div>
                         </div>
-                        
+
                         {/* Completion Progress Bar - เพิ่มส่วนนี้ */}
                         <div className="mt-3">
                           <div className="flex justify-between text-xs text-gray-600 mb-1">
@@ -573,26 +573,22 @@ const Summary = () => {
           <div className="bg-white shadow-lg rounded-lg p-2 border border-gray-200">
             <h2 className="text-lg md:text-xl font-semibold mb-8 md:mb-12 mt-4 md:mt-6 ml-4 md:ml-6">Cost Breakdown</h2>
             <CostBreakdown filteredProjects={filteredProjects} />
-            <div className="bg-white mt-8 md:mt-12 shadow-lg rounded-lg p-1 border border-gray-200">
-              <h2 className="text-base md:text-lg font-bold mb-4 md:mb-5 mt-4  text-indigo-700 px-3">💰 Resource Cost Breakdown</h2>
+            <div className="bg-white mt-6 md:mt-8 shadow-lg rounded-lg p-4 border border-gray-200">
+              <h2 className="text-base md:text-lg font-bold mb-4 text-blue-700">💰 Resource Cost Breakdown</h2>
 
-              <div className="overflow-x-auto rounded-lg ">
+              <div className="overflow-x-auto rounded-lg">
                 <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
-                  <thead className="bg-indigo-100">
+                  <thead className="bg-blue-100">
                     <tr>
-                      <th className="text-left px-2 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Resource Type</th>
-                      <th className="text-center px-2 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Quantity</th>
-                      <th className="text-right pr-2 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Total Cost</th>
+                      <th className="text-left px-3 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Resource Type</th>
+                      <th className="text-right pr-3 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Total Cost</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredProjects && filteredProjects.length > 0 && resourceSummary.length > 0 ? (
                       resourceSummary.map((item) => (
-                        <tr key={item.type}>
+                        <tr key={item.type} className="hover:bg-blue-50">
                           <td className="px-3 md:px-4 py-2 md:py-3 text-sm">{item.type}</td>
-                          <td className="text-center px-3 md:px-4 py-2 md:py-3 text-sm">
-                            {Number(item.quantity).toLocaleString()}
-                          </td>
                           <td className="text-right px-3 md:px-4 py-2 md:py-3 text-red-700 font-semibold text-sm">
                             {Number(item.totalCost).toLocaleString()}
                           </td>
@@ -600,17 +596,14 @@ const Summary = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="text-center text-gray-400 py-4">No data</td>
+                        <td colSpan={2} className="text-center text-gray-400 py-4">No resource data available</td>
                       </tr>
                     )}
                   </tbody>
-                  <tfoot className="bg-indigo-50 font-bold">
+                  <tfoot className="bg-blue-50 font-bold">
                     <tr>
-                      <td className="px-3 md:px-4 py-2 md:py-3 text-indigo-900 text-sm">Total</td>
-                      <td className="text-center px-3 md:px-4 py-2 md:py-3 text-indigo-900 text-sm">
-                        {resourceSummary.reduce((sum, i) => sum + Number(i.quantity), 0).toLocaleString()}
-                      </td>
-                      <td className="text-right px-3 md:px-4 py-2 md:py-3 text-indigo-900 text-sm">
+                      <td className="px-3 md:px-4 py-2 md:py-3 text-blue-900 text-sm">Total</td>
+                      <td className="text-right px-3 md:px-4 py-2 md:py-3 text-blue-900 text-sm">
                         {resourceSummary.reduce((sum, i) => sum + Number(i.totalCost), 0).toLocaleString()}
                       </td>
                     </tr>

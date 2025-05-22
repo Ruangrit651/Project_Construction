@@ -175,8 +175,16 @@ export default function TasklistPage() {
                             subtask.task_id === task.task_id
                         );
 
-                        // เก็บข้อมูล subtasks ตามลำดับที่ได้รับจาก API โดยไม่เรียงใหม่
-                        subtasksData[task.task_id] = filteredSubtasks;
+                        // เรียงลำดับตาม created_at
+                        const sortedSubtasks = [...filteredSubtasks].sort((a, b) => {
+                            if (a.created_at && b.created_at) {
+                                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                            }
+                            return a.subtask_id.localeCompare(b.subtask_id);
+                        });
+
+                        // เก็บข้อมูล subtasks ที่เรียงลำดับแล้ว
+                        subtasksData[task.task_id] = sortedSubtasks;
                     } else {
                         subtasksData[task.task_id] = [];
                     }
@@ -316,10 +324,18 @@ export default function TasklistPage() {
                         subtask.task_id === taskId
                     );
 
-                    // ไม่ต้องเรียงลำดับใหม่ ใช้ลำดับจาก backend ตามที่ได้รับมา
+                    // เรียงลำดับตาม created_at ก่อนเก็บข้อมูล
+                    const sortedSubtasks = [...filteredSubtasks].sort((a, b) => {
+                        if (a.created_at && b.created_at) {
+                            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                        }
+                        return a.subtask_id.localeCompare(b.subtask_id);
+                    });
+
+                    // เก็บข้อมูลที่เรียงแล้ว
                     setSubtasks(prev => ({
                         ...prev,
-                        [taskId]: filteredSubtasks
+                        [taskId]: sortedSubtasks
                     }));
 
                     // ดึงข้อมูล progress ใหม่จาก backend หลังจากโหลด subtasks
@@ -453,24 +469,26 @@ export default function TasklistPage() {
             // ตรวจสอบว่า subtask มีอยู่แล้วหรือไม่
             const subtaskIndex = prev[taskId].findIndex(s => s.subtask_id === updatedSubtask.subtask_id);
 
-            if (subtaskIndex === -1) {
-                // ถ้ายังไม่มี subtask นี้ ให้เพิ่มใหม่โดยเพิ่มต่อท้าย (ไม่ต้องเรียงลำดับใหม่)
-                const newSubtasks = [...prev[taskId], updatedSubtask];
+            // สร้าง array ใหม่
+            const newSubtasks = [...prev[taskId]];
 
-                return {
-                    ...prev,
-                    [taskId]: newSubtasks
-                };
+            if (subtaskIndex === -1) {
+                // ถ้ายังไม่มี subtask นี้ ให้เพิ่มต่อท้าย
+                newSubtasks.push(updatedSubtask);
             } else {
                 // ถ้ามี subtask นี้แล้ว ให้อัพเดทในตำแหน่งเดิม
-                const newSubtasks = [...prev[taskId]];
-                newSubtasks[subtaskIndex] = updatedSubtask;
-
-                return {
-                    ...prev,
-                    [taskId]: newSubtasks
+                newSubtasks[subtaskIndex] = {
+                    ...updatedSubtask,
+                    // เก็บ created_at เดิมไว้ (ถ้ามี) เพื่อไม่ให้มีผลต่อการเรียงลำดับในอนาคต
+                    created_at: prev[taskId][subtaskIndex].created_at
                 };
             }
+
+            // ไม่ต้องเรียงลำดับใหม่ เพื่อรักษาตำแหน่งเดิม
+            return {
+                ...prev,
+                [taskId]: newSubtasks
+            };
         });
     };
 
@@ -484,10 +502,23 @@ export default function TasklistPage() {
                 };
             }
 
-            // ถ้ามีอยู่แล้ว ให้เพิ่มต่อท้าย
+            // เพิ่ม created_at property ให้กับ newSubtask (ใช้เวลาปัจจุบัน)
+            const subtaskWithCreatedAt = {
+                ...newSubtask,
+                created_at: new Date().toISOString() // เพิ่มเวลาปัจจุบันให้กับ subtask ใหม่
+            };
+
+            // เพิ่ม subtask แล้วเรียงลำดับตาม created_at
+            const updatedSubtasks = [...prev[taskId], subtaskWithCreatedAt].sort((a, b) => {
+                if (a.created_at && b.created_at) {
+                    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                }
+                return a.subtask_id.localeCompare(b.subtask_id);
+            });
+
             return {
                 ...prev,
-                [taskId]: [...prev[taskId], newSubtask]
+                [taskId]: updatedSubtasks
             };
         });
 

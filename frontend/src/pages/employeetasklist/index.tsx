@@ -161,7 +161,16 @@ export default function TasklistPage() {
                         const filteredSubtasks = res.responseObject.filter(subtask =>
                             subtask.task_id === task.task_id
                         );
-                        subtasksData[task.task_id] = filteredSubtasks;
+                        
+                        // เรียงลำดับตาม created_at
+                        const sortedSubtasks = [...filteredSubtasks].sort((a, b) => {
+                            if (a.created_at && b.created_at) {
+                                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                            }
+                            return a.subtask_id.localeCompare(b.subtask_id);
+                        });
+                        
+                        subtasksData[task.task_id] = sortedSubtasks;
                     } else {
                         subtasksData[task.task_id] = [];
                     }
@@ -303,12 +312,20 @@ export default function TasklistPage() {
                     subtask.task_id === taskId
                 );
 
-                console.log(`Filtered subtasks for task ${taskId}:`, filteredSubtasks);
+                // เรียงลำดับตาม created_at
+                const sortedSubtasks = [...filteredSubtasks].sort((a, b) => {
+                    if (a.created_at && b.created_at) {
+                        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                    }
+                    return a.subtask_id.localeCompare(b.subtask_id);
+                });
+
+                console.log(`Filtered subtasks for task ${taskId}:`, sortedSubtasks);
 
                 // อัปเดต state โดยใช้ taskId เป็น key
                 setSubtasks(prev => ({
                     ...prev,
-                    [taskId]: filteredSubtasks
+                    [taskId]: sortedSubtasks
                 }));
 
                 // ดึงข้อมูล progress ใหม่จาก backend หลังจากโหลด subtasks

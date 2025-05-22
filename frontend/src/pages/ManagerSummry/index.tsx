@@ -9,10 +9,10 @@ import CostBreakdown from "../CEOSummary/CostBreakdown";
 import BudgetSummaryEAC from "../CEOSummary/BudgetSummaryEAC";
 import { getResourceSummary } from "@/services/resource.service";
 import { useLocation } from "react-router-dom";
-import { getProjectActualCost } from "@/services/project.service";
 import { formatDate } from '../Function/FormatDate';
 import { calculateTotalDuration } from '../Function/TotalDuration';
 import { getDetailedProjectProgress } from "@/services/progress.service"; // Added import for progress service
+import { getProjectAvailable, getProjectActualCost } from "@/services/project.service";
 
 // EAC calculation function
 const calculateLocalEAC = (projects: TypeDashboard[] | null, completionRate: number) => {
@@ -135,15 +135,15 @@ export default function ManagerSummary() {
 
   // Calculate metrics based on filtered projects
   const aggregatedValues = filteredProjects ? calculateAggregatedValues(filteredProjects) : null;
-  
+
   // Update completionRate calculation to use API progress data
-  const completionRate = filteredProjects ? 
+  const completionRate = filteredProjects ?
     filteredProjects.reduce((sum, project) => {
       // Use progress from API if available, or fall back to project.completionRate
       const projectProgress = projectProgressMap[project.project_id] || project.completionRate || 0;
       return sum + projectProgress;
     }, 0) / (filteredProjects.length || 1) : 0;
-    
+
   const totalAmountSpent = filteredProjects ? calculateTotalAmountSpent(filteredProjects) : 0;
   const utilizedDays = filteredProjects ? calculateUtilizedDuration(filteredProjects) : 0;
   const actualBudget = filteredProjects
@@ -157,7 +157,7 @@ export default function ManagerSummary() {
   useEffect(() => {
     const fetchAllProjectsProgress = async () => {
       if (!filteredProjects || filteredProjects.length === 0) return;
-      
+
       setProgressLoading(true);
       const progressMap: Record<string, number> = {};
       const progressPromises = filteredProjects.map(async (project) => {
@@ -179,11 +179,30 @@ export default function ManagerSummary() {
   useEffect(() => {
     const fetchProjectDetails = async () => {
       try {
-        const data = await getDashboard();
-        if (Array.isArray(data.responseObject) && data.responseObject.length > 0) {
+        setLoading(true);
+
+        // Use getProjectAvailable instead of getDashboard to get only user's projects
+        const response = await getProjectAvailable();
+
+        if (response.success && Array.isArray(response.responseObject) && response.responseObject.length > 0) {
+          // Transform the project data to match TypeDashboard format
+          const userProjects = response.responseObject.map(item => ({
+            project_id: item.project?.project_id || item.project_id,
+            project_name: item.project?.project_name || item.project_name || "No Name",
+            status: item.project?.status || item.status || "Unknown",
+            budget: item.project?.budget || item.budget || 0,
+            totalBudget: item.project?.budget || item.budget || 0,
+            actual: item.project?.actual || item.actual || 0,
+            amountSpent: item.project?.actual || item.actual || 0,
+            start_date: item.project?.start_date || item.start_date || new Date().toISOString(),
+            end_date: item.project?.end_date || item.end_date || new Date().toISOString(),
+            completionRate: item.project?.completionRate || item.completionRate || 0,
+            // Add any other required properties with appropriate defaults
+          }));
+
           // ดึงค่า Actual Cost ที่คำนวณจากทรัพยากร
           const actualCostsMap: Record<string, number> = {};
-          const actualCostPromises = data.responseObject.map(async (project) => {
+          const actualCostPromises = userProjects.map(async (project) => {
             try {
               const actualCostData = await getProjectActualCost(project.project_id);
               if (actualCostData.success) {
@@ -198,10 +217,9 @@ export default function ManagerSummary() {
           setCalculatedActuals(actualCostsMap);
 
           // อัปเดตข้อมูลโครงการด้วยค่า Actual ที่คำนวณจากทรัพยากร
-          const updatedProjects = data.responseObject.map(project => ({
+          const updatedProjects = userProjects.map(project => ({
             ...project,
             actual: actualCostsMap[project.project_id] || project.actual,
-            // ปรับค่า amountSpent ให้ตรงกับ actual เพื่อใช้ในการคำนวณ
             amountSpent: actualCostsMap[project.project_id] || project.amountSpent
           }));
 
@@ -215,12 +233,12 @@ export default function ManagerSummary() {
             setFilteredProjects(updatedProjects);
           }
 
-          const options = ["All", ...data.responseObject.map((project) => project.project_name)];
+          const options = ["All", ...updatedProjects.map((project) => project.project_name)];
           setProjectOptions(options);
 
           // If project ID exists in URL, select only that project
           if (projectId) {
-            const projectName = data.responseObject.find(p => p.project_id === projectId)?.project_name;
+            const projectName = updatedProjects.find(p => p.project_id === projectId)?.project_name;
             if (projectName) {
               setSelectedProjects([projectName]);
             } else {
@@ -230,7 +248,7 @@ export default function ManagerSummary() {
             setSelectedProjects(["All"]);
           }
         } else {
-          console.error("responseObject is not an array or is empty");
+          console.error("No projects available for current user");
           setProjectDetails([]);
         }
       } catch (error) {
@@ -492,7 +510,7 @@ export default function ManagerSummary() {
                       "Suspend operations": "bg-yellow-100 text-yellow-800",
                       "Project Cancellation": "bg-red-100 text-red-800",
                     };
-                    
+
                     // Get completion progress from progress map or fallback to project.completionRate
                     const completionProgress = projectProgressMap[project.project_id] || project.completionRate || 0;
 
@@ -611,7 +629,6 @@ export default function ManagerSummary() {
                   <thead className="bg-blue-100">
                     <tr>
                       <th className="text-left px-3 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Resource Type</th>
-                      <th className="text-center px-3 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Quantity</th>
                       <th className="text-right pr-3 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Total Cost</th>
                     </tr>
                   </thead>
@@ -620,9 +637,6 @@ export default function ManagerSummary() {
                       resourceSummary.map((item) => (
                         <tr key={item.type} className="hover:bg-blue-50">
                           <td className="px-3 md:px-4 py-2 md:py-3 text-sm">{item.type}</td>
-                          <td className="text-center px-3 md:px-4 py-2 md:py-3 text-sm">
-                            {Number(item.quantity).toLocaleString()}
-                          </td>
                           <td className="text-right px-3 md:px-4 py-2 md:py-3 text-red-700 font-semibold text-sm">
                             {Number(item.totalCost).toLocaleString()}
                           </td>
@@ -630,16 +644,13 @@ export default function ManagerSummary() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="text-center text-gray-400 py-4">No resource data available</td>
+                        <td colSpan={2} className="text-center text-gray-400 py-4">No resource data available</td>
                       </tr>
                     )}
                   </tbody>
                   <tfoot className="bg-blue-50 font-bold">
                     <tr>
                       <td className="px-3 md:px-4 py-2 md:py-3 text-blue-900 text-sm">Total</td>
-                      <td className="text-center px-3 md:px-4 py-2 md:py-3 text-blue-900 text-sm">
-                        {resourceSummary.reduce((sum, i) => sum + Number(i.quantity), 0).toLocaleString()}
-                      </td>
                       <td className="text-right px-3 md:px-4 py-2 md:py-3 text-blue-900 text-sm">
                         {resourceSummary.reduce((sum, i) => sum + Number(i.totalCost), 0).toLocaleString()}
                       </td>

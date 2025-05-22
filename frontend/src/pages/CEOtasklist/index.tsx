@@ -152,8 +152,16 @@ export default function CEOTasklist() {
                             subtask.task_id === task.task_id
                         );
 
-                        // เก็บข้อมูล subtasks ตามลำดับที่ได้รับจาก API โดยไม่เรียงใหม่
-                        subtasksData[task.task_id] = filteredSubtasks;
+                        // เรียงลำดับตาม created_at
+                        const sortedSubtasks = [...filteredSubtasks].sort((a, b) => {
+                            if (a.created_at && b.created_at) {
+                                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                            }
+                            return a.subtask_id.localeCompare(b.subtask_id);
+                        });
+
+                        // เก็บข้อมูล subtasks ที่เรียงลำดับแล้ว
+                        subtasksData[task.task_id] = sortedSubtasks;
                     } else {
                         subtasksData[task.task_id] = [];
                     }
@@ -193,10 +201,18 @@ export default function CEOTasklist() {
                     subtask.task_id === taskId
                 );
 
-                // ไม่ต้องเรียงลำดับใหม่ ใช้ลำดับจาก backend ตามที่ได้รับมา
+                // เรียงลำดับตาม created_at
+                const sortedSubtasks = [...filteredSubtasks].sort((a, b) => {
+                    if (a.created_at && b.created_at) {
+                        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                    }
+                    return a.subtask_id.localeCompare(b.subtask_id);
+                });
+
+                // เก็บข้อมูลที่เรียงลำดับแล้ว
                 setSubtasks(prev => ({
                     ...prev,
-                    [taskId]: filteredSubtasks
+                    [taskId]: sortedSubtasks
                 }));
             } else {
                 console.error(`Failed to fetch subtasks for task ${taskId}:`, response.message);
@@ -353,7 +369,7 @@ export default function CEOTasklist() {
                                                     <div className="pl-6"></div>
                                                 </Table.Cell>
                                                 <Table.Cell>
-                                                    <Text size="2" className="pl-4">• {subtask.subtask_name}</Text>
+                                                    <Text size="2" className="pl-4">{subtask.subtask_name}</Text>
                                                     <Text size="2" color="gray" className="pl-4">{subtask.description}</Text>
                                                 </Table.Cell>
                                                 <Table.Cell>{formatBudget(subtask.budget)}</Table.Cell>

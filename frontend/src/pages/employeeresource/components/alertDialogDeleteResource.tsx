@@ -3,23 +3,31 @@ import { deleteResource } from "@/services/resource.service";
 
 interface AlertDialogDeleteResourceProps {
     getResourceData: () => void;
+    removeResourceFromState: (resourceId: string) => void; // เพิ่ม prop ใหม่
     resource_id: string;
     task_name: string;
     resource_name: string;
 }
 
-const AlertDialogDeleteResource: React.FC<AlertDialogDeleteResourceProps> = ({ getResourceData, resource_id, task_name, resource_name }) => {
+const AlertDialogDeleteResource: React.FC<AlertDialogDeleteResourceProps> = ({
+    getResourceData,
+    removeResourceFromState,
+    resource_id,
+    task_name,
+    resource_name
+}) => {
     const handleDelete = async () => {
         try {
             const response = await deleteResource({ resource_id });
             if (response.statusCode === 200) {
-                getResourceData();
+                // ลบข้อมูลออกจาก state โดยตรง
+                removeResourceFromState(resource_id);
             } else {
-                alert(response.message || "Unexpected error occurred");
+                alert(response.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ");
             }
         } catch (error) {
-            console.error("Error deleting resource:", error);
-            alert("Failed to delete resource. Please try again.");
+            console.error("ลบข้อมูลไม่สำเร็จ:", error);
+            alert("เกิดข้อผิดพลาดในการลบข้อมูล");
         }
     };
 

@@ -421,7 +421,7 @@ export default function DashboardCEO() {
                   <span className="font-medium">Budget: </span>
                   <span>{Number(currentProject.budget).toLocaleString()} THB</span>
                 </div>
-                
+
               </div>
             </div>
           </div>
@@ -694,7 +694,6 @@ export default function DashboardCEO() {
                   <thead className="bg-blue-100">
                     <tr>
                       <th className="text-left px-3 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Resource Type</th>
-                      <th className="text-center px-3 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Quantity</th>
                       <th className="text-right pr-3 py-2 md:py-3 border-b text-gray-700 text-sm md:text-base">Total Cost</th>
                     </tr>
                   </thead>
@@ -703,9 +702,6 @@ export default function DashboardCEO() {
                       resourceSummary.map((item) => (
                         <tr key={item.type} className="hover:bg-blue-50">
                           <td className="px-3 md:px-4 py-2 md:py-3 text-sm">{item.type}</td>
-                          <td className="text-center px-3 md:px-4 py-2 md:py-3 text-sm">
-                            {Number(item.quantity).toLocaleString()}
-                          </td>
                           <td className="text-right px-3 md:px-4 py-2 md:py-3 text-red-700 font-semibold text-sm">
                             {Number(item.totalCost).toLocaleString()}
                           </td>
@@ -713,16 +709,13 @@ export default function DashboardCEO() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="text-center text-gray-400 py-4">No resource data available</td>
+                        <td colSpan={2} className="text-center text-gray-400 py-4">No resource data available</td>
                       </tr>
                     )}
                   </tbody>
                   <tfoot className="bg-blue-50 font-bold">
                     <tr>
                       <td className="px-3 md:px-4 py-2 md:py-3 text-blue-900 text-sm">Total</td>
-                      <td className="text-center px-3 md:px-4 py-2 md:py-3 text-blue-900 text-sm">
-                        {resourceSummary.reduce((sum, i) => sum + Number(i.quantity), 0).toLocaleString()}
-                      </td>
                       <td className="text-right px-3 md:px-4 py-2 md:py-3 text-blue-900 text-sm">
                         {resourceSummary.reduce((sum, i) => sum + Number(i.totalCost), 0).toLocaleString()}
                       </td>
