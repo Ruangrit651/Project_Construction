@@ -1,21 +1,21 @@
-📅 เวลา: 21/05/2025 17:34:31
-🚀 Page Load Time: 1175 ms
-🔐 Login Time: 330 ms
+📅 เวลา: 27/05/2025 13:26:07
+🚀 Page Load Time: 1483 ms
+🔐 Login Time: 290 ms
 ✅ Login success: http://localhost:5173/admin
-📅 เวลา: 21/05/2025 17:34:31
+📅 เวลา: 27/05/2025 13:26:07
 🔄 Navigating to Project page...
 🔍 Current URL: http://localhost:5173/adminproject
 ✅ Successfully navigated to Project page
-📅 เวลา: 21/05/2025 17:34:33
+📅 เวลา: 27/05/2025 13:26:08
 🔄 Looking for Create button...
 🟢 Clicked Create button
 ✅ Create Project dialog opened
-📝 Entered Project Name: Test Project 1747823673325
+📝 Entered Project Name: Test Project 1748327168984
 📝 Entered Budget: 10,000
-📝 Entered Start Date: 2025-05-21
-📝 Entered End Date: 2025-06-21
+📅 กำหนดวันเริ่มต้นโปรเจกต์: 2025-05-24 (ย้อนหลัง 3 วัน)
+📅 กำหนดวันสิ้นสุดโปรเจกต์: 2025-07-23 (60 วันหลังจากวันเริ่มต้น)
 🟢 Clicked Save button
 ✅ Dialog closed after save
 ✅ New project appears in the table
-⏱️ Total Create Project Time: 1063 ms
+⏱️ Total Create Project Time: 899 ms
 🌐 Final URL: http://localhost:5173/adminproject

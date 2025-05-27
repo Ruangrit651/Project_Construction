@@ -381,12 +381,12 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
 
     return (
         <Dialog.Root open={open} onOpenChange={setOpen}>
-            <Dialog.Trigger asChild>
+            <Dialog.Trigger>
                 <Button className="cursor-pointer" size="1" variant="soft" color="green">+ Add</Button>
             </Dialog.Trigger>
             <Dialog.Content style={{ maxWidth: "500px" }}>
                 <Dialog.Title>Add Subtask for {taskName}</Dialog.Title>
-                <form onSubmit={(e) => e.preventDefault()}>
+                <form >
                     <Flex direction="column" gap="3">
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">
@@ -395,6 +395,7 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                             <TextField.Root
                                 placeholder="Enter subtask name"
                                 value={subtaskName}
+                                id="add-subtask-name"
                                 onChange={(e) => setSubtaskName(e.target.value)}
                             />
                         </label>

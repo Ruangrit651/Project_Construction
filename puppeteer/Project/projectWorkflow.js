@@ -71,7 +71,7 @@ const logFilename = 'Project_Workflow_log.txt';
     await page.waitForFunction(() => {
       const buttons = Array.from(document.querySelectorAll('button'));
       return buttons.some(btn => btn.textContent.includes('Create'));
-    }, { timeout: 5000 });
+    }, { timeout: 1100 });
 
     await page.$$eval('button', buttons => {
       const createButton = buttons.find(btn => btn.textContent.includes('Create'));
@@ -82,9 +82,9 @@ const logFilename = 'Project_Workflow_log.txt';
       return false;
     });
 
-    log.push('🟢 Clicked Create button');
+    log.push('🟢 Clicked Create button'); 
 
-    await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+    await page.waitForSelector('[role="dialog"]', { timeout: 1100 });
     // log.push('✅ Create Project dialog opened');
 
     const newProjectName = `Test Project ${Date.now()}`;
@@ -96,7 +96,7 @@ const logFilename = 'Project_Workflow_log.txt';
       // log.push('🔄 กำลังเลือกเจ้าของโปรเจกต์...');
       
       // วิธีที่ 1: ใช้ CSS Selector ที่หลากหลายในการคลิก dropdown
-      await page.waitForSelector('.select-trigger, .dropdown-toggle, select[name="owner"], div[role="combobox"]', { timeout: 5000 });
+      await page.waitForSelector('.select-trigger, .dropdown-toggle, select[name="owner"], div[role="combobox"]', { timeout: 1100 });
       
       await page.evaluate(() => {
         // เลือกจากตัวเลือกหลายรูปแบบที่อาจเป็นไปได้
@@ -196,7 +196,7 @@ const logFilename = 'Project_Workflow_log.txt';
     try {
       await page.waitForFunction(
         () => !document.querySelector('[role="dialog"]'),
-        { timeout: 5000 }
+        { timeout: 1100 }
       );
       log.push('✅ Dialog closed after save');
     } catch (e) {
@@ -204,7 +204,7 @@ const logFilename = 'Project_Workflow_log.txt';
     }
 
     // รอให้ตารางโหลดใหม่
-    await page.waitForSelector('table', { timeout: 5000 });
+    await page.waitForSelector('table', { timeout: 1100 });
     await new Promise(resolve => setTimeout(resolve, 2000)); // รอเพิ่มเติมให้ข้อมูลอัพเดท
 
     // บันทึกจำนวนโปรเจกต์หลังสร้าง เพื่อเปรียบเทียบ
@@ -218,7 +218,7 @@ const logFilename = 'Project_Workflow_log.txt';
           const cells = document.querySelectorAll('td');
           return Array.from(cells).some(cell => cell.textContent.includes(expectedProject));
         },
-        { timeout: 5000 },
+        { timeout: 1100 },
         newProjectName
       );
 
@@ -243,7 +243,7 @@ const logFilename = 'Project_Workflow_log.txt';
     // log.push('🔄 Looking for Detail button...');
 
     // รอให้ตารางแสดงข้อมูลโปรเจกต์โหลดเสร็จ
-    await page.waitForSelector('table', { timeout: 5000 });
+    await page.waitForSelector('table', { timeout: 1100 });
     // log.push('✅ Project table loaded');
 
     // บันทึกชื่อโปรเจกต์ก่อนคลิกปุ่ม Detail
@@ -283,8 +283,8 @@ const logFilename = 'Project_Workflow_log.txt';
       return document.querySelector('div') !== null &&
         document.body.innerText.includes('Budget') &&
         document.body.innerText.includes('Status');
-    }, { timeout: 5000 });
-    log.push('✅ Project details loaded');
+    }, { timeout: 1100 });
+    // log.push('✅ Project details loaded');
 
     // ตรวจสอบข้อมูลที่แสดง
     const detailsShown = await page.evaluate((expectedName) => {
@@ -338,7 +338,7 @@ const logFilename = 'Project_Workflow_log.txt';
     await new Promise(r => setTimeout(r, 1000)); 
 
     // ตรวจสอบว่ากลับไปยังหน้าโปรเจกต์
-    await page.waitForSelector('table', { timeout: 5000 });
+    await page.waitForSelector('table', { timeout: 1100 });
     log.push('✅ Returned to projects page');
 
     const detailTime = Date.now() - startDetail;
@@ -352,7 +352,7 @@ const logFilename = 'Project_Workflow_log.txt';
     // log.push('🔄 Looking for Edit button...');
 
     // รอให้ตารางแสดงข้อมูลโปรเจกต์โหลดเสร็จ
-    await page.waitForSelector('table', { timeout: 5000 });
+    await page.waitForSelector('table', { timeout: 1100 });
     // log.push('✅ Project table loaded');
 
     // บันทึกข้อมูลโปรเจกต์ก่อนแก้ไข
@@ -394,7 +394,7 @@ const logFilename = 'Project_Workflow_log.txt';
 
     // =================== ตรวจสอบที่ Dialog แก้ไขโปรเจกต์ ===================
     // รอให้ Dialog แก้ไขโปรเจกต์เปิดขึ้น
-    await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+    await page.waitForSelector('[role="dialog"]', { timeout: 1100 });
     // log.push('✅ Edit Project dialog opened');
 
     // ตรวจสอบว่าฟอร์มแสดงข้อมูลโปรเจกต์เดิมถูกต้อง
@@ -439,7 +439,7 @@ const logFilename = 'Project_Workflow_log.txt';
       if (statusSelect) statusSelect.click();
     });
 
-    await page.waitForSelector('[role="option"]', { timeout: 5000 });
+    await page.waitForSelector('[role="option"]', { timeout: 1100 });
     
     // เลือกสถานะ "Completed"
     await page.$$eval('[role="option"]', options => {
@@ -467,10 +467,10 @@ log.push('🟢 Clicked Update button');
 try {
   await page.waitForFunction(
     () => !document.querySelector('[role="dialog"]'),
-    { timeout: 5000 } 
+    { timeout: 1100 } 
   );
   const updateTime = Date.now() - startUpdate; // คำนวณเวลาที่ใช้
-  log.push('✅ Dialog closed after update');
+  // log.push('✅ Dialog closed after update');
   log.push(`⏱️ Time to close dialog after Update: ${updateTime} ms`);
 } catch (e) {
   log.push(`⚠️ Dialog did not close: ${e.message}`);
@@ -478,7 +478,7 @@ try {
 
     // =================== ตรวจสอบว่าข้อมูลถูกอัพเดทหรือไม่ ===================
     // รอให้ตารางโหลดใหม่
-    await page.waitForSelector('table', { timeout: 5000 });
+    await page.waitForSelector('table', { timeout: 1100 });
     // log.push('✅ Project table reloaded');
 
     // ตรวจสอบข้อมูลที่ถูกแก้ไข
@@ -548,7 +548,7 @@ try {
     // log.push('🔄 Testing Delete Project functionality...');
 
     // รอให้ตารางแสดงข้อมูลโปรเจกต์โหลดเสร็จ
-    await page.waitForSelector('table', { timeout: 5000 });
+    await page.waitForSelector('table', { timeout: 1100 });
     log.push('✅ Project table loaded');
 
     // บันทึกข้อมูลโปรเจกต์ก่อนลบ
@@ -595,7 +595,7 @@ try {
 
     // =================== ตรวจสอบ Dialog ยืนยันการลบ ===================
     // รอให้ Dialog ยืนยันการลบเปิดขึ้น
-    await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+    await page.waitForSelector('[role="dialog"]', { timeout: 1100 });
     // log.push('✅ Delete confirmation dialog opened');
 
     // ตรวจสอบว่า Dialog แสดงข้อมูลโปรเจกต์ที่จะลบถูกต้อง
@@ -650,7 +650,7 @@ try {
     try {
       await page.waitForFunction(
         () => !document.querySelector('[role="dialog"]'),
-        { timeout: 5000 }
+        { timeout: 1100 }
       );
       // log.push('✅ Dialog closed after delete');
     } catch (e) {
@@ -664,7 +664,7 @@ try {
           const toast = document.querySelector('[role="status"]');
           return toast !== null;
         },
-        { timeout: 5000 }
+        { timeout: 1100 }
       );
       
       const toastMessage = await page.evaluate(() => {
@@ -679,7 +679,7 @@ try {
 
     // =================== ตรวจสอบว่าโปรเจกต์ถูกลบออกจากตารางหรือไม่ ===================
     // รอให้ตารางโหลดใหม่
-    await page.waitForSelector('table', { timeout: 5000 });
+    await page.waitForSelector('table', { timeout: 1100 });
     // log.push('✅ Project table reloaded');
 
     // ตรวจสอบว่าโปรเจกต์ถูกลบไปหรือไม่
@@ -734,7 +734,7 @@ try {
     log.push(errorLog);
     fs.writeFileSync(logFilename, log.join('\n'), 'utf8');
   } finally {
-    await new Promise(r => setTimeout(r, 2000)); // ชะลอให้เห็นผลลัพธ์
+    await new Promise(r => setTimeout(r, 1000)); // ชะลอให้เห็นผลลัพธ์
 
     await browser?.close();
   }
