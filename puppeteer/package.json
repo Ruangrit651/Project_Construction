@@ -22,7 +22,7 @@
     "project-workflow": "node Project/projectWorkflow.js",
 
     "project-list": "node Manager/projectList.js",
-    "project-tasklist": "node Manager/tasklist.js",
+    "project-list-coppy": "node Manager/projectList-copy.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

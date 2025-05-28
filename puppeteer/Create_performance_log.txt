@@ -1,9 +1,0 @@
-📝 Log saved to create_performance_log.txt
-
-📅 Timestamp: 21/05/2025 15:30:42
-🚀 Page Load Time: 2581.00 ms
-🔐 Login Time: 835.00 ms
-👤 Create User Time: 2080.00 ms
-👤 New Username: testuser_1747816241253
-📌 Result: ✅ Create user test passed!
-🌐 Final URL: http://localhost:5173/admin

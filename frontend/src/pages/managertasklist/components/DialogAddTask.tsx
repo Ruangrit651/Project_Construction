@@ -124,7 +124,12 @@ const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData, projectId })
         const projectIdToUse = projectId || selectedProjectId;
 
         console.log("Attempting to add task to project:", projectIdToUse);
-
+        console.log("taskName:", taskName);
+        console.log("description:", description);
+        console.log("startDate:", startDate);
+        console.log("endDate:", endDate);
+        console.log("budget:", budget);
+        console.log("status:", status);
         // เพิ่มการตรวจสอบ projectIdToUse
         if (!taskName || !description || !startDate || !endDate || !projectIdToUse) {
             alert("กรุณากรอกข้อมูลให้ครบถ้วนและเลือก Project");

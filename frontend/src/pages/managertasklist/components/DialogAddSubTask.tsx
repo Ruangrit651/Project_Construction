@@ -381,13 +381,14 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
 
     return (
         <Dialog.Root open={open} onOpenChange={setOpen}>
-            <Dialog.Trigger asChild>
-                <Button className="cursor-pointer" size="1" variant="soft" color="green">+ Add</Button>
+            <Dialog.Trigger >
+                <Button className="cursor-pointer" size="1" variant="soft" color="green">+ Subtask Add</Button>
             </Dialog.Trigger>
             <Dialog.Content style={{ maxWidth: "500px" }}>
                 <Dialog.Title>Add Subtask for {taskName}</Dialog.Title>
-                <form onSubmit={(e) => e.preventDefault()}>
+       
                     <Flex direction="column" gap="3">
+                        {/* Subtask Name */}
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">
                                 Subtask Name
@@ -395,9 +396,12 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                             <TextField.Root
                                 placeholder="Enter subtask name"
                                 value={subtaskName}
+                                id="add-subtask-name"
                                 onChange={(e) => setSubtaskName(e.target.value)}
                             />
                         </label>
+
+                        {/* Description */}
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">
                                 Description
@@ -408,6 +412,8 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                                 onChange={(e) => setDescription(e.target.value)}
                             />
                         </label>
+
+                        {/* Budget */}
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">
                                 Budget
@@ -418,13 +424,17 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                                 onChange={handleBudgetChange}
                             />
                         </label>
+
+                        {/* Start & End Date */}
                         <Flex gap="3">
                             <label style={{ flexGrow: 1 }}>
                                 <Text as="div" size="2" mb="1" weight="bold">
                                     Start Date
                                 </Text>
-                                <TextField.Root
+                                <input
                                     type="date"
+                                    className="w-full px-2 py-1 border rounded"
+                                    id="add-subtask-start-date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
                                 />
@@ -433,13 +443,17 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                                 <Text as="div" size="2" mb="1" weight="bold">
                                     End Date
                                 </Text>
-                                <TextField.Root
+                                <input
                                     type="date"
+                                    className="w-full px-2 py-1 border rounded"
+                                    id="add-subtask-end-date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
                                 />
                             </label>
                         </Flex>
+
+                        {/* Status Select */}
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">
                                 Status
@@ -448,14 +462,9 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                                 value={status}
                                 onValueChange={(value) => {
                                     setStatus(value);
-                                    // อัปเดต progress ตาม status ที่เลือก
-                                    if (value === "completed") {
-                                        setProgressPercent(100);
-                                    } else if (value === "in progress") {
-                                        setProgressPercent(50);
-                                    } else {
-                                        setProgressPercent(0);
-                                    }
+                                    if (value === "completed") setProgressPercent(100);
+                                    else if (value === "in progress") setProgressPercent(50);
+                                    else setProgressPercent(0);
                                 }}
                             >
                                 <Select.Trigger />
@@ -468,32 +477,25 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                             </Select.Root>
                         </label>
 
-                        {/* เพิ่มส่วนสไลเดอร์สำหรับความคืบหน้า */}
+                        {/* Initial Progress */}
                         <label>
                             <Text as="div" size="2" mb="1" weight="bold">
                                 Initial Progress (%)
                             </Text>
                             <Flex gap="2" align="center">
-                                <TextField.Root
+                                <input
                                     type="number"
+                                    className="w-full px-2 py-1 border rounded"
                                     value={progressPercent}
                                     onChange={(e) => {
-                                        // ตรวจสอบค่าอยู่ในช่วง 0-100
                                         let value = parseInt(e.target.value);
                                         if (isNaN(value)) value = 0;
                                         if (value < 0) value = 0;
                                         if (value > 100) value = 100;
-
                                         setProgressPercent(value);
-
-                                        // อัปเดต status ตาม progress
-                                        if (value === 100) {
-                                            setStatus("completed");
-                                        } else if (value > 0) {
-                                            setStatus("in progress");
-                                        } else {
-                                            setStatus("pending");
-                                        }
+                                        if (value === 100) setStatus("completed");
+                                        else if (value > 0) setStatus("in progress");
+                                        else setStatus("pending");
                                     }}
                                     placeholder="0-100"
                                     min={0}
@@ -503,6 +505,7 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                             </Flex>
                         </label>
 
+                        {/* Error Message */}
                         {errorMessage && (
                             <Text color="red" size="2">
                                 {errorMessage}
@@ -510,17 +513,18 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                         )}
                     </Flex>
 
+                    {/* Action Buttons */}
                     <Flex gap="3" mt="4" justify="end">
                         <Dialog.Close>
                             <Button className="cursor-pointer" variant="soft" color="gray">
                                 Cancel
                             </Button>
                         </Dialog.Close>
-                        <Button className="cursor-pointer" type="submit" onClick={handleAddSubtask}>
+                        <Button className="cursor-pointer" onClick={handleAddSubtask}>
                             Add Subtask
                         </Button>
                     </Flex>
-                </form>
+
             </Dialog.Content>
         </Dialog.Root>
     );
