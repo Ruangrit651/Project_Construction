@@ -3,6 +3,7 @@ require('dotenv').config();  // โหลดตัวแปรสภาพแว
 const puppeteer = require('puppeteer');  // ใช้สำหรับควบคุมเบราว์เซอร์อัตโนมัติ
 const fs = require('fs');  // ใช้สำหรับจัดการไฟล์
 const { performance } = require('perf_hooks');  // ใช้วัดประสิทธิภาพการทำงาน
+const { log } = require('console');
 
 // ฟังก์ชันสำหรับแสดงเวลาปัจจุบันในรูปแบบ วัน/เดือน/ปี ชั่วโมง:นาที:วินาที
 function now() {
@@ -360,6 +361,47 @@ function now() {
         // รอให้หน้าโหลดหรือมีการอัพเดต UI หลังจากคลิก
         await new Promise(r => setTimeout(r, 1500));
 
+        // คลิกปุ่มลูกศรขวาก่อนเพื่อเข้าถึงรายละเอียดโปรเจ็ค
+        const arrowButtonClicked = await page.evaluate(() => {
+          // หาปุ่มลูกศรขวาจาก SVG path หรือคลาสที่เกี่ยวข้อง
+          const arrowButtons = Array.from(document.querySelectorAll('button'))
+            .filter(btn => {
+              // ตรวจสอบว่ามี SVG ภายในปุ่ม
+              const svg = btn.querySelector('svg');
+              if (!svg) return false;
+
+              // ตรวจสอบว่า SVG มี path ที่เป็นลูกศรขวา
+              const path = svg.querySelector('path');
+              return path && path.getAttribute('d')?.includes('M6.1584 3.13508');
+            });
+
+          if (arrowButtons.length > 0) {
+            console.log('พบปุ่มลูกศรขวา กำลังคลิก...');
+            arrowButtons[0].click();
+            return true;
+          }
+
+          // วิธีสำรอง - หาปุ่มที่มีลักษณะคล้ายปุ่มนำทาง
+          const navigationButtons = Array.from(document.querySelectorAll('button.rt-Button, button[class*="ghost"]'))
+            .filter(btn => !btn.textContent.includes('Add') && !btn.textContent.includes('Save'));
+
+          if (navigationButtons.length > 0) {
+            console.log('พบปุ่มนำทาง กำลังคลิก...');
+            navigationButtons[0].click();
+            return true;
+          }
+
+          return false;
+        });
+
+        if (arrowButtonClicked) {
+          logs.push('✅ คลิกปุ่มลูกศรขวาเพื่อเข้าถึงรายละเอียดโปรเจ็คแล้ว');
+          // รอให้หน้าโหลดหลังจากคลิกปุ่มลูกศรขวา
+          await new Promise(r => setTimeout(r, 1500));
+        } else {
+          logs.push('⚠️ ไม่พบปุ่มลูกศรขวา - ลองค้นหาปุ่ม + Subtask Add โดยตรง');
+        }
+
         // หาและคลิกปุ่ม + Add ในโปรเจกต์ที่เลือก
         const addButtonClicked = await page.evaluate(() => {
           const addButtons = Array.from(document.querySelectorAll('button'))
@@ -432,14 +474,16 @@ function now() {
             await page.keyboard.up('Control');
             await page.keyboard.press('Backspace');
             await page.keyboard.type(subtaskstartDateMDY);
+            logs.push('✅ 4. กรอก Start Date แล้ว');
 
-            // 4. กรอก End Date 
+            // 5. กรอก End Date 
             await page.click('#add-subtask-end-date').catch(() => null);
             await page.keyboard.down('Control');
             await page.keyboard.press('a');
             await page.keyboard.up('Control');
             await page.keyboard.press('Backspace');
             await page.keyboard.type(subtaskendDateMDY);
+            logs.push('✅ 5. กรอก End Date แล้ว');
 
             // 6. เลือก Status เป็น "In Progress" (แบบปรับปรุง)
             try {
