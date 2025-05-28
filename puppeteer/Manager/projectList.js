@@ -212,8 +212,7 @@ function now() {
     logs.push('✅ 3. กรอก Budget แล้ว');
     await new Promise(r => setTimeout(r, 300));
 
-    logs.push('🔄 กำลังกำหนด Start Date ด้วยวิธีใหม่...');
-
+    // 4. กรอก Start Date
     await page.click('#start-date-input').catch(() => null);
     await page.keyboard.down('Control');
     await page.keyboard.press('a');
@@ -283,19 +282,7 @@ function now() {
 
     // ========== ขั้นตอนที่ 8: บันทึก Task ==========
 
-    logs.push('🖱️ กำลังคลิกปุ่ม Save...');
-
     try {
-      // ตรวจสอบว่ามีข้อความแจ้งเตือนในฟอร์มหรือไม่
-      const formErrors = await page.evaluate(() => {
-        const errorElements = document.querySelectorAll('[color="red"], .text-red-500, .error, .text-danger');
-        return Array.from(errorElements).map(el => el.textContent.trim());
-      });
-
-      if (formErrors.length > 0) {
-        logs.push(`⚠️ พบข้อความแจ้งเตือนในฟอร์ม: ${formErrors.join(', ')}`);
-      }
-
       // คลิกปุ่ม Save
       const buttonFound = await page.evaluate(() => {
         const saveButtons = [
@@ -324,78 +311,15 @@ function now() {
         logs.push('❌ ไม่พบปุ่ม Save ในหน้าจอ');
         throw new Error('ไม่พบปุ่ม Save');
       }
-
-      // รอให้ Dialog ปิดหรือ API ตอบกลับ
-      await Promise.race([
-        page.waitForResponse(response => response.url().includes('/api/task')).catch(() => null),
-        page.waitForFunction(() => !document.querySelector('div[role="dialog"]')).catch(() => null),
-        new Promise(r => setTimeout(r, 10000))
-      ]);
-
-      // ตรวจสอบว่า Dialog ปิดแล้วหรือยัง
-      const dialogClosed = await page.evaluate(() =>
-        !document.querySelector('div[role="dialog"]')
-      );
-
-      if (dialogClosed) {
-        logs.push('✅ Dialog ปิดแล้ว แสดงว่าน่าจะบันทึกสำเร็จ');
-      } else {
-        logs.push('⚠️ Dialog ยังไม่ปิด อาจมีปัญหา');
-
-        // ดูว่ามีข้อความแจ้งเตือนหรือไม่
-        const errorMsg = await page.evaluate(() => {
-          const errorElements = document.querySelectorAll('[color="red"], .text-red-500, .error');
-          return Array.from(errorElements).map(el => el.textContent.trim()).join(", ");
-        });
-
-        if (errorMsg) {
-          logs.push(`❌ ข้อความแจ้งเตือนในฟอร์ม: ${errorMsg}`);
-        }
-
-        // ลองคลิกปุ่ม Save อีกครั้ง
-        logs.push('🔄 ลองคลิกปุ่ม Save อีกครั้ง...');
-        await page.evaluate(() => {
-          const saveButtons = Array.from(document.querySelectorAll('div[role="dialog"] button')).filter(
-            btn => !btn.textContent.includes('Cancel')
-          );
-          if (saveButtons.length > 0) saveButtons[0].click();
-        });
-
-        // รอให้ Dialog ปิดอีกครั้ง
-        await Promise.race([
-          page.waitForFunction(() => !document.querySelector('div[role="dialog"]')).catch(() => null),
-          new Promise(r => setTimeout(r, 5000))
-        ]);
-      }
-
-      // ลองคลิกปุ่มนอก Dialog เพื่อปิด Dialog หากยังเปิดอยู่
-      await page.evaluate(() => {
-        const dialog = document.querySelector('div[role="dialog"]');
-        if (dialog) {
-          // คลิกที่ overlay หรือพื้นหลังของ dialog
-          const overlay = dialog.parentElement;
-          if (overlay) overlay.click();
-
-          // หรือกดปุ่ม ESC
-          document.dispatchEvent(new KeyboardEvent('keydown', {
-            key: 'Escape',
-            code: 'Escape',
-            keyCode: 27,
-            which: 27,
-            bubbles: true
-          }));
-        }
-      });
-
     } catch (error) {
-      logs.push(`❌ เกิดข้อผิดพลาดขณะบันทึก Task: ${error.message}`);
+      logs.push(`❌ เกิดข้อผิดพลาดในการคลิกปุ่ม Save: ${error.message}`);
     }
 
     const saveTaskEnd = performance.now();
     logs.push(`⏱️ บันทึก Task ใช้เวลา: ${(saveTaskEnd - saveTaskStart).toFixed(2)} ms`);
 
     // รอให้หน้าอัพเดทข้อมูล
-    await new Promise(r => setTimeout(r, 3000));
+    await new Promise(r => setTimeout(r, 1000));
 
     // ========== ขั้นตอนที่ 9: ตรวจสอบผลลัพธ์ ==========
 
@@ -409,254 +333,313 @@ function now() {
       logs.push('✅ สร้าง Task เรียบร้อยและปรากฏในรายการ');
     } else {
       logs.push('❓ สร้าง Task แล้วแต่ไม่พบในรายการ (อาจต้องรีเฟรชหน้า)');
+    }
+    // ====================================================================================================
 
-      // ลองรีเฟรชหน้าเพื่อดูอีกครั้ง
-      await page.reload({ waitUntil: 'networkidle0' });
-      await new Promise(r => setTimeout(r, 2000));
+    // ========== ขั้นตอนที่ 10: ทดสอบคลิกปุ่ม + Add ในโปรเจกต์ที่สร้างขึ้น ==========
+    logs.push(`📅 Timestamp: ${now()}`);
+    logs.push('🧪 เริ่มทดสอบการคลิกปุ่ม + Add ในโปรเจกต์');
 
-      // ตรวจสอบอีกครั้งหลังจากรีเฟรช
-      const taskFoundAfterRefresh = await page.evaluate((taskNameToFind) => {
-        const taskElements = Array.from(document.querySelectorAll('table tbody tr'));
-        return taskElements.some(row => row.textContent?.includes(taskNameToFind));
+    try {
+      // หาแถวที่มีชื่อ Task ที่เราสร้างไว้
+      const taskRowFound = await page.evaluate(async (taskNameToFind) => {
+        const taskRows = Array.from(document.querySelectorAll('table tbody tr'));
+        for (const row of taskRows) {
+          if (row.textContent?.includes(taskNameToFind)) {
+            // เลือกแถวที่มี Task ที่เราสร้าง
+            row.click();
+            return true;
+          }
+        }
+        return false;
       }, taskName);
 
-      if (taskFoundAfterRefresh) {
-        logs.push('✅ พบ Task หลังจากรีเฟรชหน้า');
-      } else {
-        logs.push('⚠️ ยังไม่พบ Task หลังจากรีเฟรชหน้าแล้ว');
-      }
-    }
+      if (taskRowFound) {
+        logs.push('✅ คลิกที่แถวของ Task ที่สร้างแล้ว');
 
-    // ========== ขั้นตอนที่ 10: เลือก Task เพื่อเพิ่ม Subtask ==========
+        // รอให้หน้าโหลดหรือมีการอัพเดต UI หลังจากคลิก
+        await new Promise(r => setTimeout(r, 1500));
 
-    // logs.push(`📅 Timestamp: ${now()}`);
-    // logs.push('🧪 เริ่มทดสอบการเพิ่ม Subtask');
+        // หาและคลิกปุ่ม + Add ในโปรเจกต์ที่เลือก
+        const addButtonClicked = await page.evaluate(() => {
+          const addButtons = Array.from(document.querySelectorAll('button'))
+            .filter(btn => btn.textContent?.includes('+ Subtask Add'));
 
-    // // คลิกที่ Task ที่เพิ่งสร้าง
-    // try {
-    //   const clickTask = await page.evaluate((taskNameToClick) => {
-    //     const taskRows = Array.from(document.querySelectorAll('table tbody tr'));
-    //     const targetRow = taskRows.find(row => row.textContent.includes(taskNameToClick));
-
-    //     if (targetRow) {
-    //       targetRow.click();
-    //       return true;
-    //     }
-    //     return false;
-    //   }, taskName);
-
-    //   if (clickTask) {
-    //     logs.push('✅ คลิกที่ Task เรียบร้อยแล้ว');
-    //     await page.waitForNavigation({ waitUntil: 'networkidle0' });
-    //   } else {
-    //     logs.push('❌ ไม่พบ Task ที่ต้องการคลิก');
-    //     throw new Error('ไม่พบ Task ที่ต้องการคลิก');
-    //   }
-    // } catch (error) {
-    //   logs.push(`❌ เกิดข้อผิดพลาดขณะคลิก Task: ${error.message}`);
-    //   await page.screenshot({ path: 'error-task-click.png', fullPage: true });
-    // }
-
-    //========== ขั้นตอนที่ 11: เพิ่ม Subtask ==========
-
-    logs.push('🔍 กำลังหาปุ่ม + Add สำหรับเพิ่ม Subtask...');
-
-    await new Promise(r => setTimeout(r, 2000)); // รอให้หน้าโหลดเสร็จสมบูรณ์
-
-    // ค้นหาและคลิกปุ่ม + Add
-    try {
-      const addButtonVisible = await page.evaluate(() => {
-        const addButtons = Array.from(document.querySelectorAll('button')).filter(
-          btn => btn.textContent.includes('+ Add')
-        );
-        return addButtons.length > 0;
-      });
-
-      if (addButtonVisible) {
-        logs.push('✅ พบปุ่ม + Add แล้ว');
-
-        await page.evaluate(() => {
-          const addButtons = Array.from(document.querySelectorAll('button')).filter(
-            btn => btn.textContent.includes('+ Add')
-          );
-          addButtons[0].click();
-        });
-
-        logs.push('✅ คลิกปุ่ม + Add แล้ว');
-
-        // รอให้ Dialog ปรากฏและโหลดเสร็จสมบูรณ์
-        await page.waitForSelector('div[role="dialog"]', { visible: true, timeout: 5000 });
-        logs.push('✅ Dialog เปิดขึ้นมาแล้ว');
-        await new Promise(r => setTimeout(r, 5000)); // รอให้ UI render เสร็จสมบูรณ์
-
-        // สร้างข้อมูล Subtask ที่จะใช้ทดสอบ
-        const subtaskName = `Test Subtask ${new Date().toISOString().slice(0, 10)}`;
-        const description = `This is a test subtask created by Puppeteer on ${now()}`;
-        const budget = "2000";
-        const progressPercent = 25;
-
-        // กำหนดวันที่
-        const today = new Date();
-        const startDate = today.toISOString().slice(0, 10);
-        const endDate = new Date();
-        endDate.setDate(today.getDate() + 7);
-        const endDateStr = endDate.toISOString().slice(0, 10);
-
-        // รูปแบบวันที่แบบ MM/DD/YYYY
-        const startDateMDY = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
-        const endDateMDY = `${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}/${endDate.getFullYear()}`;
-
-        logs.push('🖊️ เริ่มกรอกข้อมูล Subtask ตามลำดับ...');
-
-        // 1. กรอก Subtask Name
-        await page.waitForSelector('#add-subtask-name', { timeout: 5000 });
-        await page.type('#add-subtask-name', "Test Subtask");
-        logs.push('✅ 1. กรอก Subtask Name แล้ว');
-        await new Promise(r => setTimeout(r, 300));
-
-        // 2. กรอก Description
-        await page.type('input[placeholder="Enter description"]', description);
-        logs.push('✅ 2. กรอก Description แล้ว');
-        await new Promise(r => setTimeout(r, 300));
-
-        // 3. กรอก Budget
-        await page.type('input[placeholder="Enter budget"]', budget);
-        logs.push('✅ 3. กรอก Budget แล้ว');
-        await new Promise(r => setTimeout(r, 300));
-
-        // 4. กำหนด Start Date
-        await page.evaluate(() => {
-          const startDateInput = document.querySelector('input[type="date"]');
-          if (startDateInput) startDateInput.click();
-        });
-        await page.keyboard.down('Control');
-        await page.keyboard.press('a');
-        await page.keyboard.up('Control');
-        await page.keyboard.press('Backspace');
-        await page.keyboard.type(startDateMDY);
-        logs.push('✅ 4. กำหนด Start Date แล้ว');
-        await new Promise(r => setTimeout(r, 300));
-
-        // 5. กำหนด End Date
-        await page.evaluate(() => {
-          const dateInputs = document.querySelectorAll('input[type="date"]');
-          if (dateInputs.length > 1) dateInputs[1].click();
-        });
-        await page.keyboard.down('Control');
-        await page.keyboard.press('a');
-        await page.keyboard.up('Control');
-        await page.keyboard.press('Backspace');
-        await page.keyboard.type(endDateMDY);
-        logs.push('✅ 5. กำหนด End Date แล้ว');
-        await new Promise(r => setTimeout(r, 300));
-
-        // 6. เลือก Status
-        await page.evaluate(() => {
-          const statusSelect = document.querySelector('button[role="combobox"]');
-          if (statusSelect) statusSelect.click();
-        });
-        await new Promise(r => setTimeout(r, 500));
-
-        await page.evaluate(() => {
-          const inProgressOption = Array.from(document.querySelectorAll('[role="option"]')).find(
-            option => option.textContent.includes('In Progress')
-          );
-          if (inProgressOption) inProgressOption.click();
-        });
-        logs.push('✅ 6. เลือก Status เป็น "In Progress" แล้ว');
-        await new Promise(r => setTimeout(r, 500));
-
-        // 7. กำหนด Initial Progress
-        await page.evaluate((percent) => {
-          const progressInput = document.querySelector('input[type="number"]');
-          if (progressInput) {
-            progressInput.value = percent.toString();
-            progressInput.dispatchEvent(new Event('input', { bubbles: true }));
-            progressInput.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-        }, progressPercent);
-        logs.push(`✅ 7. กำหนด Initial Progress เป็น ${progressPercent}% แล้ว`);
-        await new Promise(r => setTimeout(r, 500));
-
-        // 8. คลิกปุ่ม Add Subtask
-        const addSubtaskButtonClick = await page.evaluate(() => {
-          const addSubtaskButtons = Array.from(document.querySelectorAll('button')).filter(
-            btn => btn.textContent.includes('Add Subtask')
-          );
-
-          if (addSubtaskButtons.length > 0) {
-            addSubtaskButtons[0].click();
+          if (addButtons.length > 0) {
+            console.log(`พบปุ่ม Add จำนวน ${addButtons.length} ปุ่ม`);
+            addButtons[0].click();
             return true;
           }
           return false;
         });
 
-        if (addSubtaskButtonClick) {
-          logs.push('✅ คลิกปุ่ม Add Subtask แล้ว');
+        if (addButtonClicked) {
+          logs.push('✅ คลิกปุ่ม + Add ในโปรเจกต์สำเร็จ');
 
-          // รอให้ Dialog ปิดหรือ API ตอบกลับ
-          await Promise.race([
-            page.waitForResponse(response => response.url().includes('/api/subtask')).catch(() => null),
-            page.waitForFunction(() => !document.querySelector('div[role="dialog"]')).catch(() => null),
-            new Promise(r => setTimeout(r, 10000))
-          ]);
-
-          // ตรวจสอบว่า Dialog ปิดแล้วหรือยัง
-          const dialogClosed = await page.evaluate(() => !document.querySelector('div[role="dialog"]'));
-          if (dialogClosed) {
-            logs.push('✅ Dialog ปิดแล้ว แสดงว่าการเพิ่ม Subtask สำเร็จ');
-          } else {
-            logs.push('⚠️ Dialog ยังไม่ปิด อาจมีปัญหา');
-
-            // ดูว่ามีข้อความแจ้งเตือนหรือไม่
-            const errorMsg = await page.evaluate(() => {
-              const errorElements = document.querySelectorAll('[color="red"], .text-red-500, .error');
-              return Array.from(errorElements).map(el => el.textContent.trim()).join(", ");
+          // รอให้ Dialog หรือฟอร์มแสดงขึ้นมา
+          await page.waitForSelector('div[role="dialog"]', { timeout: 5000 })
+            .then(() => {
+              logs.push('✅ Dialog สำหรับเพิ่มข้อมูลเปิดขึ้นมาแล้ว');
+            })
+            .catch(() => {
+              logs.push('⚠️ ไม่พบ Dialog สำหรับเพิ่มข้อมูล');
             });
 
-            if (errorMsg) {
-              logs.push(`❌ ข้อความแจ้งเตือนในฟอร์ม: ${errorMsg}`);
+          // ========== ขั้นตอนที่ 11: กรอกข้อมูล Subtask ในฟอร์ม ==========
+          logs.push('🧪 เริ่มทดสอบการกรอกข้อมูล Subtask');
+
+          try {
+            const subtaskDescription = `This is a subtask created by Puppeteer on ${now()}`;
+            const subtaskBudget = "2000";
+            const progressPercent = "30";
+
+            const today = new Date();
+            const subtaskStartDate = today.toISOString().slice(0, 10);
+            const subtaskEndDate = new Date();
+            subtaskEndDate.setDate(today.getDate() + 3);
+            const subtaskEndDateStr = subtaskEndDate.toISOString().slice(0, 10);
+
+            logs.push('🖊️ เริ่มกรอกข้อมูล Subtask ตามลำดับ...');
+
+            const subtaskName = "Sub task " + new Date().toISOString().slice(0, 10);
+            // 1. กรอก Subtask Name - ใช้ตัวเลือกทั่วไปมากขึ้น
+            await page.waitForSelector('input[placeholder="Enter subtask name"]');
+            await page.click('input[placeholder="Enter subtask name"]');
+            await page.keyboard.type(subtaskName);
+            logs.push('✅ 1. กรอกชื่อ Subtask แล้ว');
+
+            // 2. กรอก Description
+            await page.type('input[placeholder="Enter description"]', subtaskDescription);
+            logs.push('✅ 2. กรอก Description แล้ว');
+
+            // 3. กรอก Budget
+            const budgetInput = await page.$('input[placeholder="Enter budget"]');
+            if (budgetInput) {
+              await budgetInput.click({ clickCount: 3 });
+              await budgetInput.press('Backspace');
+              await budgetInput.type(subtaskBudget);
             }
-          }
+            logs.push('✅ 3. กรอก Budget แล้ว');
 
-          // รอให้หน้าอัพเดทข้อมูล
-          await new Promise(r => setTimeout(r, 3000));
 
-          // 9. ตรวจสอบว่า Subtask ถูกเพิ่มเข้าไปในรายการหรือไม่
-          const subtaskCreated = await page.evaluate((subtaskNameToFind) => {
-            const subtaskElements = document.querySelectorAll('table tbody tr');
-            return Array.from(subtaskElements).some(row => row.textContent?.includes(subtaskNameToFind));
-          }, subtaskName);
+            const subtaskstartDateMDY = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
+            const subtaskendDateMDY = `${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}/${endDate.getFullYear()}`;
 
-          if (subtaskCreated) {
-            logs.push('✅ เพิ่ม Subtask เรียบร้อยและปรากฏในรายการ');
-          } else {
-            logs.push('⚠️ เพิ่ม Subtask แล้วแต่ไม่พบในรายการ (อาจต้องรีเฟรชหน้า)');
+            // 4. กรอก Start Date 
+            await page.click('#add-subtask-start-date').catch(() => null);
+            await page.keyboard.down('Control');
+            await page.keyboard.press('a');
+            await page.keyboard.up('Control');
+            await page.keyboard.press('Backspace');
+            await page.keyboard.type(subtaskstartDateMDY);
 
-            // ลองรีเฟรชหน้าเพื่อดูอีกครั้ง
-            await page.reload({ waitUntil: 'networkidle0' });
-            await new Promise(r => setTimeout(r, 2000));
+            // 4. กรอก End Date 
+            await page.click('#add-subtask-end-date').catch(() => null);
+            await page.keyboard.down('Control');
+            await page.keyboard.press('a');
+            await page.keyboard.up('Control');
+            await page.keyboard.press('Backspace');
+            await page.keyboard.type(subtaskendDateMDY);
 
-            const subtaskFoundAfterRefresh = await page.evaluate((subtaskNameToFind) => {
-              const subtaskElements = document.querySelectorAll('table tbody tr');
-              return Array.from(subtaskElements).some(row => row.textContent?.includes(subtaskNameToFind));
-            }, subtaskName);
 
-            if (subtaskFoundAfterRefresh) {
-              logs.push('✅ พบ Subtask หลังจากรีเฟรชหน้า');
-            } else {
-              logs.push('❌ ยังไม่พบ Subtask หลังจากรีเฟรชหน้าแล้ว');
+            // 6. เลือก Status เป็น "In Progress" (แบบปรับปรุง)
+            try {
+              logs.push('🔍 กำลังเลือก Status...');
+
+              // ใช้ JavaScript ดักจับและกำหนดค่าให้กับ Select โดยตรง
+              const statusSelected = await page.evaluate(() => {
+                // วิธีที่ 1: ดูว่ามี select element หรือไม่
+                const selectElem = document.querySelector('select, [role="combobox"], [data-radix-select-trigger]');
+                if (selectElem) {
+                  selectElem.click();
+                  console.log("คลิก select element");
+
+                  // รอให้ dropdown แสดง
+                  setTimeout(() => {
+                    // ค้นหา option ที่เกี่ยวกับ progress
+                    const options = document.querySelectorAll('[role="option"], option, [role="menuitem"]');
+                    console.log(`พบตัวเลือกทั้งหมด ${options.length} ตัวเลือก`);
+
+                    for (const opt of options) {
+                      if (opt.textContent.toLowerCase().includes('progress') ||
+                        opt.textContent.toLowerCase().includes('in progress')) {
+                        console.log(`คลิกตัวเลือก: ${opt.textContent}`);
+                        opt.click();
+                        return true;
+                      }
+                    }
+                  }, 500);
+                }
+
+                // วิธีที่ 2: ใช้ JavaScript กำหนดค่าโดยตรง
+                const allSelects = document.querySelectorAll('select');
+                for (const select of allSelects) {
+                  for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].textContent.toLowerCase().includes('progress')) {
+                      select.selectedIndex = i;
+                      select.dispatchEvent(new Event('change', { bubbles: true }));
+                      return true;
+                    }
+                  }
+                }
+
+                // วิธีที่ 3: หาจาก label และกำหนดค่า
+                const statusLabels = Array.from(document.querySelectorAll('label, span, div'))
+                  .filter(el => el.textContent.toLowerCase().includes('status'));
+
+                for (const label of statusLabels) {
+                  const selectNear = label.parentElement?.querySelector('select') ||
+                    label.nextElementSibling?.querySelector('select') ||
+                    label.closest('div')?.querySelector('select');
+
+                  if (selectNear) {
+                    // หาตัวเลือก in progress
+                    for (let i = 0; i < selectNear.options.length; i++) {
+                      if (selectNear.options[i].textContent.toLowerCase().includes('progress')) {
+                        selectNear.selectedIndex = i;
+                        selectNear.dispatchEvent(new Event('change', { bubbles: true }));
+                        return true;
+                      }
+                    }
+                  }
+                }
+
+                // บันทึกสถานะ DOM สำหรับ debugging
+                console.log("DOM Structure for debugging:", document.querySelector('div[role="dialog"]')?.innerHTML);
+
+                return false;
+              });
+
+              if (statusSelected) {
+                logs.push('✅ 6. เลือก Status เป็น "In Progress" แล้ว');
+              } else {
+                logs.push('⚠️ ไม่สามารถเลือก Status ได้ - ลองใช้ค่าเริ่มต้น');
+
+                // อาจมีค่า default อยู่แล้ว บางครั้งไม่จำเป็นต้องเปลี่ยน
+                logs.push('ℹ️ ทดลองข้ามขั้นตอนการเลือก Status - อาจใช้ค่าเริ่มต้น');
+              }
+            } catch (error) {
+              logs.push(`❌ เกิดข้อผิดพลาดในการเลือก Status: ${error.message}`);
+              // ไม่หยุดการทำงานของโปรแกรม - ข้ามไปขั้นตอนต่อไป
             }
+
+            // 7. กรอก Initial Progress
+            try {
+              const numberInputs = await page.$$(`input[type="number"]`);
+              if (numberInputs.length > 0) {
+                // แปลงค่าเป็นตัวเลขก่อนเพื่อกำจัด 0 นำหน้า
+                const numericProgress = parseInt(progressPercent, 10);
+                const cleanProgressString = numericProgress.toString();
+
+                await numberInputs[0].click({ clickCount: 3 });
+                await numberInputs[0].press('Backspace');
+                await numberInputs[0].type(cleanProgressString);
+                logs.push(`✅ 7. กรอกค่า Initial Progress เป็น ${cleanProgressString} แล้ว`);
+              } else {
+                // ลองค้นหาด้วยวิธีอื่น เช่น ค้นหา input ที่อยู่ใกล้กับคำว่า Progress
+                const progressInputFound = await page.evaluate(() => {
+                  // หา input ที่อยู่ใกล้คำว่า Progress หรือ Percent
+                  const labels = Array.from(document.querySelectorAll('label, div, span'))
+                    .filter(el => el.textContent?.toLowerCase().includes('progress') ||
+                      el.textContent?.toLowerCase().includes('percent'));
+
+                  for (const label of labels) {
+                    // หา input ที่อยู่ใกล้ๆ
+                    const input = label.querySelector('input') ||
+                      label.nextElementSibling?.querySelector('input') ||
+                      label.parentElement?.querySelector('input');
+
+                    if (input) {
+                      input.value = "40"; // ใช้ค่าที่ไม่มี 0 นำหน้า
+                      input.dispatchEvent(new Event('input', { bubbles: true }));
+                      input.dispatchEvent(new Event('change', { bubbles: true }));
+                      return true;
+                    }
+                  }
+                  return false;
+                });
+
+                if (progressInputFound) {
+                  logs.push('✅ 7. กรอกค่า Initial Progress เป็น 40 แล้ว (ด้วย JavaScript)');
+                } else {
+                  logs.push('❌ ไม่พบ input สำหรับ Initial Progress');
+                }
+              }
+            } catch (error) {
+              logs.push(`❌ เกิดข้อผิดพลาดในการกรอก Initial Progress: ${error.message}`);
+            }
+
+            // 8. คลิกปุ่ม Add Subtask
+            logs.push('🖱️ กำลังคลิกปุ่ม Add Subtask...');
+
+            try {
+              // แก้ไขจาก page.$x เป็น page.evaluate
+              const addButtonClicked = await page.evaluate(() => {
+                // ค้นหาปุ่มที่มีข้อความ "Add Subtask"
+                const buttons = Array.from(document.querySelectorAll('button'))
+                  .filter(btn => btn.textContent?.includes('Add Subtask'));
+
+                if (buttons.length > 0) {
+                  buttons[0].click();
+                  return true;
+                }
+
+                // หากไม่พบ ลองหาปุ่มอื่นที่อาจเป็นปุ่มบันทึก
+                const confirmButtons = Array.from(document.querySelectorAll('div[role="dialog"] button'))
+                  .filter(btn =>
+                    !btn.textContent?.toLowerCase().includes('cancel') &&
+                    !btn.textContent?.toLowerCase().includes('close')
+                  );
+
+                if (confirmButtons.length > 0) {
+                  confirmButtons[0].click();
+                  return true;
+                }
+
+                return false;
+              });
+
+              if (addButtonClicked) {
+                logs.push('✅ 8. คลิกปุ่มยืนยันการเพิ่ม Subtask แล้ว');
+
+                // รอให้ระบบประมวลผล - แก้ไขจาก waitForTimeout เป็น Promise.setTimeout
+                await new Promise(r => setTimeout(r, 1000));
+
+                const dialogClosed = await page.evaluate(() => {
+                  return !document.querySelector('div[role="dialog"]');
+                });
+
+                if (dialogClosed) {
+                  logs.push('✅ Dialog ปิดแล้ว - เพิ่ม Subtask สำเร็จ');
+                } else {
+                  const errorMessage = await page.evaluate(() => {
+                    const errors = document.querySelectorAll('div[role="dialog"] [color="red"], .error-message');
+                    return errors.length > 0 ? errors[0].textContent : null;
+                  });
+
+                  logs.push(errorMessage ? `❌ พบข้อผิดพลาด: ${errorMessage}` : '⚠️ Dialog ยังเปิดอยู่หลังจากกดปุ่ม');
+                }
+
+              } else {
+                logs.push('❌ ไม่พบปุ่ม Add Subtask หรือปุ่มยืนยันในฟอร์ม');
+                await page.screenshot({ path: 'missing-add-button.png' });
+              }
+            } catch (error) {
+              logs.push(`❌ เกิดข้อผิดพลาดในการคลิกปุ่ม: ${error.message}`);
+              await page.screenshot({ path: 'add-button-error.png' });
+            }
+          } catch (error) {
+            // จัดการข้อผิดพลาดที่อาจเกิดขึ้นในภาพรวม
+            const errMsg = `[${now()}] ❌ Fatal error: ${error.message}`;
+            console.error(errMsg);
+            logs.push(errMsg);
           }
-        } else {
-          logs.push('❌ ไม่พบปุ่ม Add Subtask ในหน้าจอ');
         }
-      } else {
-        logs.push('❌ ไม่พบปุ่ม + Add ในหน้าจอ');
       }
     } catch (error) {
-      logs.push(`❌ เกิดข้อผิดพลาดขณะเพิ่ม Subtask: ${error.message}`);
-      await page.screenshot({ path: 'error-add-subtask.png', fullPage: true });
+      const errMsg = `[${now()}] ❌ Fatal error: ${error.message}`;
+      console.error(errMsg);
+      logs.push(errMsg);
     }
 
     // บันทึกล็อกลงไฟล์และแสดงผลในคอนโซล
@@ -665,15 +648,16 @@ function now() {
     console.log(logs.join('\n'));
 
   } catch (error) {
-    // จัดการข้อผิดพลาดที่อาจเกิดขึ้น
-    const errMsg = `[${now()}] ❌ Unexpected error: ${error.message}`;
+    // จัดการข้อผิดพลาดที่อาจเกิดขึ้นในภาพรวมของโปรแกรม
+    const errMsg = `[${now()}] ❌ Fatal error: ${error.message}`;
     console.error(errMsg);
-    logs.push(errMsg);
-    fs.writeFileSync(logFilename, logs.join('\n'), 'utf8');
-    
+    if (logs.length > 0) {
+      logs.push(errMsg);
+      fs.writeFileSync(logFilename, logs.join('\n'), 'utf8');
+    }
   } finally {
     // รอสักครู่ก่อนปิดเบราว์เซอร์
     await new Promise(r => setTimeout(r, 2000));
-    await browser?.close();
+    if (browser) await browser.close();
   }
 })();

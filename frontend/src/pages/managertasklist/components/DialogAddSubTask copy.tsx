@@ -381,12 +381,12 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
 
     return (
         <Dialog.Root open={open} onOpenChange={setOpen}>
-            <Dialog.Trigger >
-                <Button className="cursor-pointer" size="1" variant="soft" color="green">+ Subtask Add</Button>
+            <Dialog.Trigger>
+                <Button className="cursor-pointer" size="1" variant="soft" color="green">+ Add</Button>
             </Dialog.Trigger>
             <Dialog.Content style={{ maxWidth: "500px" }}>
                 <Dialog.Title>Add Subtask for {taskName}</Dialog.Title>
-       
+                <form>
                     <Flex direction="column" gap="3">
                         {/* Subtask Name */}
                         <label>
@@ -434,7 +434,6 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                                 <input
                                     type="date"
                                     className="w-full px-2 py-1 border rounded"
-                                    id="add-subtask-start-date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
                                 />
@@ -446,7 +445,6 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                                 <input
                                     type="date"
                                     className="w-full px-2 py-1 border rounded"
-                                    id="add-subtask-end-date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
                                 />
@@ -520,10 +518,11 @@ const DialogAddSubTask: React.FC<DialogAddSubTaskProps> = ({
                                 Cancel
                             </Button>
                         </Dialog.Close>
-                        <Button className="cursor-pointer" onClick={handleAddSubtask}>
+                        <Button className="cursor-pointer" type="submit" onClick={handleAddSubtask}>
                             Add Subtask
                         </Button>
                     </Flex>
+                </form>
 
             </Dialog.Content>
         </Dialog.Root>
