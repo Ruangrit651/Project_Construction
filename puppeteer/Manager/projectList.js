@@ -441,82 +441,109 @@ function now() {
             await page.keyboard.press('Backspace');
             await page.keyboard.type(subtaskendDateMDY);
 
-
             // 6. เลือก Status เป็น "In Progress" (แบบปรับปรุง)
             try {
               logs.push('🔍 กำลังเลือก Status...');
 
-              // ใช้ JavaScript ดักจับและกำหนดค่าให้กับ Select โดยตรง
-              const statusSelected = await page.evaluate(() => {
-                // วิธีที่ 1: ดูว่ามี select element หรือไม่
+              // คลิกที่ select element ก่อน (แยกออกจาก evaluate)
+              const selectExists = await page.evaluate(() => {
                 const selectElem = document.querySelector('select, [role="combobox"], [data-radix-select-trigger]');
                 if (selectElem) {
                   selectElem.click();
-                  console.log("คลิก select element");
-
-                  // รอให้ dropdown แสดง
-                  setTimeout(() => {
-                    // ค้นหา option ที่เกี่ยวกับ progress
-                    const options = document.querySelectorAll('[role="option"], option, [role="menuitem"]');
-                    console.log(`พบตัวเลือกทั้งหมด ${options.length} ตัวเลือก`);
-
-                    for (const opt of options) {
-                      if (opt.textContent.toLowerCase().includes('progress') ||
-                        opt.textContent.toLowerCase().includes('in progress')) {
-                        console.log(`คลิกตัวเลือก: ${opt.textContent}`);
-                        opt.click();
-                        return true;
-                      }
-                    }
-                  }, 500);
+                  return true;
                 }
-
-                // วิธีที่ 2: ใช้ JavaScript กำหนดค่าโดยตรง
-                const allSelects = document.querySelectorAll('select');
-                for (const select of allSelects) {
-                  for (let i = 0; i < select.options.length; i++) {
-                    if (select.options[i].textContent.toLowerCase().includes('progress')) {
-                      select.selectedIndex = i;
-                      select.dispatchEvent(new Event('change', { bubbles: true }));
-                      return true;
-                    }
-                  }
-                }
-
-                // วิธีที่ 3: หาจาก label และกำหนดค่า
-                const statusLabels = Array.from(document.querySelectorAll('label, span, div'))
-                  .filter(el => el.textContent.toLowerCase().includes('status'));
-
-                for (const label of statusLabels) {
-                  const selectNear = label.parentElement?.querySelector('select') ||
-                    label.nextElementSibling?.querySelector('select') ||
-                    label.closest('div')?.querySelector('select');
-
-                  if (selectNear) {
-                    // หาตัวเลือก in progress
-                    for (let i = 0; i < selectNear.options.length; i++) {
-                      if (selectNear.options[i].textContent.toLowerCase().includes('progress')) {
-                        selectNear.selectedIndex = i;
-                        selectNear.dispatchEvent(new Event('change', { bubbles: true }));
-                        return true;
-                      }
-                    }
-                  }
-                }
-
-                // บันทึกสถานะ DOM สำหรับ debugging
-                console.log("DOM Structure for debugging:", document.querySelector('div[role="dialog"]')?.innerHTML);
-
                 return false;
               });
 
-              if (statusSelected) {
-                logs.push('✅ 6. เลือก Status เป็น "In Progress" แล้ว');
-              } else {
-                logs.push('⚠️ ไม่สามารถเลือก Status ได้ - ลองใช้ค่าเริ่มต้น');
+              if (selectExists) {
+                // รอให้ dropdown แสดง (ระหว่างรอนอก evaluate)
+                await new Promise(r => setTimeout(r, 800));
 
-                // อาจมีค่า default อยู่แล้ว บางครั้งไม่จำเป็นต้องเปลี่ยน
-                logs.push('ℹ️ ทดลองข้ามขั้นตอนการเลือก Status - อาจใช้ค่าเริ่มต้น');
+                // จากนั้นจึงเลือก option
+                const optionSelected = await page.evaluate(() => {
+                  // ค้นหา option ที่เกี่ยวกับ progress
+                  const options = document.querySelectorAll('[role="option"], option, [role="menuitem"]');
+                  console.log(`พบตัวเลือกทั้งหมด ${options.length} ตัวเลือก`);
+
+                  for (const opt of options) {
+                    if (opt.textContent.toLowerCase().includes('progress') ||
+                      opt.textContent.toLowerCase().includes('in progress')) {
+                      console.log(`คลิกตัวเลือก: ${opt.textContent}`);
+                      opt.click();
+                      return true;
+                    }
+                  }
+                  return false;
+                });
+
+                if (optionSelected) {
+                  logs.push('✅ 6. เลือก Status เป็น "In Progress" แล้ว');
+                }
+                else {
+                  // ถ้ายังไม่สำเร็จ ลองใช้วิธีอื่น
+                  const alternativeMethod = await page.evaluate(() => {
+                    // วิธีที่ 2: ใช้ JavaScript กำหนดค่าโดยตรง
+                    const allSelects = document.querySelectorAll('select');
+                    for (const select of allSelects) {
+                      for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].textContent.toLowerCase().includes('progress')) {
+                          select.selectedIndex = i;
+                          select.dispatchEvent(new Event('change', { bubbles: true }));
+                          return true;
+                        }
+                      }
+                    }
+
+                    // วิธีที่ 3: หาจาก label และกำหนดค่า
+                    const statusLabels = Array.from(document.querySelectorAll('label, span, div'))
+                      .filter(el => el.textContent.toLowerCase().includes('status'));
+
+                    for (const label of statusLabels) {
+                      const selectNear = label.parentElement?.querySelector('select') ||
+                        label.nextElementSibling?.querySelector('select') ||
+                        label.closest('div')?.querySelector('select');
+
+                      if (selectNear) {
+                        for (let i = 0; i < selectNear.options.length; i++) {
+                          if (selectNear.options[i].textContent.toLowerCase().includes('progress')) {
+                            selectNear.selectedIndex = i;
+                            selectNear.dispatchEvent(new Event('change', { bubbles: true }));
+                            return true;
+                          }
+                        }
+                      }
+                    }
+
+                    return false;
+                  });
+
+                  if (alternativeMethod) {
+                    logs.push('✅ 6. เลือก Status เป็น "In Progress" แล้ว (วิธีที่ 2)');
+                  } else {
+                    logs.push('⚠️ ไม่สามารถเลือก Status ได้ - ลองใช้ค่าเริ่มต้น');
+                  }
+                }
+              } else {
+                // วิธีที่ 4: ลองหาวิธีกำหนดค่าด้วยวิธีอื่น เช่น ค้นหา Radio Button
+                const radioSelected = await page.evaluate(() => {
+                  const radioButtons = document.querySelectorAll('input[type="radio"]');
+                  for (const radio of radioButtons) {
+                    if (radio.value.toLowerCase().includes('progress') ||
+                      radio.nextSibling?.textContent?.toLowerCase().includes('progress')) {
+                      radio.checked = true;
+                      radio.click();
+                      return true;
+                    }
+                  }
+                  return false;
+                });
+
+                if (radioSelected) {
+                  logs.push('✅ 6. เลือก Status เป็น "In Progress" แล้ว (จากปุ่ม radio)');
+                } else {
+                  logs.push('⚠️ ไม่สามารถเลือก Status ได้ - ลองใช้ค่าเริ่มต้น');
+                  logs.push('ℹ️ ทดลองข้ามขั้นตอนการเลือก Status - อาจใช้ค่าเริ่มต้น');
+                }
               }
             } catch (error) {
               logs.push(`❌ เกิดข้อผิดพลาดในการเลือก Status: ${error.message}`);
