@@ -709,7 +709,7 @@ export default function TasklistPage() {
                                                                 }}
                                                                 subtaskId={subtask.subtask_id}
                                                                 taskId={task.task_id}
-                                                                trigger={<Button className="cursor-pointer" size="1" variant="soft" color="orange">Edit</Button>}
+                                                                trigger={<Button className="cursor-pointer" size="1" variant="soft" color="orange" id="subtaskEdit">Edit</Button>}
                                                                 updateTaskStatus={updateTaskStatusFromSubtasks}
                                                                 onProgressUpdate={(percent) => updateProgressInState(subtask.subtask_id, percent, 'subtask')}
                                                                 updateSubtaskInPlace={(updatedSubtask) => updateSubtaskAndMaintainOrder(task.task_id, updatedSubtask)}

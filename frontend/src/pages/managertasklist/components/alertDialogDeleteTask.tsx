@@ -44,7 +44,7 @@ const AlertDialogDeleteTask: React.FC<AlertDialogDeleteTaskProps> = ({ getTaskDa
                         </Button>
                     </Dialog.Close>
                     <Dialog.Close>
-                        <Button className="cursor-pointer" variant="soft" onClick={handleDelete} color="red">
+                        <Button className="cursor-pointer" variant="soft" onClick={handleDelete} color="red" id="delete-task">
                             Delete
                         </Button>
                     </Dialog.Close>

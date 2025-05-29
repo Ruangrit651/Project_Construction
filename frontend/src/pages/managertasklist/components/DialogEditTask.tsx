@@ -219,7 +219,7 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({
     return (
         <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger>
-                <Button className="cursor-pointer" color="orange" variant="soft" size="1">
+                <Button className="cursor-pointer" color="orange" variant="soft" size="1" id="task-edit">
                     Edit
                 </Button>
             </Dialog.Trigger>
