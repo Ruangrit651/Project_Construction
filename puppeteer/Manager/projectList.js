@@ -3,7 +3,7 @@ require('dotenv').config();  // โหลดตัวแปรสภาพแว
 const puppeteer = require('puppeteer');  // ใช้สำหรับควบคุมเบราว์เซอร์อัตโนมัติ
 const fs = require('fs');  // ใช้สำหรับจัดการไฟล์
 const { performance } = require('perf_hooks');  // ใช้วัดประสิทธิภาพการทำงาน
-const { log } = require('console');
+const { log } = require('console'); // ใช้สำหรับแสดงข้อความในคอนโซล
 
 // ฟังก์ชันสำหรับแสดงเวลาปัจจุบันในรูปแบบ วัน/เดือน/ปี ชั่วโมง:นาที:วินาที
 function now() {

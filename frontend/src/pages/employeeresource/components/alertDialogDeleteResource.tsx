@@ -1,9 +1,10 @@
 import { Dialog, Button, Flex, Strong, Text } from "@radix-ui/themes";
 import { deleteResource } from "@/services/resource.service";
+import { useState } from "react";
 
 interface AlertDialogDeleteResourceProps {
     getResourceData: () => void;
-    removeResourceFromState: (resourceId: string) => void; // เพิ่ม prop ใหม่
+    removeResourceFromState: (resourceId: string) => void;
     resource_id: string;
     task_name: string;
     resource_name: string;
@@ -16,12 +17,14 @@ const AlertDialogDeleteResource: React.FC<AlertDialogDeleteResourceProps> = ({
     task_name,
     resource_name
 }) => {
+    const [open, setOpen] = useState(false); // สถานะควบคุม Dialog
+
     const handleDelete = async () => {
         try {
             const response = await deleteResource({ resource_id });
             if (response.statusCode === 200) {
-                // ลบข้อมูลออกจาก state โดยตรง
                 removeResourceFromState(resource_id);
+                setOpen(false); // ปิด Dialog หลังลบสำเร็จ
             } else {
                 alert(response.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ");
             }
@@ -32,7 +35,7 @@ const AlertDialogDeleteResource: React.FC<AlertDialogDeleteResourceProps> = ({
     };
 
     return (
-        <Dialog.Root>
+        <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger>
                 <Button color="red" variant="soft" className="cursor-pointer">Delete</Button>
             </Dialog.Trigger>
@@ -46,9 +49,15 @@ const AlertDialogDeleteResource: React.FC<AlertDialogDeleteResourceProps> = ({
                     <Dialog.Close>
                         <Button className="cursor-pointer" variant="soft" color="gray">Cancel</Button>
                     </Dialog.Close>
-                    <Dialog.Close>
-                        <Button className="cursor-pointer" variant="soft" onClick={handleDelete} color="red">Confirm</Button>
-                    </Dialog.Close>
+                    <Button
+                        className="cursor-pointer"
+                        variant="soft"
+                        onClick={handleDelete}
+                        color="red"
+                        id="delete-resource-button-confirm-em"
+                    >
+                        Confirm
+                    </Button>
                 </Flex>
             </Dialog.Content>
         </Dialog.Root>

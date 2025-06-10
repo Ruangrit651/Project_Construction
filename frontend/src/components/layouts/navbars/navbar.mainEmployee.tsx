@@ -169,7 +169,7 @@ const NavbarEmployee = () => {
               : 'border-transparent hover:bg-gray-700'
               }`}
           >
-            <ArchiveIcon className={`${getActiveTab() === 'projectlist' ? 'text-blue-400' : ''}`} />
+          <ArchiveIcon className={`${getActiveTab() === 'projectlist' ? 'text-blue-400' : ''}`} />
             Project List
           </Tabs.Trigger>
 
@@ -211,7 +211,7 @@ const NavbarEmployee = () => {
             disabled={!selectedProject.id}
             title={!selectedProject.id ? 'โปรดเลือกโปรเจกต์ก่อน' : 'ทรัพยากร/งบประมาณ'}
           >
-            <ArchiveIcon className={`${getActiveTab() === 'resource' ? 'text-blue-400' : ''}`} />
+          <ArchiveIcon className={`${getActiveTab() === 'resource' ? 'text-blue-400' : ''}`} />
             Resource/Budget
           </Tabs.Trigger>
 

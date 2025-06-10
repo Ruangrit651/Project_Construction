@@ -22,8 +22,9 @@
     "project-workflow": "node Project/projectWorkflow.js",
 
     "project-list": "node Manager/projectList.js",
-    "project-list-coppy": "node Manager/projectList-copy.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+
+  
+    "employee-workflow": "node Employee/employeeWorkflow.js"
   },
   "dependencies": {
     "chalk": "^5.4.1",
