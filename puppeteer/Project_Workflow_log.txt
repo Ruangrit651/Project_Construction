@@ -1,36 +1,7 @@
-📅 เวลาเริ่มทดสอบทั้งหมด: 13/07/2025 00:48:54
+📅 เวลาเริ่มทดสอบทั้งหมด: 17/07/2025 21:52:04
 🧪 เริ่มการทดสอบการทำงานของโปรเจกต์แบบครบวงจร (Create → Detail → Edit → Delete)
-🚀 Page Load Time: 1327 ms
-🔐 Login Time: 293 ms
-✅ Login success: http://localhost:5173/admin
-⏱️ Project Page Navigation Time: 1203 ms
-🟢 Clicked Create button
-✅ เลือกเจ้าของโปรเจกต์สำเร็จ
-🟢 Clicked Save button
-✅ Dialog closed after save
-✅ New project appears in the table
-⏱️ Total Create Project Time: 2890 ms
-✅ ขั้นตอนที่ 0 เสร็จสิ้น: การทดสอบการสร้างโปรเจกต์สำเร็จ
-🟢 Clicked Detail button
-🟢 Clicked Close/Back button
-✅ Returned to projects page
-⏱️ Total Detail Testing Time: 3086 ms
-✅ STEP 1 COMPLETE: Detail testing successful
-🟢 Clicked Update button
-⏱️ Time to close dialog after Update: 191 ms
-⏱️ Total Edit Testing Time: 628 ms
-✅ STEP 2 COMPLETE: Edit testing successful
-✅ Project table loaded
-🟢 Clicked Delete button
-✅ Toast notification appeared: "Project "Test Project 1752342536979" deleted successfully×Operation completed successfully."
-⏱️ Total Delete Testing Time: 120 ms
-✅ STEP 3 COMPLETE: Delete testing successful
-📅 เวลาสิ้นสุดการทดสอบ: 13/07/2025 00:49:03
-⏱️ ระยะเวลาทดสอบทั้งหมด: 9548 ms
-🔍 สรุปเวลาในแต่ละขั้นตอน:
-   - Create: 2890 ms
-   - Detail: 3086 ms
-   - Edit: 628 ms
-   - Delete: 120 ms
-🌐 Final URL: http://localhost:5173/adminproject
-✅ การทดสอบครบวงจรเสร็จสิ้น (Create → Detail → Edit → Delete)
+🚀 Page Load Time: 24729 ms
+🔐 Login Time: 662 ms
+✅ Login success: http://119.59.102.182:5173/admin
+⏱️ Project Page Navigation Time: 3449 ms
+📅 เวลา: 17/07/2025 21:52:34 ❌ Unexpected error: Waiting failed: 1100ms exceeded

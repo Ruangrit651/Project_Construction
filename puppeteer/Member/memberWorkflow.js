@@ -121,7 +121,8 @@ const logFilename = 'Member_Workflow_log.txt';
           log.push('🟢 คลิกปุ่ม "Create" ในไดอะล็อกเพื่อบันทึก');
           break;
         }
-
+      }
+    }
     // ตรวจสอบว่า user ถูกสร้างแล้ว (หา username ในตาราง)
     await page.waitForFunction(
       username => [...document.querySelectorAll('td')].some(td => td.textContent.includes(username)),
