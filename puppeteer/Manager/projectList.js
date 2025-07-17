@@ -125,6 +125,7 @@ function now() {
 
     logs.push(`📅 Timestamp: ${now()}`);
     logs.push('🧪 เริ่มทดสอบการสร้าง Task ใหม่');
+    const createTaskStart = performance.now();
 
     const errorMsgExists = await page.evaluate(() => {
       const errorElements = Array.from(document.querySelectorAll('div, p, span')).filter(
@@ -212,14 +213,14 @@ function now() {
     logs.push('✅ 3. กรอก Budget แล้ว');
     await new Promise(r => setTimeout(r, 300));
 
-    // 4. กรอก Start Date
+    // 4. กรอก Start Date 
     await page.click('#start-date-input').catch(() => null);
     await page.keyboard.down('Control');
     await page.keyboard.press('a');
     await page.keyboard.up('Control');
     await page.keyboard.press('Backspace');
     await page.keyboard.type(startDateMDY);
-
+    // 5. กรอก End Date
     await page.click('#end-date-input').catch(() => null);
     await page.keyboard.down('Control');
     await page.keyboard.press('a');
@@ -231,16 +232,16 @@ function now() {
       await page.evaluate(() => {
         const statusSelect = document.querySelector('select[name="status"], select#status');
         if (statusSelect) {
-          statusSelect.value = "pending";
+          statusSelect.value = "Pending";
           statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
         }
       });
-      logs.push('✅ 6. เลือก Status เป็น "pending" แล้ว');
+      logs.push('✅ 6. เลือก Status เป็น "Pending" แล้ว');
     } catch (error) {
       logs.push(`⚠️ ไม่สามารถเลือก Status ได้: ${error.message}`);
     }
 
-    // 7. ตรวจสอบและเลือก Project
+    // 6. ตรวจสอบและเลือก Project
     try {
       const projectSelectorExists = await page.evaluate(() => {
         return !!document.querySelector('select[name="project"], select#project, [aria-label*="project"], [placeholder*="project"]');
@@ -280,8 +281,7 @@ function now() {
     const saveTaskStart = performance.now();
     await new Promise(r => setTimeout(r, 1000));
 
-    // ========== ขั้นตอนที่ 8: บันทึก Task ==========
-
+    // 7. บันทึก Task
     try {
       // คลิกปุ่ม Save
       const buttonFound = await page.evaluate(() => {
@@ -321,8 +321,7 @@ function now() {
     // รอให้หน้าอัพเดทข้อมูล
     await new Promise(r => setTimeout(r, 1000));
 
-    // ========== ขั้นตอนที่ 9: ตรวจสอบผลลัพธ์ ==========
-
+    // 8. ตรวจสอบผลลัพธ์ 
     // ตรวจสอบว่า Task ที่สร้างปรากฏในรายการหรือไม่
     const taskCreated = await page.evaluate((taskNameToFind) => {
       const taskElements = Array.from(document.querySelectorAll('table tbody tr'));
@@ -334,11 +333,15 @@ function now() {
     } else {
       logs.push('❓ สร้าง Task แล้วแต่ไม่พบในรายการ (อาจต้องรีเฟรชหน้า)');
     }
+    const createTaskEnd = performance.now();
+    logs.push(`⏱️ Create Task Time: ${(createTaskEnd - createTaskStart).toFixed(2)} ms`);
+    logs.push(`📅 Timestamp: ${now()}`);
     // ====================================================================================================
 
-    // ========== ขั้นตอนที่ 10: ทดสอบคลิกปุ่ม + Add ในโปรเจกต์ที่สร้างขึ้น ==========
+    // ========== ขั้นตอนที่ 5: ทดสอบคลิกปุ่ม + Add ในโปรเจกต์ที่สร้างขึ้น ==========
     logs.push(`📅 Timestamp: ${now()}`);
     logs.push('🧪 เริ่มทดสอบการคลิกปุ่ม + Add ในโปรเจกต์');
+    const addSubtaskStart = performance.now();
 
     try {
       // หาแถวที่มีชื่อ Task ที่เราสร้างไว้
@@ -397,9 +400,13 @@ function now() {
 
         if (addButtonClicked) {
           logs.push('✅ คลิกปุ่ม + Subtask Add ในโปรเจกต์สำเร็จ');
+          const addSubtaskEnd = performance.now();
+          logs.push(`⏱️ Add Subtask Button Time: ${(addSubtaskEnd - addSubtaskStart).toFixed(2)} ms`);
 
-          // ========== ขั้นตอนที่ 11: กรอกข้อมูล Subtask ในฟอร์ม ==========
+          // ========== ขั้นตอนที่ 6: กรอกข้อมูล Subtask ในฟอร์ม ==========
           logs.push('🧪 เริ่มทดสอบการกรอกข้อมูล Subtask');
+          const fillSubtaskStart = performance.now();
+          logs.push(`📅 Timestamp: ${now()}`);
 
           try {
             const subtaskDescription = `This is a subtask created by Puppeteer on ${now()}`;
@@ -611,9 +618,14 @@ function now() {
 
                   if (subtaskFound) {
                     logs.push('✅ พบ Subtask ในรายการแล้ว');
+                    const fillSubtaskEnd = performance.now();
+                    logs.push(`⏱️ Fill Subtask Form Time: ${(fillSubtaskEnd - fillSubtaskStart).toFixed(2)} ms`);
 
+
+                    // ========== ขั้นตอนที่ 7: ทดสอบปุ่ม Edit ของ Subtask  ==========
                     // ทดสอบปุ่ม Edit
                     logs.push('🧪 เริ่มทดสอบปุ่ม Edit Subtask');
+                    const editSubtaskStart = performance.now();
 
                     let editButtonClicked = false;
 
@@ -806,10 +818,14 @@ function now() {
                             } else {
                               logs.push('⚠️ ไม่พบข้อมูล Subtask ที่อัพเดทในรายการ - อาจมีการเปลี่ยนแปลงแล้วแต่ไม่แสดงผลทันที');
                             }
+                            const editSubtaskEnd = performance.now();
+                            logs.push(`⏱️ Edit Subtask Time: ${(editSubtaskEnd - editSubtaskStart).toFixed(2)} ms`);
 
 
+                            // ========== ขั้นตอนที่ 8: ทดสอบปุ่ม Delete ของ  Subtask  ==========
                             // ทดสอบต่อไป - ทดสอบปุ่ม Delete Subtask
                             logs.push('🧪 เริ่มทดสอบปุ่ม Delete Subtask');
+                            const deleteSubtaskStart = performance.now();
 
                             try {
                               // ค้นหา Subtask ที่เพิ่งแก้ไขในรายการและคลิกปุ่ม Delete
@@ -919,6 +935,9 @@ function now() {
                                         logs.push('❌ Subtask ยังคงปรากฏในรายการแม้หลังจากลบแล้ว');
 
                                       }
+                                      const deleteSubtaskEnd = performance.now();
+                                      logs.push(`⏱️ Delete Subtask Time: ${(deleteSubtaskEnd - deleteSubtaskStart).toFixed(2)} ms`);
+
                                     } else {
                                       logs.push('⚠️ Dialog ยังคงเปิดอยู่หลังจากคลิกปุ่ม Confirm - อาจมีข้อผิดพลาดในการลบ');
 
@@ -995,9 +1014,10 @@ function now() {
             logs.push(errMsg);
           }
 
-          // ========== ขั้นตอนที่ 12: ทดสอบปุ่ม Edit ของ Task ==========
+          // ========== ขั้นตอนที่ 9: ทดสอบปุ่ม Edit ของ Task ==========
           logs.push(`📅 Timestamp: ${now()}`);
           logs.push('🧪 เริ่มทดสอบการแก้ไข Task');
+          const editTaskStart = performance.now();
 
           // ค้นหาและคลิกปุ่ม Edit ของ Task
           try {
@@ -1241,6 +1261,9 @@ function now() {
                     } else {
                       logs.push('⚠️ ไม่พบข้อมูล Task ที่อัพเดทในรายการ - อาจมีการเปลี่ยนแปลงแล้วแต่ไม่แสดงผลทันที');
                     }
+                    const editTaskEnd = performance.now();
+                    logs.push(`⏱️ Edit Task Time: ${(editTaskEnd - editTaskStart).toFixed(2)} ms`);
+
                   } else {
                     logs.push('❌ Dialog ยังคงเปิดอยู่หลังจากคลิกปุ่ม Update - อาจมีข้อผิดพลาดในการบันทึก');
 
@@ -1267,9 +1290,10 @@ function now() {
             logs.push(`❌ เกิดข้อผิดพลาดในกระบวนการแก้ไข Task: ${error.message}`);
           }
 
-          // ========== ขั้นตอนที่ 13: ทดสอบปุ่ม Delete ของ Task ==========
+          // ========== ขั้นตอนที่ 10: ทดสอบปุ่ม Delete ของ Task ==========
           logs.push(`📅 Timestamp: ${now()}`);
           logs.push('🧪 เริ่มทดสอบการลบ Task');
+          const deleteTaskStart = performance.now();
 
           try {
             // ค้นหา Task ที่เพิ่งแก้ไข (Edited Task)
@@ -1376,6 +1400,9 @@ function now() {
                   } else {
                     logs.push('❌ Task ยังคงปรากฏในรายการแม้หลังจากลบแล้ว');
                   }
+                  const deleteTaskEnd = performance.now();
+                  logs.push(`⏱️ Delete Task Time: ${(deleteTaskEnd - deleteTaskStart).toFixed(2)} ms`);
+
                 } else {
                   logs.push('❌ Dialog ยังคงเปิดอยู่หลังจากคลิกปุ่ม Delete - อาจมีข้อผิดพลาดในการลบ');
                 }
@@ -1397,6 +1424,52 @@ function now() {
       const errMsg = `[${now()}] ❌ Fatal error: ${error.message}`;
       console.error(errMsg);
       logs.push(errMsg);
+    }
+
+    // สรุปผลการทดสอบ
+    logs.push(`\n======== สรุปผลการทดสอบ ========`);
+    logs.push(`📅 เวลาสิ้นสุด: ${now()}`);
+
+    const summaryLogs = ['\n🔍 สรุปเวลาในแต่ละขั้นตอน:'];
+    const timingRegex = /([A-Za-z\s]+ Time): ([\d.]+) ms$/;
+    const timings = {};
+
+    // 1. รวบรวมเวลาจาก logs ทั้งหมด
+    logs.forEach(log => {
+      const match = log.match(timingRegex);
+      if (match) {
+        const key = match[1].trim();
+        const time = parseFloat(match[2]);
+        // รวมเวลา Login
+        if (key === 'Login Page Load Time' || key === 'Login Time') {
+          timings['Login Process Time'] = (timings['Login Process Time'] || 0) + time;
+        } else {
+          timings[key] = time;
+        }
+      }
+    });
+
+    // 2. สร้างสรุปตามโครงสร้างที่ต้องการ
+    const addTimingToSummary = (step, key, label) => {
+      if (timings[key]) {
+        summaryLogs.push(`ขั้นตอนที่ ${step}: ${label} - ${timings[key].toFixed(0)} ms`);
+      }
+    };
+
+    addTimingToSummary(1, 'Login Process Time', 'เข้าสู่ระบบ');
+    addTimingToSummary(2, 'Navigation to Project List Time', 'นำทางไปยังหน้ารายการโปรเจกต์');
+    addTimingToSummary(3, 'Navigation to Task List Time', 'เข้าสู่รายการงาน (Task) ในโปรเจกต์');
+    addTimingToSummary(4, 'Create Task Time', 'สร้าง Task ใหม่');
+    addTimingToSummary(5, 'Add Subtask Button Time', 'ทดสอบคลิกปุ่ม + Add ในโปรเจกต์');
+    addTimingToSummary(6, 'Fill Subtask Form Time', 'กรอกข้อมูล Subtask ในฟอร์ม');
+    addTimingToSummary(7, 'Edit Subtask Time', 'ทดสอบปุ่ม Edit ของ Subtask');
+    addTimingToSummary(8, 'Delete Subtask Time', 'ทดสอบปุ่ม Delete ของ Subtask');
+    addTimingToSummary(9, 'Edit Task Time', 'ทดสอบปุ่ม Edit ของ Task');
+    addTimingToSummary(10, 'Delete Task Time', 'ทดสอบปุ่ม Delete ของ Task');
+
+    // 3. เพิ่มส่วนสรุปเข้า logs หลัก
+    if (summaryLogs.length > 1) {
+      logs.push(...summaryLogs);
     }
 
     // บันทึกล็อกลงไฟล์และแสดงผลในคอนโซล

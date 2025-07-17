@@ -1,5 +1,0 @@
-📅 Timestamp: 17/06/2025 19:11:17
-🚀 Page Load Time: 1907.45 ms
-🔐 Login Time: 157.31 ms
-📌 Result: ✅ Login test passed!
-🌐 Final URL: http://119.59.102.182:5173/admin

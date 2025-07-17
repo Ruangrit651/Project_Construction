@@ -148,6 +148,6 @@ const logFilename = 'Detail_performance_log.txt';
     log.push(errorLog);
     fs.writeFileSync(logFilename, log.join('\n'), 'utf8');
   } finally {
-    await browser?.close();
+    await browser?.on();
   }
 })();

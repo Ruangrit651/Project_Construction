@@ -8,11 +8,14 @@
   "main": "index.js",
   "scripts": {
     "login": "node login/login.js",
+
+    
     "member-create": "node Member/create.js",
     "member-details": "node Member/details.js",
     "member-edit": "node Member/edit.js",
     "member-delete": "node Member/delete.js",
-    "member-Suspend": "node Member/suspend.js",
+    "member-suspend": "node Member/suspend.js",
+    "member-workflow": "node Member/memberWorkflow.js",
 
     "project-buttonProject": "node Project/buttonProject.js",
     "project-create": "node Project/create.js",
@@ -21,7 +24,8 @@
     "project-delete": "node Project/delete.js",
     "project-workflow": "node Project/projectWorkflow.js",
 
-    "project-list": "node Manager/projectList.js",
+
+    "project-list": "node Manager/projectList.js", 
 
   
     "employee-workflow": "node Employee/employeeWorkflow.js"
