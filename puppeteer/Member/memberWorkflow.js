@@ -322,28 +322,87 @@ await new Promise(res => setTimeout(res, 500));
       const usernameInput = document.querySelector('input[placeholder="Enter new username"]');
       if (usernameInput) usernameInput.value = '';
     });
-
-    const startFormEdit = Date.now();
     await page.type('input[placeholder="Enter new username"]', newUsername);
     log.push(`📝 เปลี่ยน username เป็น: ${newUsername}`);
 
-    // ลองเปลี่ยน role อีกครั้ง (หากมีให้เปลี่ยน)
-    const editComboboxes = await page.$$('[role="combobox"]');
-    if (editComboboxes.length > 0) {
-      try {
-        await editComboboxes[0].click();
-        await page.waitForSelector('[role="option"]');
-        const options = await page.$$('[role="option"]');
-        if (options.length > 1) {
-          await options[1].click();
-          log.push('✅ เปลี่ยนการเลือกบทบาทสำเร็จ');
-        }
-      } catch (e) {
-        log.push(`⚠️ ไม่สามารถเปลี่ยนบทบาทได้: ${e.message}`);
-      }
+    // เปลี่ยนรหัสผ่านใหม่
+    try {
+        await page.type('input[placeholder="Enter new password (optional)"]', 'newpassword456');
+        log.push('📝 กรอกรหัสผ่านใหม่');
+    } catch (e) {
+        log.push('ℹ️ ไม่พบช่องกรอกรหัสผ่าน หรือไม่สามารถกรอกได้');
     }
 
-    const formEditTime = Date.now() - startFormEdit;
+    // เปลี่ยน role
+    try {
+        log.push('🔄 กำลังเปลี่ยนบทบาท...');
+        const comboboxes = await page.$$('[role="combobox"]');
+        if (comboboxes.length > 0) {
+            // สมมติว่า combobox แรกคือ role
+            await comboboxes[0].click();
+            await page.waitForSelector('[role="option"]');
+            const options = await page.$$('[role="option"]');
+            if (options.length > 1) {
+                await options[1].click(); // เลือก role อันที่สอง
+                log.push('✅ เปลี่ยนการเลือกบทบาทสำเร็จ');
+            }
+        }
+    } catch (e) {
+        log.push(`⚠️ ไม่สามารถเปลี่ยนบทบาทได้: ${e.message}`);
+    }
+
+    // เปลี่ยน project
+    try {
+        log.push('🔄 กำลังเปลี่ยนโปรเจกต์...');
+        
+        // วิธีที่เสถียรขึ้นในการหาและคลิก dropdown ของโปรเจกต์
+        const projectTriggerClicked = await page.evaluate(() => {
+            const labels = Array.from(document.querySelectorAll('label'));
+            const projectLabel = labels.find(label => label.textContent.includes('Project'));
+            if (projectLabel) {
+                // Radix UI puts the trigger next to the label, not always inside.
+                const trigger = projectLabel.nextElementSibling?.querySelector('[role="combobox"]') || projectLabel.querySelector('[role="combobox"]');
+                if (trigger) {
+                    trigger.click();
+                    return true;
+                }
+            }
+            // Fallback: คลิก combobox ที่สอง
+            const comboboxes = document.querySelectorAll('[role="combobox"]');
+            if (comboboxes.length > 1) {
+                comboboxes[1].click();
+                return true;
+            }
+            return false;
+        });
+
+        if (!projectTriggerClicked) {
+            throw new Error('ไม่พบ dropdown สำหรับเลือกโปรเจกต์');
+        }
+        log.push('🟢 คลิก dropdown ของโปรเจกต์แล้ว');
+
+        // เพิ่มการรอเล็กน้อยเผื่อมี animation
+        await new Promise(res => setTimeout(res, 500));
+
+        // รอให้ตัวเลือกปรากฏด้วย timeout ที่นานขึ้น
+        await page.waitForSelector('[role="option"]', { timeout: 5000, visible: true });
+        log.push('✅ ตัวเลือกโปรเจกต์ปรากฏขึ้นแล้ว');
+
+        const options = await page.$$('[role="option"]');
+        if (options.length > 1) {
+            await options[1].click(); // เลือก project อันที่สองเพื่อทดสอบการเปลี่ยนแปลง
+            log.push('✅ เปลี่ยนการเลือกโปรเจกต์สำเร็จ');
+        } else if (options.length === 1) {
+            await options[0].click();
+            log.push('✅ เปลี่ยนการเลือกโปรเจกต์สำเร็จ (มีแค่ตัวเลือกเดียว)');
+        } else {
+            log.push('⚠️ ไม่พบตัวเลือกใน dropdown ของโปรเจกต์');
+        }
+    } catch (e) {
+        log.push(`⚠️ ไม่สามารถเปลี่ยนโปรเจกต์ได้: ${e.message}`);
+    }
+
+    const formEditTime = Date.now() - startEdit;
     log.push(`⌨️ เวลาการแก้ไขข้อมูลในฟอร์ม: ${formEditTime} ms`);
 
     // คลิกปุ่ม Update เพื่อบันทึกการเปลี่ยนแปลง
