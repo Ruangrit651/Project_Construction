@@ -1,16 +1,25 @@
-📅 เวลาเริ่มทดสอบทั้งหมด: 17/07/2025 22:10:16
+📅 เวลาเริ่มทดสอบทั้งหมด: 17/07/2025 22:18:42
 🧪 เริ่มการทดสอบการจัดการสมาชิกแบบครบวงจร (Create → Detail → Edit → Suspend → Delete)
-🚀 Page Load Time: 3117 ms
-🔐 Login Time: 489 ms
+🚀 Page Load Time: 2734 ms
+🔐 Login Time: 515 ms
 ✅ Login success: http://119.59.102.182:5173/admin
-📅 เวลา: 17/07/2025 22:10:20
+📅 เวลา: 17/07/2025 22:18:45
 🔄 เริ่มสร้างสมาชิกใหม่...
 🟢 คลิกปุ่ม "Create" สำเร็จ
-📝 กรอก Username: testuser_1752765021134
+📝 กรอก Username: testuser_1752765526261
 📝 กรอกรหัสผ่าน
 🔄 กำลังเลือกบทบาทและโปรเจกต์...
-⚠️ ไม่สามารถใช้ combobox: Waiting for selector `[role="option"]` failed: Waiting failed: 3000ms exceeded
-⚠️ ไม่สามารถใช้ combobox: Node is detached from document
-⚠️ ไม่สามารถใช้ combobox: Node is detached from document
-✅ เลือกบทบาทและโปรเจกต์สำเร็จ
-[17/07/2025 22:10:29] ❌ เกิดข้อผิดพลาดที่ไม่คาดคิด: Waiting failed: 5000ms exceeded
+🔄 กำลังเลือกบทบาท...
+⚠️ ไม่สามารถเลือกได้ด้วย Radix UI selector: Waiting for selector `[data-radix-select-content]` failed: Waiting failed: 5000ms exceeded
+🔄 กำลังลองใช้ generic selector...
+✅ เสร็จสิ้นการเลือกบทบาทและโปรเจกต์
+[17/07/2025 22:18:56] ❌ เกิดข้อผิดพลาดที่ไม่คาดคิด: Waiting failed: 5000ms exceeded
+📋 Stack trace: TimeoutError: Waiting failed: 5000ms exceeded
+    at new WaitTask (T:\Project_Final\Constrution_Web\puppeteer\node_modules\puppeteer-core\lib\cjs\puppeteer\common\WaitTask.js:48:34)
+    at IsolatedWorld.waitForFunction (T:\Project_Final\Constrution_Web\puppeteer\node_modules\puppeteer-core\lib\cjs\puppeteer\api\Realm.js:25:26)
+    at CdpFrame.waitForFunction (T:\Project_Final\Constrution_Web\puppeteer\node_modules\puppeteer-core\lib\cjs\puppeteer\api\Frame.js:587:43)
+    at CdpFrame.<anonymous> (T:\Project_Final\Constrution_Web\puppeteer\node_modules\puppeteer-core\lib\cjs\puppeteer\util\decorators.js:109:27)
+    at CdpPage.waitForFunction (T:\Project_Final\Constrution_Web\puppeteer\node_modules\puppeteer-core\lib\cjs\puppeteer\api\Page.js:1439:37)
+    at T:\Project_Final\Constrution_Web\puppeteer\Member\memberWorkflow.js:195:16
+⚠️ ไม่สามารถบันทึก screenshot: page is not defined
+🔒 ปิดเบราว์เซอร์สำเร็จ
