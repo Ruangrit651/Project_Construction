@@ -123,7 +123,6 @@ const logFilename = 'Member_Workflow_log.txt';
         }
       }
     }
-
     // ตรวจสอบว่า user ถูกสร้างแล้ว (หา username ในตาราง)
     await page.waitForFunction(
       username => [...document.querySelectorAll('td')].some(td => td.textContent.includes(username)),
