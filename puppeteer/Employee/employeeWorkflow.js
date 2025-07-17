@@ -142,7 +142,7 @@ async function wait(ms) {
         // });
 
         // ========== ขั้นตอนที่ 3: เลือกโปรเจกต์แรก ==========
-
+        const selectProjectStart = performance.now();
         logs.push(`📅 Timestamp: ${now()}`);
         logs.push(`🧪 เริ่มทดสอบการเลือกโปรเจกต์แรก`);
 
@@ -157,7 +157,7 @@ async function wait(ms) {
             logs.push(`✅ พบโปรเจกต์ในระบบ`);
 
             // เลือกโปรเจกต์แรก - ปรับปรุงประสิทธิภาพ
-            const selectProjectStart = performance.now();
+
 
             // ใช้ try-catch เพื่อจับข้อผิดพลาดที่อาจเกิดขึ้น
             try {
@@ -245,7 +245,7 @@ async function wait(ms) {
                 logs.push(`📅 Timestamp: ${now()}`);
                 logs.push(`🧪 เริ่มทดสอบการนำทางไปยังหน้า Resource/Budget`);
 
-                const navigateToResourceStart = performance.now();
+                const navigateToResourceStartTime = performance.now();
 
                 try {
                     // วิธีที่ 1: คลิกปุ่มตรงๆ
@@ -301,6 +301,8 @@ async function wait(ms) {
                     });
 
                     if (isResourcePage.isResourcePage) {
+                        const navigateToResourceEndTime = performance.now();
+                        logs.push(`🔄 Resource/Budget Navigation Time: ${(navigateToResourceEndTime - navigateToResourceStartTime).toFixed(2)} ms`);
                         logs.push(`✅ นำทางไปยังหน้า Resource/Budget สำเร็จ`);
                         // logs.push(`🔍 URL ปัจจุบัน: ${isResourcePage.url}`);
                         // logs.push(`🔍 แท็บที่เลือก: ${isResourcePage.activeTabText}`);
@@ -1086,8 +1088,8 @@ async function wait(ms) {
                             return dialogClosed;
                         }
 
-                        const navigateToResourceEnd = performance.now();
-                        logs.push(`🔄 Resource/Budget Navigation Time: ${(navigateToResourceEnd - navigateToResourceStart).toFixed(2)} ms`);
+                        const deleteTestEnd = performance.now();
+                        logs.push(`🔄 Delete Test Time: ${(deleteTestEnd - deleteTestStart).toFixed(2)} ms`);
                     } else {
                         logs.push(`⚠️ ไม่สามารถนำทางไปยังหน้า Resource/Budget ได้`);
                         logs.push(`🔍 URL ปัจจุบัน: ${isResourcePage.url}`);
@@ -1127,7 +1129,63 @@ async function wait(ms) {
         // สรุปผลการทดสอบ
         logs.push(`\n======== สรุปผลการทดสอบ ========`);
         logs.push(`📅 เวลาสิ้นสุด: ${now()}`);
-        logs.push(`✅ การทดสอบเสร็จสมบูรณ์`);
+
+        const summaryLogs = ['\n🔍 สรุปเวลาในแต่ละขั้นตอน:'];
+        const timingRegex = /🔄 ([\w\s/]+ Time): ([\d.]+) ms|🚀 ([\w\s]+ Time): ([\d.]+) ms|🔐 ([\w\s]+ Time): ([\d.]+) ms/;
+        const timings = {};
+        let totalTime = 0;
+
+        // 1. รวบรวมเวลาจาก logs ทั้งหมด
+        logs.forEach(log => {
+            const match = log.match(timingRegex);
+            if (match) {
+                // Handle different capture groups from the regex
+                const stepKey = (match[1] || match[3] || match[5]).trim();
+                const time = parseFloat(match[2] || match[4] || match[6]);
+                if (stepKey && !isNaN(time)) {
+                    timings[stepKey] = time;
+                    totalTime += time;
+                }
+            }
+        });
+
+        // 2. สร้างสรุปตามโครงสร้างที่ต้องการ
+        const addTiming = (stepKey, label) => {
+            if (timings[stepKey]) {
+                const time = timings[stepKey];
+                summaryLogs.push(`   - ${label}: ${time.toFixed(0)} ms`);
+            }
+        };
+
+        summaryLogs.push('\nขั้นตอนที่ 1: เข้าสู่ระบบ');
+        addTiming('Login Page Load Time', 'โหลดหน้าเว็บ');
+
+        summaryLogs.push('\nขั้นตอนที่ 2: ยืนยันการเข้าสู่ระบบ');
+        addTiming('Login Time', 'ยืนยันการเข้าสู่ระบบ');
+
+        summaryLogs.push('\nขั้นตอนที่ 3: เลือกโปรเจกต์');
+        addTiming('Project Selection Time', 'เวลาที่ใช้เลือก');
+
+        summaryLogs.push('\nขั้นตอนที่ 4: นำทางไปยังหน้า Resource/Budget');
+        addTiming('Resource/Budget Navigation Time', 'เวลาที่ใช้เปิดหน้า');
+
+        summaryLogs.push('\nขั้นตอนที่ 5: การเพิ่มทรัพยากร');
+        addTiming('Dropdown Check Time', 'เวลาที่ใช้ทั้งหมด');
+
+        summaryLogs.push('\nขั้นตอนที่ 6: การแก้ไขทรัพยากร');
+        addTiming('Arrow Dropdown Check Time', 'เวลาที่ใช้ทั้งหมด');
+
+        summaryLogs.push('\nขั้นตอนที่ 7: การลบทรัพยากร');
+        addTiming('Delete Test Time', 'เวลาที่ใช้ทั้งหมด');
+
+        // 3. เพิ่มเวลารวมและเพิ่มเข้า logs หลัก
+        if (Object.keys(timings).length > 0) {
+            summaryLogs.push(`\n   ⏱️ เวลารวมทุกขั้นตอน: ${totalTime.toFixed(0)} ms (~${(totalTime / 1000).toFixed(2)} วินาที)`);
+            logs.push(...summaryLogs);
+        }
+
+        logs.push(`\n✅ การทดสอบเสร็จสมบูรณ์`);
+
 
     } catch (error) {
         console.error(`[${now()}] ❌ ERROR:`, error);
