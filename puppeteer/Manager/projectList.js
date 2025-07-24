@@ -32,6 +32,7 @@ function now() {
         '--disable-features=PasswordManagerEnabled,AutomaticPasswordSaving',
         '--disable-save-password-bubble'
       ],
+      defaultViewport: null,  // ใช้ viewport ขนาดเต็มจอ
       protocolTimeout: 60000  // เพิ่ม timeout เป็น 60 วินาที เพื่อแก้ปัญหา screenshot timeout
     });
 
@@ -79,7 +80,7 @@ function now() {
 
     logs.push(`📅 Timestamp: ${now()}`);
     const navigateToProjectsStart = performance.now();
-    await page.goto(`${process.env.APP_URL}/ManagerProjectList`, { waitUntil: 'networkidle0' });
+    await page.goto(`${process.env.APP_URL}ManagerProjectList`, { waitUntil: 'networkidle0' });
     const navigateToProjectsEnd = performance.now();
     logs.push(`🧭 Navigation to Project List Time: ${(navigateToProjectsEnd - navigateToProjectsStart).toFixed(2)} ms`);
 

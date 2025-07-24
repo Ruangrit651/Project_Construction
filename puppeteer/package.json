@@ -8,14 +8,13 @@
   "main": "index.js",
   "scripts": {
     "login": "node login/login.js",
-
-    
     "member-create": "node Member/create.js",
     "member-details": "node Member/details.js",
     "member-edit": "node Member/edit.js",
     "member-delete": "node Member/delete.js",
     "member-suspend": "node Member/suspend.js",
     "member-workflow": "node Member/memberWorkflow.js",
+
 
     "project-buttonProject": "node Project/buttonProject.js",
     "project-create": "node Project/create.js",
@@ -25,14 +24,17 @@
     "project-workflow": "node Project/projectWorkflow.js",
 
 
-    "project-list": "node Manager/projectList.js", 
+    "project-list": "node Manager/projectList.js",
 
-  
+
     "employee-workflow": "node Employee/employeeWorkflow.js"
+    
   },
   "dependencies": {
     "chalk": "^5.4.1",
     "dotenv": "^16.5.0",
-    "puppeteer": "^24.8.2"
+    "puppeteer": "^24.8.2",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }

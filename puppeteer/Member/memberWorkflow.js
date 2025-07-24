@@ -32,7 +32,8 @@ const logFilename = 'Member_Workflow_log.txt';
       args: [
         '--disable-features=PasswordManagerEnabled,AutomaticPasswordSaving',
         '--disable-save-password-bubble'
-      ]
+      ],
+      defaultViewport: null // ใช้ viewport ขนาดเต็มจอ
     });
 
     const page = await browser.newPage();
@@ -88,7 +89,7 @@ const logFilename = 'Member_Workflow_log.txt';
 
     // กรอกข้อมูลสำหรับสร้าง user ใหม่
     await page.waitForSelector('input[placeholder="Enter username"]');
-    const username = 'testuser_' + Date.now();
+    let username = 'testuser_' + Date.now();
     const password = 'testpassword123';
 
     const startCreate = Date.now();
@@ -198,7 +199,7 @@ const logFilename = 'Member_Workflow_log.txt';
 
 // ปิดหน้ารายละเอียด (คลิกปุ่ม Close หรือ X)
 try {
-  // วิธีที่ 2: ขยายเงื่อนไขการค้นหาปุ่มปิด
+  // ขยายเงื่อนไขการค้นหาปุ่มปิด
   log.push('🔄 กำลังพยายามปิดหน้ารายละเอียด (วิธีที่ 2)...');
   const closeClicked = await page.evaluate(() => {
     // ค้นหาปุ่มได้ละเอียดขึ้น

@@ -26,7 +26,8 @@ const logFilename = 'Project_Workflow_log.txt';
       args: [
         '--disable-features=PasswordManagerEnabled,AutomaticPasswordSaving',
         '--disable-save-password-bubble'
-      ]
+      ],
+      defaultViewport: null, // ใช้ viewport ขนาดเต็มจอ
     });
 
     const page = await browser.newPage();
@@ -53,11 +54,11 @@ const logFilename = 'Project_Workflow_log.txt';
 
     // =================== นำทางไปยังหน้า Project ===================
     const startProjectNav = Date.now();
-    await page.goto(`${process.env.APP_URL}/adminproject`, { waitUntil: 'networkidle0' });
+    await page.goto(`${process.env.APP_URL}adminproject`, { waitUntil: 'networkidle0' });
     const projectNavTime = Date.now() - startProjectNav;
 
     log.push(`⏱️ Project Page Navigation Time: ${projectNavTime} ms`);
-    if (page.url().includes('/adminproject')) {
+    if (page.url().includes('adminproject')) {
       // log.push('✅ Successfully navigated to Project page');
     } else {
       throw new Error('Failed to navigate to Project page');
@@ -120,7 +121,7 @@ const logFilename = 'Project_Workflow_log.txt';
           }
         }
         
-        // ถ้าไม่เจอเลย ลองคลิกที่ dropdown ตัวแรกที่เจอในแบบฟอร์ม
+        // ถ้าไม่เจอ ลองคลิกที่ dropdown ตัวแรกที่เจอในแบบฟอร์ม
         const form = document.querySelector('form, [role="dialog"]');
         if (form) {
           const dropdowns = form.querySelectorAll('.select-trigger, select, [role="combobox"]');
