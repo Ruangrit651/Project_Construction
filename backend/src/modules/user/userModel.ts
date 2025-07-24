@@ -4,9 +4,10 @@ import { z } from "zod";
 export type TypePayloadUser = {
     project_id?: string | null;
     project_name?: string | null; 
-    role: string;    
+    role: string;
     username: string;
     password: string;
+    fullname?: string | null;
     is_active?: boolean; // เพิ่มฟิลด์นี้
     created_by?: string;
     updated_by?: string;
@@ -19,6 +20,7 @@ export const CreateUserSchema = z.object({
         username: z.string().max(255),
         password: z.string().max(255),
         role: z.string().max(255),
+        fullname: z.string().max(255).optional(),
         is_active: z.boolean().optional().default(true), // เพิ่มฟิลด์นี้
         created_by: z.string().uuid().optional(),
         updated_by: z.string().uuid().optional(),
@@ -32,6 +34,7 @@ export const UpdateUserSchema = z.object({
         role: z.string().optional(),
         username: z.string().max(255).optional(),
         password: z.string().max(255).optional(),
+        fullname: z.string().max(255).optional(),
         is_active: z.boolean().optional(), // เพิ่มฟิลด์นี้
         updated_by: z.string().uuid().optional(),
     }),

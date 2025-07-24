@@ -14,6 +14,7 @@ const DialogAdd = ({ getUserData, showToast }: DialogUserProps) => {
   const [postUserName, setPostUserName] = useState("");
   const [postPassword, setPostPassword] = useState("");
   const [postRole, setPostRole] = useState("");
+  const [postFullName, setPostFullName] = useState("");
   const [postProject, setPostProject] = useState<string | null>(null);
   const [roles, setRoles] = useState<{ role_id: string; name: string }[]>([]);
   const [projects, setProjects] = useState<{ project_id: string; project_name: string }[]>([]);
@@ -93,6 +94,7 @@ const DialogAdd = ({ getUserData, showToast }: DialogUserProps) => {
       const response = await postUser({
         username: postUserName,
         password: postPassword,
+        fullname: postFullName, // Include full name in the request
         role: postRole,
         project_id: postProject,
       });
@@ -169,6 +171,17 @@ const DialogAdd = ({ getUserData, showToast }: DialogUserProps) => {
               placeholder="Enter password"
               type="password"
               onChange={(event) => setPostPassword(event.target.value)}
+            />
+          </label>
+           {/* Full Name - เพิ่มส่วนนี้ */}
+          <label>
+            <Text as="div" size="2" mb="1" weight="bold">
+              Full Name
+            </Text>
+            <TextField.Root
+              value={postFullName}
+              placeholder="Enter full name (optional)"
+              onChange={(event) => setPostFullName(event.target.value)}
             />
           </label>
           {/* Role */}

@@ -151,6 +151,7 @@ export default function AdminPage() {
                                                 getUserData={getUserData}
                                                 user_id={user.user_id}
                                                 username={user.username}
+                                                fullname={user.fullname}
                                                 role={user.role}
                                                 project={user.projects?.project_id || ""}
                                                 showToast={showToast}

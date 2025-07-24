@@ -32,6 +32,7 @@ function now() {
         '--disable-features=PasswordManagerEnabled,AutomaticPasswordSaving',
         '--disable-save-password-bubble'
       ],
+      defaultViewport: null,  // ใช้ viewport ขนาดเต็มจอ
       protocolTimeout: 60000  // เพิ่ม timeout เป็น 60 วินาที เพื่อแก้ปัญหา screenshot timeout
     });
 
@@ -79,7 +80,7 @@ function now() {
 
     logs.push(`📅 Timestamp: ${now()}`);
     const navigateToProjectsStart = performance.now();
-    await page.goto(`${process.env.APP_URL}/ManagerProjectList`, { waitUntil: 'networkidle0' });
+    await page.goto(`${process.env.APP_URL}ManagerProjectList`, { waitUntil: 'networkidle0' });
     const navigateToProjectsEnd = performance.now();
     logs.push(`🧭 Navigation to Project List Time: ${(navigateToProjectsEnd - navigateToProjectsStart).toFixed(2)} ms`);
 
@@ -338,153 +339,679 @@ function now() {
     logs.push(`📅 Timestamp: ${now()}`);
     // ====================================================================================================
 
-    // ========== ขั้นตอนที่ 5, 6, 7, 8: การทดสอบ Subtask (สร้าง, แก้ไข, ลบ) ==========
+    // ========== ขั้นตอนที่ 5: ทดสอบคลิกปุ่ม + Add ในโปรเจกต์ที่สร้างขึ้น ==========
+    logs.push(`📅 Timestamp: ${now()}`);
+    logs.push('🧪 เริ่มทดสอบการคลิกปุ่ม + Add ในโปรเจกต์');
+    const addSubtaskStart = performance.now();
+
     try {
-      let subtaskName; // Use to store the subtask name for later steps
-
-      // ========== Step 5: Test Clicking the + Add Subtask Button ==========
-      logs.push(`📅 Timestamp: ${now()}`);
-      logs.push('🧪 Starting test: Click + Add Subtask button');
-      const addSubtaskStart = performance.now();
-
-      const taskRowFoundAndClicked = await page.evaluate((name) => {
-        const rows = Array.from(document.querySelectorAll('table tbody tr'));
-        const targetRow = rows.find(row => row.textContent?.includes(name));
-        if (targetRow) {
-          targetRow.click(); // Select the parent task row
-          return true;
+      // หาแถวที่มีชื่อ Task ที่เราสร้างไว้
+      const taskRowFound = await page.evaluate(async (taskNameToFind) => {
+        const taskRows = Array.from(document.querySelectorAll('table tbody tr'));
+        for (const row of taskRows) {
+          if (row.textContent?.includes(taskNameToFind)) {
+            // เลือกแถวที่มี Task ที่เราสร้าง
+            row.click();
+            return true;
+          }
         }
         return false;
       }, taskName);
 
-      if (!taskRowFoundAndClicked) throw new Error(`Could not find the row for task: "${taskName}"`);
-      logs.push('✅ Clicked on the created task row.');
-      await new Promise(r => setTimeout(r, 1000)); // Wait for UI to respond
+      if (taskRowFound) {
+        logs.push('✅ คลิกที่แถวของ Task ที่สร้างแล้ว');
 
-      const addButtonClicked = await page.evaluate(() => {
-        const button = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent?.includes('+ Subtask Add'));
-        if (button) {
-          button.click();
-          return true;
-        }
-        return false;
-      });
+        // รอให้หน้าโหลดหรือมีการอัพเดต UI หลังจากคลิก
+        await new Promise(r => setTimeout(r, 1500));
 
-      if (!addButtonClicked) throw new Error('Could not find or click the "+ Subtask Add" button.');
-      logs.push('✅ Successfully clicked the "+ Subtask Add" button.');
-      const addSubtaskEnd = performance.now();
-      logs.push(`⏱️ Add Subtask Button Time: ${(addSubtaskEnd - addSubtaskStart).toFixed(2)} ms`);
+        // คลิกปุ่มลูกศรขวาก่อนเพื่อเข้าถึงรายละเอียดโปรเจ็ค
+        const arrowButtonClicked = await page.evaluate(() => {
+          // หาปุ่มลูกศรขวาจาก SVG path หรือคลาสที่เกี่ยวข้อง
+          const arrowButtons = Array.from(document.querySelectorAll('button'))
+            .filter(btn => {
+              // ตรวจสอบว่ามี SVG ภายในปุ่ม
+              const svg = btn.querySelector('svg');
+              if (!svg) return false;
 
-      // ========== Step 6: Create a New Subtask ==========
-      const fillSubtaskStart = performance.now();
-      logs.push('🧪 Starting test: Create a new subtask');
-      
-      await page.waitForSelector('div[role="dialog"]', { timeout: 5000 });
-      logs.push('✅ Subtask dialog opened.');
-
-      subtaskName = `Test Subtask ${new Date().toISOString().slice(0, 10)}`;
-      
-      logs.push('🖊️ Filling out subtask form...');
-      await page.type('input[placeholder*="Subtask Name"]', subtaskName);
-      await page.type('textarea[placeholder*="Description"]', `Test description - ${now()}`);
-      await page.type('input[placeholder*="Budget"]', "1200");
-      
-      const today = new Date();
-      const startDateMDY = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
-      await page.type('#add-subtask-start-date', startDateMDY);
-      
-      const endDate = new Date();
-      endDate.setDate(today.getDate() + 5);
-      const endDateMDY = `${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}/${endDate.getFullYear()}`;
-      await page.type('#add-subtask-end-date', endDateMDY);
-
-      await page.click('div[role="dialog"] #status-select');
-      await page.waitForSelector('div[role="listbox"]');
-      await page.click('div[role="listbox"] div[data-value="inprogress"]');
-
-      await page.type('input[type="number"][placeholder*="Progress"]', "10");
-      logs.push('✅ Form filled.');
-
-      await page.click('div[role="dialog"] button[type="submit"]');
-      logs.push('✅ Clicked the confirm button to add subtask.');
-
-      await page.waitForFunction(() => !document.querySelector('div[role="dialog"]'), { timeout: 5000 });
-      logs.push('✅ Dialog closed, subtask created successfully.');
-      
-      const fillSubtaskEnd = performance.now();
-      logs.push(`⏱️ Fill Subtask Form Time: ${(fillSubtaskEnd - fillSubtaskStart).toFixed(2)} ms`);
-
-      // ========== Step 7: Edit the Subtask ==========
-      const editSubtaskStart = performance.now();
-      logs.push('🧪 Starting test: Edit the subtask');
-      const editedSubtaskName = `Edited Subtask - ${new Date().toISOString().slice(0, 10)}`;
-
-      const editButtonClicked = await page.evaluate((name) => {
-        const rows = Array.from(document.querySelectorAll('tr'));
-        const targetRow = rows.find(row => row.textContent.includes(name));
-        if (targetRow) {
-          const button = targetRow.querySelector('button#subtaskEdit');
-          if (button) {
-            button.click();
-            return true;
-          }
-        }
-        return false;
-      }, subtaskName);
-
-      if (!editButtonClicked) throw new Error(`Could not find edit button for subtask: "${subtaskName}"`);
-      logs.push('✅ Clicked the edit subtask button.');
-      
-      await page.waitForSelector('div[role="dialog"]', { timeout: 5000 });
-      await page.click('input[placeholder*="Subtask Name"]', { clickCount: 3 });
-      await page.type('input[placeholder*="Subtask Name"]', editedSubtaskName);
-      await page.click('div[role="dialog"] button[type="submit"]');
-      await page.waitForFunction(() => !document.querySelector('div[role="dialog"]'), { timeout: 5000 });
-      logs.push('✅ Subtask edited successfully.');
-      subtaskName = editedSubtaskName; // Update name for the delete step
-      const editSubtaskEnd = performance.now();
-      logs.push(`⏱️ Edit Subtask Time: ${(editSubtaskEnd - editSubtaskStart).toFixed(2)} ms`);
-
-      // ========== Step 8: Delete the Subtask ==========
-      const deleteSubtaskStart = performance.now();
-      logs.push('🧪 Starting test: Delete the subtask');
-
-      const deleteButtonClicked = await page.evaluate((name) => {
-        const rows = Array.from(document.querySelectorAll('tr'));
-        const targetRow = rows.find(row => row.textContent.includes(name));
-        if (targetRow) {
-          const button = targetRow.querySelector('button#subtaskDelete');
-          if (button) {
-            button.click();
-            return true;
-          }
-        }
-        return false;
-      }, subtaskName);
-
-      if (!deleteButtonClicked) throw new Error(`Could not find delete button for subtask: "${subtaskName}"`);
-      logs.push('✅ Clicked the delete subtask button.');
-
-      await page.waitForSelector('div[role="dialog"]', { timeout: 5000 });
-      await page.click('div[role="dialog"] button[color="red"]'); // Click the red confirm button
-      await page.waitForFunction(() => !document.querySelector('div[role="dialog"]'), { timeout: 5000 });
-      logs.push('✅ Subtask deleted successfully.');
-      const deleteSubtaskEnd = performance.now();
-      logs.push(`⏱️ Delete Subtask Time: ${(deleteSubtaskEnd - deleteSubtaskStart).toFixed(2)} ms`);
-
-    } catch (error) {
-        logs.push(`❌ Error during subtask testing: ${error.message}`);
-        const isDialogOpen = await page.evaluate(() => !!document.querySelector('div[role="dialog"]'));
-        if (isDialogOpen) {
-            const dialogError = await page.evaluate(() => {
-                const errorEl = document.querySelector('div[role="dialog"] [color="red"], .error-message');
-                return errorEl ? errorEl.textContent : 'No specific error message found in dialog.';
+              // ตรวจสอบว่า SVG มี path ที่เป็นลูกศรขวา
+              const path = svg.querySelector('path');
+              return path && path.getAttribute('d')?.includes('M6.1584 3.13508');
             });
-            logs.push(`⚠️ Dialog was still open. Reason: ${dialogError}`);
-        }
-    }
-    
-    // ========== ขั้นตอนที่ 9: ทดสอบปุ่ม Edit ของ Task ==========
+
+          if (arrowButtons.length > 0) {
+            console.log('พบปุ่มลูกศรขวา กำลังคลิก...');
+            arrowButtons[0].click();
+            return true;
+          }
+          return false;
+        });
+
+        // หาและคลิกปุ่ม + Subtask Add ในโปรเจกต์ที่เลือก
+        const addButtonClicked = await page.evaluate(() => {
+          const addButtons = Array.from(document.querySelectorAll('button'))
+            .filter(btn => btn.textContent?.includes('+ Subtask Add'));
+
+          if (addButtons.length > 0) {
+            console.log(`พบปุ่ม Add จำนวน ${addButtons.length} ปุ่ม`);
+            addButtons[0].click();
+            return true;
+          }
+          return false;
+        });
+
+        if (addButtonClicked) {
+          logs.push('✅ คลิกปุ่ม + Subtask Add ในโปรเจกต์สำเร็จ');
+          const addSubtaskEnd = performance.now();
+          logs.push(`⏱️ Add Subtask Button Time: ${(addSubtaskEnd - addSubtaskStart).toFixed(2)} ms`);
+
+          // ========== ขั้นตอนที่ 6: กรอกข้อมูล Subtask ในฟอร์ม ==========
+          logs.push('🧪 เริ่มทดสอบการกรอกข้อมูล Subtask');
+          const fillSubtaskStart = performance.now();
+          logs.push(`📅 Timestamp: ${now()}`);
+
+          try {
+            const subtaskDescription = `This is a subtask created by Puppeteer on ${now()}`;
+            const subtaskBudget = "2000";
+            const progressPercent = "30";
+
+            const today = new Date();
+            const subtaskStartDate = today.toISOString().slice(0, 10);
+            const subtaskEndDate = new Date();
+            subtaskEndDate.setDate(today.getDate() + 3);
+            const subtaskEndDateStr = subtaskEndDate.toISOString().slice(0, 10);
+
+            logs.push('🖊️ เริ่มกรอกข้อมูล Subtask ตามลำดับ...');
+
+            const subtaskName = "Sub task " + new Date().toISOString().slice(0, 10);
+            // 1. กรอก Subtask Name - ใช้ตัวเลือกทั่วไปมากขึ้น
+            await page.waitForSelector('input[placeholder="Enter subtask name"]');
+            await page.click('input[placeholder="Enter subtask name"]');
+            await page.keyboard.type(subtaskName);
+            logs.push('✅ 1. กรอกชื่อ Subtask แล้ว');
+
+            // 2. กรอก Description
+            await page.type('input[placeholder="Enter description"]', subtaskDescription);
+            logs.push('✅ 2. กรอก Description แล้ว');
+
+            // 3. กรอก Budget
+            const budgetInput = await page.$('input[placeholder="Enter budget"]');
+            if (budgetInput) {
+              await budgetInput.click({ clickCount: 3 });
+              await budgetInput.press('Backspace');
+              await budgetInput.type(subtaskBudget);
+            }
+            logs.push('✅ 3. กรอก Budget แล้ว');
+
+
+            const subtaskstartDateMDY = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
+            const subtaskendDateMDY = `${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}/${endDate.getFullYear()}`;
+
+            // 4. กรอก Start Date 
+            await page.click('#add-subtask-start-date').catch(() => null);
+            await page.keyboard.down('Control');
+            await page.keyboard.press('a');
+            await page.keyboard.up('Control');
+            await page.keyboard.press('Backspace');
+            await page.keyboard.type(subtaskstartDateMDY);
+            logs.push('✅ 4. กรอก Start Date แล้ว');
+
+            // 5. กรอก End Date 
+            await page.click('#add-subtask-end-date').catch(() => null);
+            await page.keyboard.down('Control');
+            await page.keyboard.press('a');
+            await page.keyboard.up('Control');
+            await page.keyboard.press('Backspace');
+            await page.keyboard.type(subtaskendDateMDY);
+            logs.push('✅ 5. กรอก End Date แล้ว');
+
+            // 6. เลือก Status เป็น "In Progress" (แบบปรับปรุง)
+            try {
+              logs.push('🔍 กำลังเลือก Status...');
+
+              // คลิกที่ select element ก่อน (แยกออกจาก evaluate)
+              const selectExists = await page.evaluate(() => {
+                const selectElem = document.querySelector('select, [role="combobox"], [data-radix-select-trigger]');
+                if (selectElem) {
+                  selectElem.click();
+                  return true;
+                }
+                return false;
+              });
+
+              if (selectExists) {
+                // รอให้ dropdown แสดง (ระหว่างรอนอก evaluate)
+                await new Promise(r => setTimeout(r, 800));
+
+                // จากนั้นจึงเลือก option
+                const optionSelected = await page.evaluate(() => {
+                  // ค้นหา option ที่เกี่ยวกับ progress
+                  const options = document.querySelectorAll('[role="option"], option, [role="menuitem"]');
+                  console.log(`พบตัวเลือกทั้งหมด ${options.length} ตัวเลือก`);
+
+                  for (const opt of options) {
+                    if (opt.textContent.toLowerCase().includes('progress') ||
+                      opt.textContent.toLowerCase().includes('in progress')) {
+                      console.log(`คลิกตัวเลือก: ${opt.textContent}`);
+                      opt.click();
+                      return true;
+                    }
+                  }
+                  return false;
+                });
+                if (optionSelected) {
+                  logs.push('✅ 6. เลือก Status เป็น "In Progress" แล้ว');
+                }
+              }
+
+            } catch (error) {
+              logs.push(`❌ เกิดข้อผิดพลาดในการเลือก Status: ${error.message}`);
+              // ไม่หยุดการทำงานของโปรแกรม - ข้ามไปขั้นตอนต่อไป
+            }
+
+            // 7. กรอก Initial Progress
+            try {
+              const numberInputs = await page.$$(`input[type="number"]`);
+              if (numberInputs.length > 0) {
+                // แปลงค่าเป็นตัวเลขก่อนเพื่อกำจัด 0 นำหน้า
+                const numericProgress = parseInt(progressPercent, 10);
+                const cleanProgressString = numericProgress.toString();
+
+                await numberInputs[0].click({ clickCount: 3 });
+                await numberInputs[0].press('Backspace');
+                await numberInputs[0].type(cleanProgressString);
+                logs.push(`✅ 7. กรอกค่า Initial Progress เป็น ${cleanProgressString} แล้ว`);
+              } else {
+                // ลองค้นหาด้วยวิธีอื่น เช่น ค้นหา input ที่อยู่ใกล้กับคำว่า Progress
+                const progressInputFound = await page.evaluate(() => {
+                  // หา input ที่อยู่ใกล้คำว่า Progress หรือ Percent
+                  const labels = Array.from(document.querySelectorAll('label, div, span'))
+                    .filter(el => el.textContent?.toLowerCase().includes('progress') ||
+                      el.textContent?.toLowerCase().includes('percent'));
+
+                  for (const label of labels) {
+                    // หา input ที่อยู่ใกล้ๆ
+                    const input = label.querySelector('input') ||
+                      label.nextElementSibling?.querySelector('input') ||
+                      label.parentElement?.querySelector('input');
+
+                    if (input) {
+                      input.value = "40"; // ใช้ค่าที่ไม่มี 0 นำหน้า
+                      input.dispatchEvent(new Event('input', { bubbles: true }));
+                      input.dispatchEvent(new Event('change', { bubbles: true }));
+                      return true;
+                    }
+                  }
+                  return false;
+                });
+
+                if (progressInputFound) {
+                  logs.push('✅ 7. กรอกค่า Initial Progress เป็น 40 แล้ว (ด้วย JavaScript)');
+                } else {
+                  logs.push('❌ ไม่พบ input สำหรับ Initial Progress');
+                }
+              }
+            } catch (error) {
+              logs.push(`❌ เกิดข้อผิดพลาดในการกรอก Initial Progress: ${error.message}`);
+            }
+
+            // 8. คลิกปุ่ม Add Subtask
+            logs.push('🖱️ กำลังคลิกปุ่ม Add Subtask...');
+
+            try {
+              // ค้นหาปุ่ม Add Subtask และคลิก
+              const addButtonClicked = await page.evaluate(() => {
+                // ค้นหาปุ่มที่มีข้อความ "Add Subtask" หรือ "Confirm" หรือ "Save"
+                const buttons = Array.from(document.querySelectorAll('div[role="dialog"] button'))
+                  .filter(btn => 
+                    btn.textContent.includes('Add Subtask') || 
+                    btn.textContent.includes('Confirm') ||
+                    btn.textContent.includes('Save')
+                  );
+
+                if (buttons.length > 0) {
+                  buttons[0].click();
+                  return true;
+                }
+                return false;
+              });
+
+              if (addButtonClicked) {
+                logs.push('✅ 8. คลิกปุ่มยืนยันการเพิ่ม Subtask แล้ว');
+
+                // รอให้ระบบประมวลผล
+                await new Promise(r => setTimeout(r, 1500));
+
+                const dialogState = await page.evaluate(() => {
+                  const dialog = document.querySelector('div[role="dialog"]');
+                  if (!dialog) {
+                    return { closed: true, error: null };
+                  }
+                  
+                  // ตรวจสอบข้อความ error ใน dialog
+                  const errorElement = dialog.querySelector('[color="red"], .error-message, [class*="error"]');
+                  return { 
+                    closed: false, 
+                    error: errorElement ? errorElement.textContent.trim() : 'Dialog is still open.' 
+                  };
+                });
+
+                if (dialogState.closed) {
+                  logs.push('✅ Dialog ปิดแล้ว - เพิ่ม Subtask สำเร็จ');
+
+                  // ตรวจสอบว่า Subtask ปรากฏในรายการหรือไม่
+                  await new Promise(r => setTimeout(r, 1500)); // รอให้หน้า UI อัพเดต
+
+                  logs.push(`📅 Timestamp: ${now()}`);
+                  logs.push('🧪 เริ่มทดสอบการค้นหา Subtask ในรายการ');
+
+                  const subtaskName = "Sub task " + new Date().toISOString().slice(0, 10);
+                  const subtaskFound = await page.evaluate((expectedName) => {
+                    const allRows = document.querySelectorAll('table tbody tr, .subtask-list-item, [role="row"]');
+                    console.log(`พบแถวทั้งหมด ${allRows.length} แถว`);
+
+                    for (const row of allRows) {
+                      if (row.textContent.includes(expectedName)) {
+                        console.log(`พบ Subtask: ${expectedName}`);
+                        return true;
+                      }
+                    }
+                    return false;
+                  }, subtaskName);
+
+                  if (subtaskFound) {
+                    logs.push('✅ พบ Subtask ในรายการแล้ว');
+                    const fillSubtaskEnd = performance.now();
+                    logs.push(`⏱️ Fill Subtask Form Time: ${(fillSubtaskEnd - fillSubtaskStart).toFixed(2)} ms`);
+
+
+                    // ========== ขั้นตอนที่ 7: ทดสอบปุ่ม Edit ของ Subtask  ==========
+                    // ทดสอบปุ่ม Edit
+                    logs.push('🧪 เริ่มทดสอบปุ่ม Edit Subtask');
+                    const editSubtaskStart = performance.now();
+
+                    let editButtonClicked = false;
+
+                    try {
+                      // คลิกปุ่ม Edit สำหรับ Subtask ที่เพิ่งสร้าง
+                      editButtonClicked = await page.evaluate(async (subtaskName) => {
+                        // ค้นหาแถวที่มี Subtask ที่ต้องการ
+                        const rows = Array.from(document.querySelectorAll('table tbody tr, .subtask-list-item, [role="row"]'));
+                        console.log(`พบแถวทั้งหมด ${rows.length} แถว`);
+
+                        for (const row of rows) {
+                          if (row.textContent.includes(subtaskName)) {
+                            console.log(`พบแถวที่มี Subtask "${subtaskName}"`);
+
+                            // ค้นหาปุ่ม Edit ในแถวนี้โดยใช้ ID เป็นหลัก (แม่นยำที่สุด)
+                            let editButton = row.querySelector('#subtaskEdit');
+
+                            // หากไม่พบด้วย ID ลองหาด้วย properties อื่นๆ
+                            if (!editButton) {
+                              editButton = row.querySelector('button[color="orange"], button.cursor-pointer[variant="soft"]');
+                            }
+
+                            // หากยังไม่พบ ลองหาจากข้อความในปุ่ม
+                            if (!editButton) {
+                              const buttons = Array.from(row.querySelectorAll('button'));
+                              editButton = buttons.find(btn => btn.textContent.includes('Edit'));
+                            }
+
+                            if (editButton) {
+                              console.log('พบปุ่ม Edit สำหรับ Subtask');
+                              editButton.click();
+                              return true;
+                            } else {
+                              // Debug: แสดงปุ่มทั้งหมดที่พบในแถวนี้
+                              const allButtons = Array.from(row.querySelectorAll('button'));
+                              console.log(`พบปุ่มทั้งหมด ${allButtons.length} ปุ่มในแถวนี้`);
+                              allButtons.forEach((btn, idx) => {
+                                console.log(`ปุ่มที่ ${idx + 1}:`, {
+                                  text: btn.textContent,
+                                  id: btn.id,
+                                  class: btn.className,
+                                  color: btn.getAttribute('color')
+                                });
+                              });
+                              return false;
+                            }
+                          }
+                        }
+                        console.log('ไม่พบแถวของ Subtask ที่ต้องการ Edit');
+                        return false;
+                      }, subtaskName);
+                    } catch (error) {
+                      logs.push(`❌ เกิดข้อผิดพลาดในการแก้ไข Subtask: ${error.message}`);
+
+                    }
+
+                    // ตอนนี้ editButtonClicked จะถูกกำหนดค่าแล้วและสามารถใช้งานได้
+                    if (editButtonClicked) {
+                      logs.push('✅ คลิกปุ่ม Edit Subtask สำเร็จ');
+
+                      // รอให้ Dialog แก้ไขปรากฏ
+                      try {
+                        await page.waitForSelector('div[role="dialog"]', { timeout: 5000 });
+                        logs.push('✅ Dialog แก้ไข Subtask ปรากฏแล้ว');
+
+                        // รอให้ข้อมูลโหลดเสร็จ (สังเกตจากการหายไปของข้อความ Loading)
+                        await page.waitForFunction(() => {
+                          return !document.querySelector('div[role="dialog"]')?.textContent.includes('Loading subtask details');
+                        }, { timeout: 5000 }).catch(() => {
+                          logs.push('⚠️ ไม่พบข้อความ Loading หรือโหลดข้อมูลนานเกินไป');
+                        });
+
+                        // รอสักครู่ให้แน่ใจว่าฟอร์มโหลดเสร็จสมบูรณ์
+                        await new Promise(r => setTimeout(r, 1000));
+
+                        logs.push('🖊️ กำลังแก้ไขข้อมูล Subtask...');
+
+                        // 1. แก้ไข Subtask Name
+                        const newSubtaskName = `Edited Subtask - ${new Date().toISOString().slice(0, 10)}`;
+                        const nameInput = await page.$('input[placeholder="Enter subtask name"]');
+                        if (nameInput) {
+                          await nameInput.click({ clickCount: 3 }); // เลือกข้อความทั้งหมด
+                          await nameInput.press('Backspace'); // ลบข้อความเดิม
+                          await nameInput.type(newSubtaskName); // พิมพ์ข้อความใหม่
+                          logs.push('✅ แก้ไขชื่อ Subtask เป็น: ' + newSubtaskName);
+                        } else {
+                          logs.push('❌ ไม่พบช่องกรอกชื่อ Subtask');
+                        }
+
+                        // 2. แก้ไข Description
+                        const newDescription = `Description edited by Puppeteer on ${new Date().toISOString()}`;
+                        const descInput = await page.$('input[placeholder="Enter description"]');
+                        if (descInput) {
+                          await descInput.click({ clickCount: 3 });
+                          await descInput.press('Backspace');
+                          await descInput.type(newDescription);
+                          logs.push('✅ แก้ไข Description เรียบร้อย');
+                        }
+
+                        // 3. แก้ไข Budget
+                        const newBudget = "3000";
+                        const budgetInput = await page.$('input[placeholder="Enter budget"]');
+                        if (budgetInput) {
+                          await budgetInput.click({ clickCount: 3 });
+                          await budgetInput.press('Backspace');
+                          await budgetInput.type(newBudget);
+                          logs.push('✅ แก้ไข Budget เป็น: ' + newBudget);
+                        }
+
+                        // 4. แก้ไข Start Date ถ้าต้องการ
+                        // (เว้นไว้ใช้ค่าเดิม)
+
+                        // 5. แก้ไข End Date ถ้าต้องการ
+                        // (เว้นไว้ใช้ค่าเดิม)
+
+                        // 6. แก้ไข Status (เลือกเป็น "In Progress")
+                        await page.evaluate(() => {
+                          // คลิกที่ dropdown เพื่อเปิด
+                          const statusDropdown = document.querySelector('[role="combobox"], [data-radix-select-trigger], select');
+                          if (statusDropdown) statusDropdown.click();
+                        });
+
+                        // รอให้ dropdown แสดง
+                        await new Promise(r => setTimeout(r, 500));
+
+                        // เลือก "In Progress"
+                        const inProgressSelected = await page.evaluate(() => {
+                          const options = document.querySelectorAll('[role="option"], option, [role="menuitem"]');
+                          for (const opt of options) {
+                            if (opt.textContent.toLowerCase().includes('in progress')) {
+                              opt.click();
+                              return true;
+                            }
+                          }
+                          return false;
+                        });
+
+                        if (inProgressSelected) {
+                          logs.push('✅ เปลี่ยน Status เป็น "In Progress"');
+                        } else {
+                          logs.push('⚠️ ไม่สามารถเลือก Status เป็น "In Progress" ได้');
+                        }
+
+                        // 7. แก้ไข Progress (%)
+                        const newProgress = "50";
+                        const progressInput = await page.$('input[type="number"]');
+                        if (progressInput) {
+                          await progressInput.click({ clickCount: 3 });
+                          await progressInput.press('Backspace');
+                          await progressInput.type(newProgress);
+                          logs.push('✅ เปลี่ยน Progress เป็น: ' + newProgress + '%');
+                        }
+
+                        // 8. คลิกปุ่ม Update Subtask
+                        const updateClicked = await page.evaluate(() => {
+                          const updateButton = Array.from(document.querySelectorAll('button'))
+                            .find(btn => btn.textContent.includes('Update Subtask'));
+
+                          if (updateButton) {
+                            updateButton.click();
+                            return true;
+                          }
+                          return false;
+                        });
+
+                        if (updateClicked) {
+                          logs.push('✅ คลิกปุ่ม Update Subtask แล้ว');
+
+                          // รอให้ Dialog ปิด
+                          await new Promise(r => setTimeout(r, 2000));
+
+                          const dialogClosed = await page.evaluate(() => {
+                            return !document.querySelector('div[role="dialog"]');
+                          });
+
+                          if (dialogClosed) {
+                            logs.push('✅ Dialog ปิดลงแล้ว - อัพเดท Subtask สำเร็จ');
+
+                            // รอให้หน้า UI อัพเดต
+                            await new Promise(r => setTimeout(r, 1000));
+
+                            // ตรวจสอบว่า Subtask ถูกอัพเดทในรายการ
+                            const subtaskUpdated = await page.evaluate((newName) => {
+                              const rows = Array.from(document.querySelectorAll('table tbody tr, .subtask-list-item, [role="row"]'));
+                              return rows.some(row => row.textContent.includes(newName));
+                            }, newSubtaskName);
+
+                            if (subtaskUpdated) {
+                              logs.push('✅ พบข้อมูล Subtask ที่อัพเดทแล้วในรายการ');
+                            } else {
+                              logs.push('⚠️ ไม่พบข้อมูล Subtask ที่อัพเดทในรายการ - อาจมีการเปลี่ยนแปลงแล้วแต่ไม่แสดงผลทันที');
+                            }
+                            const editSubtaskEnd = performance.now();
+                            logs.push(`⏱️ Edit Subtask Time: ${(editSubtaskEnd - editSubtaskStart).toFixed(2)} ms`);
+
+
+                            // ========== ขั้นตอนที่ 8: ทดสอบปุ่ม Delete ของ  Subtask  ==========
+                            // ทดสอบต่อไป - ทดสอบปุ่ม Delete Subtask
+                            logs.push('🧪 เริ่มทดสอบปุ่ม Delete Subtask');
+                            const deleteSubtaskStart = performance.now();
+
+                            try {
+                              // ค้นหา Subtask ที่เพิ่งแก้ไขในรายการและคลิกปุ่ม Delete
+                              const deleteButtonClicked = await page.evaluate(async (newSubtaskName) => {
+                                // ค้นหาแถวที่มี Subtask ที่ต้องการ
+                                const rows = Array.from(document.querySelectorAll('table tbody tr, .subtask-list-item, [role="row"]'));
+                                console.log(`พบแถวทั้งหมด ${rows.length} แถว สำหรับการลบ`);
+
+                                for (const row of rows) {
+                                  if (row.textContent.includes(newSubtaskName)) {
+                                    console.log(`พบแถวที่มี Subtask "${newSubtaskName}" สำหรับการลบ`);
+
+                                    // ค้นหาปุ่ม Delete โดยใช้ ID เป็นหลัก (แม่นยำที่สุด)
+                                    let deleteButton = row.querySelector('#subtaskDelete');
+
+                                    // หากไม่พบด้วย ID ลองหาด้วย properties อื่นๆ
+                                    if (!deleteButton) {
+                                      deleteButton = row.querySelector('button[color="red"], button.cursor-pointer[variant="soft"][color="red"]');
+                                    }
+
+                                    // หากยังไม่พบ ลองหาจากข้อความในปุ่ม
+                                    if (!deleteButton) {
+                                      const buttons = Array.from(row.querySelectorAll('button'));
+                                      deleteButton = buttons.find(btn => btn.textContent.includes('Delete'));
+                                    }
+
+                                    if (deleteButton) {
+                                      console.log('พบปุ่ม Delete สำหรับ Subtask');
+                                      deleteButton.click();
+                                      return true;
+                                    } else {
+                                      // Debug: แสดงปุ่มทั้งหมดที่พบในแถวนี้
+                                      const allButtons = Array.from(row.querySelectorAll('button'));
+                                      console.log(`พบปุ่มทั้งหมด ${allButtons.length} ปุ่มในแถวนี้`);
+                                      allButtons.forEach((btn, idx) => {
+                                        console.log(`ปุ่มที่ ${idx + 1}:`, {
+                                          text: btn.textContent,
+                                          id: btn.id,
+                                          class: btn.className,
+                                          color: btn.getAttribute('color')
+                                        });
+                                      });
+                                      return false;
+                                    }
+                                  }
+                                }
+                                console.log(`ไม่พบแถวของ Subtask "${newSubtaskName}" ที่ต้องการลบ`);
+                                return false;
+                              }, newSubtaskName);
+
+                              if (deleteButtonClicked) {
+                                logs.push('✅ คลิกปุ่ม Delete Subtask สำเร็จ');
+
+                                // รอให้ Dialog ยืนยันการลบปรากฏ
+                                try {
+                                  await page.waitForSelector('div[role="dialog"]', { timeout: 5000 });
+                                  logs.push('✅ Dialog ยืนยันการลบ Subtask ปรากฏแล้ว');
+
+                                  // รอสักครู่เพื่อให้ Dialog แสดงผลเต็มที่
+                                  await new Promise(r => setTimeout(r, 800));
+
+                                  // คลิกปุ่ม Confirm เพื่อยืนยันการลบ
+                                  const confirmButtonClicked = await page.evaluate(() => {
+                                    // ค้นหาปุ่ม Confirm ใน Dialog
+                                    const confirmButton = Array.from(document.querySelectorAll('div[role="dialog"] button'))
+                                      .find(btn =>
+                                        btn.textContent.includes('Confirm') ||
+                                        (btn.getAttribute('color') === 'red' && !btn.textContent.includes('Cancel'))
+                                      );
+
+                                    if (confirmButton) {
+                                      console.log('พบปุ่ม Confirm ใน Dialog ยืนยันการลบ');
+                                      confirmButton.click();
+                                      return true;
+                                    }
+                                    return false;
+                                  });
+
+                                  if (confirmButtonClicked) {
+                                    logs.push('✅ คลิกปุ่มยืนยันการลบ Subtask');
+
+                                    // รอให้ Dialog ปิดและระบบประมวลผลการลบ
+                                    await new Promise(r => setTimeout(r, 2000));
+
+                                    // ตรวจสอบว่า Dialog ปิดลงหรือไม่
+                                    const dialogClosed = await page.evaluate(() => {
+                                      return !document.querySelector('div[role="dialog"]');
+                                    });
+
+                                    if (dialogClosed) {
+                                      logs.push('✅ Dialog ปิดลงแล้ว');
+
+                                      // รอให้หน้า UI อัพเดต
+                                      await new Promise(r => setTimeout(r, 1000));
+
+                                      // ตรวจสอบว่า Subtask ถูกลบออกจากรายการหรือไม่
+                                      const subtaskDeleted = await page.evaluate((deletedName) => {
+                                        const rows = Array.from(document.querySelectorAll('table tbody tr, .subtask-list-item, [role="row"]'));
+                                        return !rows.some(row => row.textContent.includes(deletedName));
+                                      }, newSubtaskName);
+
+                                      if (subtaskDeleted) {
+                                        logs.push('✅ Subtask ถูกลบออกจากรายการเรียบร้อย');
+
+                                        logs.push('🎉 การทดสอบ CRUD Subtask ทั้งหมดสำเร็จ');
+                                      } else {
+                                        logs.push('❌ Subtask ยังคงปรากฏในรายการแม้หลังจากลบแล้ว');
+
+                                      }
+                                      const deleteSubtaskEnd = performance.now();
+                                      logs.push(`⏱️ Delete Subtask Time: ${(deleteSubtaskEnd - deleteSubtaskStart).toFixed(2)} ms`);
+
+                                    } else {
+                                      logs.push('⚠️ Dialog ยังคงเปิดอยู่หลังจากคลิกปุ่ม Confirm - อาจมีข้อผิดพลาดในการลบ');
+
+                                      // ตรวจสอบข้อผิดพลาด
+                                      const errorMsg = await page.evaluate(() => {
+                                        const errorElement = document.querySelector('div[role="dialog"] [color="red"], .error-message');
+                                        return errorElement ? errorElement.textContent : null;
+                                      });
+
+                                      if (errorMsg) {
+                                        logs.push(`❌ พบข้อผิดพลาดในการลบ Subtask: ${errorMsg}`);
+                                      }
+
+                                    }
+                                  } else {
+                                    logs.push('❌ ไม่พบปุ่มยืนยันการลบใน Dialog');
+                                  }
+                                } catch (error) {
+                                  logs.push(`❌ เกิดข้อผิดพลาดในการลบ Subtask: ${error.message}`);
+                                }
+                              } else {
+                                logs.push('❌ ไม่สามารถคลิกปุ่ม Delete Subtask');
+                              }
+                            } catch (error) {
+                              logs.push(`❌ เกิดข้อผิดพลาดในขั้นตอนการลบ Subtask: ${error.message}`);
+                            }
+                          } else {
+                            logs.push('❌ Dialog ยังคงเปิดอยู่หลังจากคลิกปุ่ม Update - อาจมีข้อผิดพลาดในการบันทึก');
+
+                            // ตรวจสอบว่ามีข้อความแสดงข้อผิดพลาดหรือไม่
+                            const errorMsg = await page.evaluate(() => {
+                              const errorElement = document.querySelector('div[role="dialog"] [color="red"], .error-message');
+                              return errorElement ? errorElement.textContent : null;
+                            });
+
+                            if (errorMsg) {
+                              logs.push(`❌ พบข้อผิดพลาด: ${errorMsg}`);
+                            }
+
+                          }
+                        } else {
+                          logs.push('❌ ไม่พบปุ่ม Update Subtask');
+                        }
+
+                      } catch (error) {
+                        logs.push(`❌ เกิดข้อผิดพลาดในการแก้ไข Subtask: ${error.message}`);
+                      }
+                    } else {
+                      logs.push('❌ ไม่สามารถคลิกปุ่ม Edit Subtask');
+                    }
+
+                  } else {
+                    logs.push('❌ ไม่พบ Subtask ในรายการ ไม่สามารถทดสอบปุ่ม Edit และ Delete ได้');
+                  }
+                } else {
+                  logs.push(dialogState.error ? `❌ พบข้อผิดพลาด: ${dialogState.error}` : '⚠️ Dialog ยังเปิดอยู่หลังจากกดปุ่ม');
+                }
+
+              } else {
+                logs.push('❌ ไม่พบปุ่ม Add Subtask หรือปุ่มยืนยันในฟอร์ม');
+              }
+            } catch (error) {
+              logs.push(`❌ เกิดข้อผิดพลาดในการคลิกปุ่ม: ${error.message}`);
+            }
+          } catch (error) {
+            // จัดการข้อผิดพลาดที่อาจเกิดขึ้นในภาพรวม
+            const errMsg = `[${now()}] ❌ Fatal error: ${error.message}`;
+            console.error(errMsg);
+            logs.push(errMsg);
+          }
+
+          // ========== ขั้นตอนที่ 9: ทดสอบปุ่ม Edit ของ Task ==========
           logs.push(`📅 Timestamp: ${now()}`);
           logs.push('🧪 เริ่มทดสอบการแก้ไข Task');
           const editTaskStart = performance.now();

@@ -55,7 +55,7 @@ const ToggleUserStatus = ({ getUserData, userId, isActive, username, showToast }
             <Button 
                 className="cursor-pointer" 
                 size="1" 
-                color={isActive ? "red" : "green"} 
+                color={isActive ? "pink" : "green"} 
                 variant="soft"
                 disabled={loading}
                 onClick={() => setConfirmDialogOpen(true)}

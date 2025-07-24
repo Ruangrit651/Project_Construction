@@ -26,7 +26,8 @@ const logFilename = 'Project_Workflow_log.txt';
       args: [
         '--disable-features=PasswordManagerEnabled,AutomaticPasswordSaving',
         '--disable-save-password-bubble'
-      ]
+      ],
+      defaultViewport: null, // ใช้ viewport ขนาดเต็มจอ
     });
 
     const page = await browser.newPage();
@@ -53,11 +54,11 @@ const logFilename = 'Project_Workflow_log.txt';
 
     // =================== นำทางไปยังหน้า Project ===================
     const startProjectNav = Date.now();
-    await page.goto(`${process.env.APP_URL}/adminproject`, { waitUntil: 'networkidle0' });
+    await page.goto(`${process.env.APP_URL}adminproject`, { waitUntil: 'networkidle0' });
     const projectNavTime = Date.now() - startProjectNav;
 
     log.push(`⏱️ Project Page Navigation Time: ${projectNavTime} ms`);
-    if (page.url().includes('/adminproject')) {
+    if (page.url().includes('adminproject')) {
       // log.push('✅ Successfully navigated to Project page');
     } else {
       throw new Error('Failed to navigate to Project page');
@@ -120,7 +121,7 @@ const logFilename = 'Project_Workflow_log.txt';
           }
         }
         
-        // ถ้าไม่เจอเลย ลองคลิกที่ dropdown ตัวแรกที่เจอในแบบฟอร์ม
+        // ถ้าไม่เจอ ลองคลิกที่ dropdown ตัวแรกที่เจอในแบบฟอร์ม
         const form = document.querySelector('form, [role="dialog"]');
         if (form) {
           const dropdowns = form.querySelectorAll('.select-trigger, select, [role="combobox"]');
@@ -416,6 +417,41 @@ const logFilename = 'Project_Workflow_log.txt';
     });
     await page.type('[placeholder="Enter project name"]', editedProjectName);
     // log.push(`📝 Changed Project Name to: ${editedProjectName}`);
+
+    // แก้ไขเจ้าของโปรเจกต์
+    try {
+      log.push('🔄 Changing project owner...');
+      // คลิกที่ dropdown ของ Owner
+      await page.evaluate(() => {
+        const ownerDropdowns = document.querySelectorAll('.select-trigger');
+        // This assumes the owner dropdown is the first one. A more robust selector might be needed.
+        if(ownerDropdowns.length > 0) {
+            ownerDropdowns[0].click();
+        } else {
+            throw new Error('Owner dropdown trigger not found');
+        }
+      });
+
+      // รอให้ตัวเลือกแสดง
+      await page.waitForSelector('[role="option"]', { timeout: 1100 });
+      log.push('✅ Owner options are visible');
+
+      // เลือกเจ้าของคนใหม่ (คนที่สองในลิสต์, เพื่อให้แน่ใจว่ามีการเปลี่ยนแปลง)
+      await page.evaluate(() => {
+        const options = document.querySelectorAll('[role="option"]');
+        if (options.length > 1) {
+          // options[0] might be "No owner" or the current owner, so we select the next one.
+          options[1].click(); 
+        } else if (options.length === 1) {
+          options[0].click();
+        } else {
+          throw new Error("No owner options found to select.");
+        }
+      });
+      log.push('✅ Selected a new owner');
+    } catch (e) {
+        log.push(`⚠️ Could not change project owner: ${e.message}`);
+    }
 
     // แก้ไขงบประมาณ
     const newBudget = '20000';
