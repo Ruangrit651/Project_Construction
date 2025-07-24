@@ -58,7 +58,7 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({
             setProgressPercent(100);
         } else if (value === "in progress" && progressPercent === 0) {
             setProgressPercent(50);
-        } else if (value === "pending") {
+        } else if (value === "pending" || value === "suspended") {
             setProgressPercent(0);
         }
     };
@@ -305,7 +305,7 @@ const DialogEditTask: React.FC<DialogEditTaskProps> = ({
                                 <Select.Item value="pending">Pending</Select.Item>
                                 <Select.Item value="in progress">In Progress</Select.Item>
                                 <Select.Item value="completed">Completed</Select.Item>
-                                <Select.Item value="cancelled">Cancelled</Select.Item>
+                                <Select.Item value="suspended">Suspended</Select.Item>
                             </Select.Content>
                         </Select.Root>
                     </label>

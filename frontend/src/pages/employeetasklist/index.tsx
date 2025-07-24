@@ -439,6 +439,16 @@ export default function TasklistPage() {
         });
     };
 
+    // Calculate duration in days between two dates
+    const calculateDuration = (startDate: string | undefined, endDate: string | undefined) => {
+        if (!startDate || !endDate) return "-";
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+    };
+
     // เพิ่มการ debug ใน index.tsx ก่อนส่งข้อมูลไป ProjectProgress component
     console.log("Before sending to ProjectProgress:", {
         taskCount: tasks.length,
@@ -485,8 +495,10 @@ export default function TasklistPage() {
                                     <Table.ColumnHeaderCell>Budget</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell>Start Date</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell>End Date</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell>Duration</Table.ColumnHeaderCell> {/* Added Duration column */}
                                     <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell>Progress</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body>
@@ -511,7 +523,16 @@ export default function TasklistPage() {
                                                 <Table.Cell>{formatBudget(task.budget)}</Table.Cell>
                                                 <Table.Cell>{formatDate(task.start_date)}</Table.Cell>
                                                 <Table.Cell>{formatDate(task.end_date)}</Table.Cell>
-                                                <Table.Cell>{task.status}</Table.Cell>
+                                                <Table.Cell>{calculateDuration(task.start_date, task.end_date)}</Table.Cell> {/* Added Duration value */}
+                                                <Table.Cell>
+                                                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${task.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                        task.status === 'in progress' ? 'bg-yellow-100 text-yellow-800' :
+                                                            task.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                                'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                        {task.status}
+                                                    </span>
+                                                </Table.Cell>
                                                 <Table.Cell>
                                                     <Tooltip content={`${(taskProgress[task.task_id] || 0).toFixed(2)}%`}>
                                                         <div style={{ width: '100px' }}>
@@ -520,6 +541,16 @@ export default function TasklistPage() {
                                                             />
                                                         </div>
                                                     </Tooltip>
+                                                </Table.Cell>
+                                                <Table.Cell>
+                                                    <Button
+                                                        variant="soft"
+                                                        size="1"
+                                                        onClick={() => toggleExpandTask(task.task_id)}
+                                                        className=" cursor-pointer"
+                                                    >
+                                                        {expandedTasks.includes(task.task_id) ? 'Hide details' : 'View details'}
+                                                    </Button>
                                                 </Table.Cell>
                                             </Table.Row>
 
@@ -531,12 +562,20 @@ export default function TasklistPage() {
                                                     </Table.Cell>
                                                     <Table.Cell>
                                                         <Text size="2" className="pl-4">{subtask.subtask_name}</Text>
+                                                        <Text size="2" color="gray" className="pl-4">{subtask.description}</Text>
                                                     </Table.Cell>
                                                     <Table.Cell>{formatBudget(subtask.budget)}</Table.Cell>
                                                     <Table.Cell>{formatDate(subtask.start_date)}</Table.Cell>
                                                     <Table.Cell>{formatDate(subtask.end_date)}</Table.Cell>
+                                                    <Table.Cell>{calculateDuration(subtask.start_date, subtask.end_date)}</Table.Cell> {/* Added Duration value */}
                                                     <Table.Cell>
-                                                        <Text size="2">{subtask.status}</Text>
+                                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${subtask.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                            subtask.status === 'in progress' ? 'bg-yellow-100 text-yellow-800' :
+                                                                subtask.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                                    'bg-gray-100 text-gray-800'
+                                                            }`}>
+                                                            {subtask.status}
+                                                        </span>
                                                     </Table.Cell>
                                                     <Table.Cell>
                                                         <Tooltip content={`${subtaskProgress[subtask.subtask_id] || 0}%`}>
@@ -547,13 +586,16 @@ export default function TasklistPage() {
                                                             </div>
                                                         </Tooltip>
                                                     </Table.Cell>
+                                                    <Table.Cell>
+                                                        {/* No action buttons for subtasks in Employee view */}
+                                                    </Table.Cell>
                                                 </Table.Row>
                                             ))}
 
                                             {expandedTasks.includes(task.task_id) && (!subtasks[task.task_id] || subtasks[task.task_id]?.length === 0) && (
                                                 <Table.Row key={`empty-${task.task_id}`}>
                                                     <Table.Cell></Table.Cell>
-                                                    <Table.Cell colSpan={7}>
+                                                    <Table.Cell colSpan={8} className="text-center py-4">
                                                         <Text size="2" color="gray">No subtasks found</Text>
                                                     </Table.Cell>
                                                 </Table.Row>
