@@ -42,6 +42,7 @@ export const UserRepository = { //Object
                 project_id: true,
                 username: true,
                 fullname: true,
+                is_active: true,
                 role: true,
                 created_at: true,
                 created_by: true,

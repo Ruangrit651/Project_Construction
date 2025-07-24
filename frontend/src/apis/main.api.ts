@@ -31,18 +31,25 @@ mainApi.interceptors.response.use(
   function (response) {
     // Any status code that lie within the range of 2xx cause this function to trigger
     // Do something with response data
+    if (response.status === 401) {
+      console.log(window.location.pathname);
+      // localStorage.removeItem("token");
+      if (window.location.pathname !== "/") {
+        window.location.replace("/");
+      }
+    }
     return response;
   },
   function (error) {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
     // Do something with response error
-    // if (error?.response?.status === 401) {
-    //   console.log(window.location.pathname);
-    //   localStorage.removeItem("token");
-    //   if (window.location.pathname !== "/auth/sign-in") {
-    //     window.location.replace("/auth/sign-in");
-    //   }
-    // }
+    if (error?.response?.status === 401) {
+      console.log(window.location.pathname);
+      // localStorage.removeItem("token");
+      if (window.location.pathname !== "/") {
+        window.location.replace("/");
+      }
+    }
     return Promise.reject(error);
   }
 );
