@@ -54,6 +54,8 @@ const ProgressBar = ({ percent }: { percent: number }) => {
     );
 };
 
+import { useRef } from 'react';
+
 export default function TasklistPage() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -88,11 +90,15 @@ export default function TasklistPage() {
         }
     };
 
-    // ย้าย fetchAllData ออกมานอก useEffect
+    // ย้าย fetchAllData ออกมานอก useEffect และปรับปรุงประสิทธิภาพ
     const fetchAllData = async () => {
         setIsLoading(true);
 
         try {
+            // สร้างอาร์เรย์ของ Promises เพื่อทำงานพร้อมกัน
+            const promises = [];
+            let detailedPromise;
+            
             // กำหนด project ID ถ้ามี
             if (project_id) {
                 setCurrentProjectId(project_id);
@@ -100,9 +106,8 @@ export default function TasklistPage() {
                     setProjectName(project_name);
                 }
 
-                // ดึงข้อมูลแบบละเอียดทั้งหมดจาก API เดียว
-                try {
-                    const detailedResponse = await getDetailedProjectProgress(project_id);
+                // ดึงข้อมูลแบบละเอียดทั้งหมดจาก API เดียว (แยกเป็น Promise ต่างหาก)
+                detailedPromise = getDetailedProjectProgress(project_id).then(detailedResponse => {
                     if (detailedResponse?.success) {
                         const { projectProgress, taskProgress: newTaskProgress, subtaskProgress: newSubtaskProgress } = detailedResponse.responseObject || {};
 
@@ -112,93 +117,112 @@ export default function TasklistPage() {
                             setTaskProgress(newTaskProgress);
                             setSubtaskProgress(newSubtaskProgress);
                             setProjectProgressValue(projectProgress || 0);
-
-                            console.log("Progress data loaded from backend:", {
-                                projectProgress,
-                                taskProgressCount: Object.keys(newTaskProgress).length,
-                                subtaskProgressCount: Object.keys(newSubtaskProgress).length
-                            });
                         }
                     }
-                } catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                    console.error("Failed to fetch detailed progress:", errorMessage);
-                }
+                }).catch(error => {
+                    console.error("Failed to fetch detailed progress:", error);
+                });
+                
+                // เพิ่มเข้าในอาร์เรย์ของ Promises
+                promises.push(detailedPromise);
             }
-            // 1. ดึงข้อมูล tasks
-            let taskData: TypeTaskAll[] = [];
+            
+            // 1. ดึงข้อมูล tasks (ทำงานพร้อมกับการดึงข้อมูล progress)
+            let taskPromise;
             if (project_id) {
-                const res = await getTaskProject(project_id);
-                if (res.success && Array.isArray(res.responseObject)) {
-                    // กรองข้อมูลซ้ำด้วย task_id
-                    const uniqueTaskMap: Record<string, TypeTaskAll> = {};
-                    res.responseObject.forEach(task => {
-                        uniqueTaskMap[task.task_id] = task;
-                    });
-
-                    // แปลงเป็น array โดยไม่ต้องเรียงลำดับใหม่ - เก็บลำดับตามที่ได้รับมาจาก API
-                    taskData = Object.values(uniqueTaskMap);
-
-                    console.log(`Filtered from ${res.responseObject.length} to ${taskData.length} unique tasks`);
-
-                    if (!project_name && taskData.length > 0 && 'project_name' in taskData[0]) {
-                        setProjectName(taskData[0].project_name || "");
-                    }
-                }
-            } else {
-                const res = await getTask();
-                if (res.success && Array.isArray(res.responseObject)) {
-                    // กรองข้อมูลซ้ำด้วย task_id
-                    const uniqueTaskMap: Record<string, TypeTaskAll> = {};
-                    res.responseObject.forEach(task => {
-                        uniqueTaskMap[task.task_id] = task;
-                    });
-
-                    // แปลงเป็น array โดยไม่ต้องเรียงลำดับใหม่ - เก็บลำดับตามที่ได้รับมาจาก API
-                    taskData = Object.values(uniqueTaskMap);
-
-                    console.log(`Filtered from ${res.responseObject.length} to ${taskData.length} unique tasks`);
-                }
-            }
-
-            // อัพเดต tasks
-            setTasks(taskData);
-
-            // 2. ดึงข้อมูล subtasks ทั้งหมดพร้อมกันเลย
-            const subtasksData: Record<string, TypeSubTaskAll[]> = {};
-            const subtaskPromises = taskData.map(async (task) => {
-                try {
-                    const res = await getSubtask(task.task_id);
+                taskPromise = getTaskProject(project_id).then(res => {
                     if (res.success && Array.isArray(res.responseObject)) {
-                        // กรองเฉพาะ subtask ที่เป็นของ task นี้จริงๆ
-                        const filteredSubtasks = res.responseObject.filter(subtask =>
-                            subtask.task_id === task.task_id
-                        );
-
-                        // เรียงลำดับตาม created_at
-                        const sortedSubtasks = [...filteredSubtasks].sort((a, b) => {
-                            if (a.created_at && b.created_at) {
-                                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-                            }
-                            return a.subtask_id.localeCompare(b.subtask_id);
+                        // กรองข้อมูลซ้ำด้วย task_id
+                        const uniqueTaskMap: Record<string, TypeTaskAll> = {};
+                        res.responseObject.forEach(task => {
+                            uniqueTaskMap[task.task_id] = task;
                         });
 
-                        // เก็บข้อมูล subtasks ที่เรียงลำดับแล้ว
-                        subtasksData[task.task_id] = sortedSubtasks;
-                    } else {
-                        subtasksData[task.task_id] = [];
+                        // แปลงเป็น array โดยไม่ต้องเรียงลำดับใหม่ - เก็บลำดับตามที่ได้รับมาจาก API
+                        const taskData = Object.values(uniqueTaskMap);
+
+                        // อัพเดต tasks
+                        setTasks(taskData);
+                        
+                        // ใช้ข้อมูล project_name จาก task ถ้าไม่มีการระบุมา
+                        if (!project_name && taskData.length > 0 && 'project_name' in taskData[0]) {
+                            setProjectName(taskData[0].project_name || "");
+                        }
+                        
+                        return taskData;
                     }
-                } catch (err) {
-                    console.error(`Error fetching subtasks for task ${task.task_id}:`, err);
-                    subtasksData[task.task_id] = [];
+                    return [];
+                });
+            } else {
+                taskPromise = getTask().then(res => {
+                    if (res.success && Array.isArray(res.responseObject)) {
+                        // กรองข้อมูลซ้ำด้วย task_id
+                        const uniqueTaskMap: Record<string, TypeTaskAll> = {};
+                        res.responseObject.forEach(task => {
+                            uniqueTaskMap[task.task_id] = task;
+                        });
+
+                        // แปลงเป็น array โดยไม่ต้องเรียงลำดับใหม่
+                        const taskData = Object.values(uniqueTaskMap);
+                        
+                        // อัพเดต tasks
+                        setTasks(taskData);
+                        return taskData;
+                    }
+                    return [];
+                });
+            }
+            
+            // เพิ่มเข้าในอาร์เรย์ของ Promises
+            promises.push(taskPromise);
+
+            // รอให้ API call สำหรับดึงข้อมูล tasks เสร็จสิ้น
+            // เพื่อจะได้นำข้อมูล task ไปดึง subtasks ต่อไป
+            const taskData = await taskPromise;
+            
+            // 2. ดึงข้อมูล subtasks เฉพาะสำหรับ tasks ที่เปิดอยู่หรือที่ต้องการแสดงเท่านั้น
+            // แทนที่จะดึงทั้งหมดพร้อมกัน
+            const subtasksData: Record<string, TypeSubTaskAll[]> = {};
+            
+            // ดึงข้อมูล subtasks เฉพาะสำหรับ tasks ที่ถูกขยาย (expanded) อยู่
+            for (const taskId of expandedTasks) {
+                if (taskData.some(task => task.task_id === taskId)) {
+                    try {
+                        const res = await getSubtask(taskId);
+                        if (res.success && Array.isArray(res.responseObject)) {
+                            // กรองเฉพาะ subtask ที่เป็นของ task นี้จริงๆ
+                            const filteredSubtasks = res.responseObject.filter(subtask =>
+                                subtask.task_id === taskId
+                            );
+
+                            // เรียงลำดับตาม created_at
+                            const sortedSubtasks = [...filteredSubtasks].sort((a, b) => {
+                                if (a.created_at && b.created_at) {
+                                    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                                }
+                                return a.subtask_id.localeCompare(b.subtask_id);
+                            });
+
+                            // เก็บข้อมูล subtasks ที่เรียงลำดับแล้ว
+                            subtasksData[taskId] = sortedSubtasks;
+                        }
+                    } catch (err) {
+                        console.error(`Error fetching subtasks for task ${taskId}:`, err);
+                        subtasksData[taskId] = [];
+                    }
                 }
-            });
+            }
+            
+            // อัพเดต subtasks state ถ้ามีข้อมูลใหม่
+            if (Object.keys(subtasksData).length > 0) {
+                setSubtasks(prev => ({
+                    ...prev,
+                    ...subtasksData
+                }));
+            }
 
-            // รอให้ทุก promise เสร็จสิ้น
-            await Promise.all(subtaskPromises);
-            setSubtasks(subtasksData);
-
-            // หมายเหตุ: ข้ามการคำนวณ progress ที่ฝั่ง frontend เพราะเราดึงผลลัพธ์มาจาก backend แล้ว
+            // รอให้ทุก Promise เสร็จสิ้น
+            await Promise.all(promises);
 
         } catch (error) {
             console.error("Error in data fetch:", error);
@@ -207,28 +231,107 @@ export default function TasklistPage() {
         }
     };
 
+    // สร้างตัวแปรเพื่อเก็บค่า fetch ล่าสุด
+    const lastFetchTimestamp = useRef<number>(0);
+    const FETCH_THROTTLE_MS = 1000; // ระยะเวลาขั้นต่ำระหว่างการเรียก API
+
     useEffect(() => {
-        fetchAllData();
+        const now = Date.now();
+        
+        // ตรวจสอบว่าเคยเรียก API นี้ในช่วงเวลาที่กำหนดหรือไม่
+        if (now - lastFetchTimestamp.current > FETCH_THROTTLE_MS) {
+            lastFetchTimestamp.current = now;
+            fetchAllData();
+        }
     }, [project_id, project_name]);
 
-    // ฟังก์ชันอัพเดต progress หลังจากการเปลี่ยนแปลง
+    // ตัวแปรสำหรับเก็บข้อมูล tasks ที่ต้องการอัพเดต
+    const tasksToUpdate = useRef<Set<string>>(new Set());
+    const updateTasksTimeoutId = useRef<NodeJS.Timeout | null>(null);
+    
+    useEffect(() => {
+        // ทุกครั้งที่ subtaskProgress หรือ subtasks เปลี่ยน 
+        // ให้รวบรวม tasks ที่ต้องการอัพเดตแทนที่จะอัพเดตทันที
+        
+        // ยกเลิก timeout ที่กำลังจะทำงานถ้ามี
+        if (updateTasksTimeoutId.current) {
+            clearTimeout(updateTasksTimeoutId.current);
+        }
+        
+        // เพิ่ม tasks ที่ต้องการอัพเดตเข้าไปใน Set
+        Object.keys(subtasks).forEach(taskId => {
+            tasksToUpdate.current.add(taskId);
+        });
+        
+        // ตั้ง timeout เพื่อรอให้การเปลี่ยนแปลงหยุดก่อนที่จะอัพเดต
+        // (debounce pattern)
+        updateTasksTimeoutId.current = setTimeout(() => {
+            // อัพเดตเฉพาะ tasks ที่อยู่ใน Set
+            const taskIds = Array.from(tasksToUpdate.current);
+            
+            // ทยอยอัพเดตทีละ task เพื่อไม่ให้ UI กระตุก
+            const processNextTask = async (index: number) => {
+                if (index >= taskIds.length) {
+                    // เคลียร์ Set เมื่ออัพเดตครบทุก task แล้ว
+                    tasksToUpdate.current.clear();
+                    return;
+                }
+                
+                const taskId = taskIds[index];
+                await updateTaskStatusFromSubtasks(taskId);
+                
+                // รอเล็กน้อยก่อนอัพเดต task ถัดไป
+                setTimeout(() => processNextTask(index + 1), 10);
+            };
+            
+            // เริ่มอัพเดต task แรก
+            if (taskIds.length > 0) {
+                processNextTask(0);
+            }
+        }, 300);
+        
+        // cleanup function
+        return () => {
+            if (updateTasksTimeoutId.current) {
+                clearTimeout(updateTasksTimeoutId.current);
+            }
+        };
+        // eslint-disable-next-line
+    }, [subtaskProgress, subtasks]);
+
+    // ฟังก์ชันอัพเดต progress หลังจากการเปลี่ยนแปลง - ปรับปรุงประสิทธิภาพ
+    // สร้างตัวแปรเพื่อติดตามการเรียกใช้งาน API ล่าสุดสำหรับแต่ละ project
+    const lastApiCallTimestamps = useRef<Record<string, number>>({});
+    const API_THROTTLE_MS = 1000; // จำกัดการเรียก API ให้น้อยกว่า 1 ครั้งต่อวินาที
+
     const refreshProgressAfterUpdate = async (taskId: string) => {
         try {
             // หา projectId จาก task
             const task = tasks.find(t => t.task_id === taskId);
             if (!task || !task.project_id) return;
+            
+            const projectId = task.project_id;
+            const now = Date.now();
+            
+            // ตรวจสอบว่าเคยเรียก API นี้ในช่วงเวลาที่กำหนดหรือไม่
+            if (lastApiCallTimestamps.current[projectId] && 
+                now - lastApiCallTimestamps.current[projectId] < API_THROTTLE_MS) {
+                // ถ้าเพิ่งเรียกไป ให้ข้ามการเรียก API ใหม่
+                return;
+            }
+            
+            // บันทึกเวลาล่าสุดที่เรียก API
+            lastApiCallTimestamps.current[projectId] = now;
 
             // ดึงข้อมูลความคืบหน้าจาก API
-            const response = await getDetailedProjectProgress(task.project_id);
+            const response = await getDetailedProjectProgress(projectId);
             if (response.success) {
                 const { projectProgress, taskProgress: newTaskProgress, subtaskProgress: newSubtaskProgress } = response.responseObject;
 
-                // อัพเดต state
+                // อัพเดต state แบบ batch เพื่อลดการ re-render
                 setTaskProgress(prev => ({ ...prev, ...newTaskProgress }));
                 setSubtaskProgress(prev => ({ ...prev, ...newSubtaskProgress }));
                 setProjectProgressValue(projectProgress);
-
-                console.log("Progress data refreshed from backend after update");
             }
         } catch (error) {
             console.error("Failed to refresh progress data:", error);
@@ -239,85 +342,130 @@ export default function TasklistPage() {
     const updateTaskStatusFromSubtasks = async (taskId: string) => {
         const taskSubtasks = subtasks[taskId] || [];
 
-        // ถ้าไม่มี subtask ให้ข้ามไป
+        // Ensure taskSubtasks is treated as an array of TypeSubTaskAll
+        if (!Array.isArray(taskSubtasks)) {
+            console.error(`Expected taskSubtasks to be an array, but got:`, taskSubtasks);
+            return;
+        }
+
+        // If no subtasks, skip
         if (taskSubtasks.length === 0) return;
 
-        // ค้นหา task ปัจจุบัน
+        // Find the current task
         const currentTask = tasks.find(task => task.task_id === taskId);
         if (!currentTask) return;
 
-        // ตรวจสอบสถานะของ subtasks
-        const allCompleted = taskSubtasks.every(subtask => subtask.status === "completed");
-        const allCancelled = taskSubtasks.every(subtask => subtask.status === "cancelled");
-        const anyInProgress = taskSubtasks.some(subtask => subtask.status === "in progress");
-        const anyNotCompleted = taskSubtasks.some(subtask => subtask.status !== "completed");
-        const anyLessThan100Percent = taskSubtasks.some(subtask =>
+        // ลดการใช้ console.log เพื่อเพิ่มประสิทธิภาพ
+        // console.log(`Updating task status for task ${taskId} with ${taskSubtasks.length} subtasks`);
+
+        // Check subtask statuses - optimize by using cached values
+        const allCompleted = taskSubtasks.every((subtask: TypeSubTaskAll) => subtask.status === "completed");
+        const allCancelled = taskSubtasks.every((subtask: TypeSubTaskAll) => subtask.status === "suspended");
+        const anyInProgress = taskSubtasks.some((subtask: TypeSubTaskAll) => subtask.status === "in progress");
+        const anyNotCompleted = taskSubtasks.some((subtask: TypeSubTaskAll) => subtask.status !== "completed");
+        const anyLessThan100Percent = taskSubtasks.some((subtask: TypeSubTaskAll) =>
             (subtaskProgress[subtask.subtask_id] || 0) < 100
         );
 
         let newStatus = currentTask.status;
         let shouldUpdateStatus = false;
 
-        // กรณี 1: ถ้าทุก subtask เป็น completed และ task ไม่ใช่ completed ให้อัพเดทเป็น completed
+        // Case 1: All subtasks completed
         if (allCompleted && currentTask.status !== "completed") {
             newStatus = "completed";
             shouldUpdateStatus = true;
         }
-        // กรณี 2: ถ้าทุก subtask เป็น cancelled และ task ไม่ใช่ cancelled ให้อัพเดทเป็น cancelled
-        else if (allCancelled && currentTask.status !== "cancelled") {
-            newStatus = "cancelled";
+        // Case 2: All subtasks suspended
+        else if (allCancelled && currentTask.status !== "suspended") {
+            newStatus = "suspended";
             shouldUpdateStatus = true;
         }
-        // กรณี 3: ถ้ามีบาง subtask เป็น in progress และ task ไม่ใช่ in progress ให้อัพเดทเป็น in progress
+        // Case 3: Any subtask in progress
         else if (anyInProgress && currentTask.status !== "in progress") {
             newStatus = "in progress";
             shouldUpdateStatus = true;
         }
-        // กรณี 4: ถ้า task เป็น completed แล้ว แต่มีบาง subtask ไม่ใช่ completed หรือ progress น้อยกว่า 100%
+        // Case 4: Task marked completed but subtasks not completed
         else if (currentTask.status === "completed" && (anyNotCompleted || anyLessThan100Percent)) {
             newStatus = "in progress";
             shouldUpdateStatus = true;
         }
+        // Case 5: Any subtask with progress > 0 but task not in progress
+        else if (currentTask.status !== "in progress" && currentTask.status !== "completed") {
+            const anySubtaskWithProgress = taskSubtasks.some((subtask: TypeSubTaskAll) =>
+                (subtaskProgress[subtask.subtask_id] || 0) > 0
+            );
 
-        // ตรวจสอบและอัพเดต Task status ถ้าจำเป็น
+            if (anySubtaskWithProgress) {
+                newStatus = "in progress";
+                shouldUpdateStatus = true;
+                // ลดการใช้ console.log เพื่อเพิ่มประสิทธิภาพ
+            }
+        }
+        // Case 6: All subtasks have progress 0 and task is "in progress", change back to "pending"
+        else if (currentTask.status === "in progress") {
+            // Check if all subtasks have zero progress AND no subtask has "in progress" status
+            const allSubtasksZeroProgress = taskSubtasks.every((subtask: TypeSubTaskAll) =>
+                (subtaskProgress[subtask.subtask_id] || 0) === 0
+            );
+
+            const noSubtaskInProgress = taskSubtasks.every((subtask: TypeSubTaskAll) =>
+                subtask.status !== "in progress"
+            );
+
+            if (allSubtasksZeroProgress && noSubtaskInProgress) {
+                newStatus = "pending";
+                shouldUpdateStatus = true;
+                // ลดการใช้ console.log เพื่อเพิ่มประสิทธิภาพ
+            }
+        }
+
+        // Update task status if needed
         if (shouldUpdateStatus) {
             try {
-                console.log(`Updating task status from ${currentTask.status} to ${newStatus}`);
+                // ลดการใช้ console.log เพื่อเพิ่มประสิทธิภาพ
+                // console.log(`Updating task status from ${currentTask.status} to ${newStatus}`);
+
+                // Update local state immediately for responsiveness
+                setTasks(prev => prev.map(t =>
+                    t.task_id === taskId ? { ...t, status: newStatus } : t
+                ));
+
+                // Send update to backend - ใช้ debounce หรือ throttle ถ้าเป็นไปได้
                 const response = await patchTask({
                     task_id: taskId,
                     status: newStatus
                 });
 
-                if (response.success) {
-                    console.log(`Task status updated to ${newStatus}`);
-
-                    // อัพเดต tasks ในหน้าจอ
-                    setTasks(prevTasks => prevTasks.map(task =>
-                        task.task_id === taskId ? { ...task, status: newStatus } : task
-                    ));
+                if (!response.success) {
+                    console.error(`Failed to update task status: ${response.message}`);
                 }
             } catch (error) {
                 console.error("Failed to update task status:", error);
             }
         }
 
-        // หลังจากอัพเดต status แล้ว ดึงข้อมูลใหม่จาก backend
-        await refreshProgressAfterUpdate(taskId);
+        // Refresh progress หลังจาก status update เฉพาะเมื่อมีการอัพเดต status จริงๆ
+        if (shouldUpdateStatus) {
+            await refreshProgressAfterUpdate(taskId);
+        }
     };
 
-    // ดึงข้อมูล subtasks สำหรับ task ที่กำหนด
+    // ดึงข้อมูล subtasks สำหรับ task ที่กำหนด - ปรับปรุงประสิทธิภาพ
     const fetchSubtasks = async (taskId: string, maxRetries = 2) => {
         let attempts = 0;
 
         const attemptFetch = async () => {
             attempts++;
             try {
-                console.log(`Fetching subtasks for task: ${taskId} (Attempt ${attempts})`);
+                // ลดการ log ที่ไม่จำเป็น
+                // console.log(`Fetching subtasks for task: ${taskId} (Attempt ${attempts})`);
 
                 const response = await getSubtask(taskId);
 
                 if (response?.success) {
-                    console.log(`Subtasks for task ${taskId}:`, response.responseObject);
+                    // ลดการ log ที่ไม่จำเป็น
+                    // console.log(`Subtasks for task ${taskId}:`, response.responseObject);
 
                     // ตรวจสอบให้แน่ใจว่า subtask ที่ได้รับเป็นของ task นี้จริง ๆ
                     const filteredSubtasks = response.responseObject.filter(subtask =>
@@ -335,15 +483,14 @@ export default function TasklistPage() {
                     // เก็บข้อมูลที่เรียงแล้ว
                     setSubtasks(prev => ({
                         ...prev,
-                        [taskId]: sortedSubtasks
+                        [taskId]: Array.isArray(sortedSubtasks) ? sortedSubtasks : []
                     }));
 
                     // ดึงข้อมูล progress ใหม่จาก backend หลังจากโหลด subtasks
+                    // แต่ใช้ throttle เพื่อป้องกันการเรียก API บ่อยเกินไป
                     await refreshProgressAfterUpdate(taskId);
                     return true;
                 } else {
-                    console.warn(`Attempt ${attempts}: Failed to fetch subtasks for task ${taskId}:`, response?.message || 'Unknown error');
-                    // If we have retries left, don't set empty array yet
                     if (attempts >= maxRetries) {
                         setSubtasks(prev => ({
                             ...prev,
@@ -354,8 +501,7 @@ export default function TasklistPage() {
                 }
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.warn(`Attempt ${attempts}: Error fetching subtasks for task ${taskId}:`, errorMessage);
-
+                
                 // Only set empty array on last attempt
                 if (attempts >= maxRetries) {
                     setSubtasks(prev => ({
@@ -404,53 +550,185 @@ export default function TasklistPage() {
 
     const updateProgressInState = async (id: string, percent: number, type: 'task' | 'subtask') => {
         if (type === 'task') {
-            // อัพเดต task progress ใน state
+            // Update task progress in state
             setTaskProgress(prev => ({
                 ...prev,
                 [id]: percent
             }));
 
-            // ค้นหา task เพื่อหา project_id
+            // Find task to get project_id
             const task = tasks.find(t => t.task_id === id);
             if (task && task.project_id) {
-                // ดึงข้อมูลความคืบหน้าจาก API
+                // Fetch updated progress from API
                 await refreshProgressAfterUpdate(id);
             }
-        }
-        else if (type === 'subtask') {
-            // อัพเดต subtask progress ใน state
+        } else if (type === 'subtask') {
+            // Update subtask progress in state
             setSubtaskProgress(prev => ({
                 ...prev,
                 [id]: percent
             }));
 
-            // หา taskId ของ subtask นี้
+            // Find the taskId of this subtask
             let taskId = '';
+
+            // Loop through all tasks and their subtasks
             for (const tid in subtasks) {
-                if (subtasks[tid].some(s => s.subtask_id === id)) {
+                const taskSubtasks = subtasks[tid];
+                if (Array.isArray(taskSubtasks) && taskSubtasks.some(s => s.subtask_id === id)) {
                     taskId = tid;
                     break;
                 }
             }
 
             if (taskId) {
-                // ดึงข้อมูลความคืบหน้าจาก API
+                console.log(`Found taskId ${taskId} for subtask ${id}, updating task status...`);
+
+                // Immediately update the subtask status based on progress
+                setSubtasks(prev => {
+                    const taskSubtasks = prev[taskId];
+                    if (!Array.isArray(taskSubtasks)) return prev;
+
+                    const updatedSubtasks = taskSubtasks.map(s => {
+                        if (s.subtask_id === id) {
+                            // If progress is > 0 but < 100, set status to "in progress"
+                            if (percent > 0 && percent < 100) {
+                                return { ...s, status: "in progress" };
+                            }
+                            // If progress is 100%, set status to "completed"
+                            else if (percent === 100) {
+                                return { ...s, status: "completed" };
+                            }
+                            // If progress is 0, revert status back to "pending"
+                            else if (percent === 0) {
+                                return { ...s, status: "pending" };
+                            }
+                        }
+                        return s;
+                    });
+
+                    return {
+                        ...prev,
+                        [taskId]: updatedSubtasks
+                    };
+                });
+
+                // Force task status to "in progress" if the subtask progress is > 0
+                const task = tasks.find(t => t.task_id === taskId);
+                if (task && percent > 0 && task.status !== "in progress" && task.status !== "completed") {
+                    console.log(`Forcing task ${taskId} status to "in progress" due to subtask progress > 0`);
+
+                    // Update local task state immediately
+                    setTasks(prev => prev.map(t =>
+                        t.task_id === taskId ? { ...t, status: "in progress" } : t
+                    ));
+
+                    // Send update to backend
+                    try {
+                        const response = await patchTask({
+                            task_id: taskId,
+                            status: "in progress"
+                        });
+
+                        if (response.success) {
+                            console.log(`Successfully updated task status to "in progress"`);
+                        } else {
+                            console.error(`Failed to update task status: ${response.message}`);
+                        }
+                    } catch (error) {
+                        console.error("Error updating task status:", error);
+                    }
+                }
+                // If progress is set to 0, check if we need to update task status to pending
+                else if (task && percent === 0 && task.status === "in progress") {
+                    // Need to check all subtasks of this task
+                    const allTaskSubtasks = subtasks[taskId] || [];
+
+                    // Update with the change we're currently making
+                    const updatedSubtasks = allTaskSubtasks.map(s =>
+                        s.subtask_id === id ? { ...s, status: "pending" } : s
+                    );
+
+                    // Check if all subtasks now have 0 progress
+                    const allZeroProgress = updatedSubtasks.every(s =>
+                        (subtaskProgress[s.subtask_id] || 0) === 0 || s.subtask_id === id
+                    );
+
+                    // Check if none are in progress status anymore
+                    const noInProgressStatus = updatedSubtasks.every(s =>
+                        s.status !== "in progress" || s.subtask_id === id
+                    );
+
+                    if (allZeroProgress && noInProgressStatus) {
+                        console.log(`All subtasks now have 0 progress, reverting task ${taskId} to "pending"`);
+
+                        // Update local task state immediately
+                        setTasks(prev => prev.map(t =>
+                            t.task_id === taskId ? { ...t, status: "pending" } : t
+                        ));
+
+                        // Send update to backend
+                        try {
+                            const response = await patchTask({
+                                task_id: taskId,
+                                status: "pending"
+                            });
+
+                            if (response.success) {
+                                console.log(`Successfully updated task status to "pending"`);
+                            } else {
+                                console.error(`Failed to update task status: ${response.message}`);
+                            }
+                        } catch (error) {
+                            console.error("Error updating task status:", error);
+                        }
+                    }
+                }
+
+                // Update task status based on subtasks
+                await updateTaskStatusFromSubtasks(taskId);
+
+                // Fetch updated progress from API
                 await refreshProgressAfterUpdate(taskId);
+            } else {
+                console.error(`Could not find taskId for subtask ${id}`);
             }
         }
     };
 
+    // อัพเดต toggleExpandTask ให้มีประสิทธิภาพมากขึ้น
+    // สร้างตัวแปรเพื่อจำกัดการทำงานซ้ำ
+    const expandInProgress = useRef<Set<string>>(new Set());
+    
     const toggleExpandTask = (taskId: string) => {
         setExpandedTasks(prev => {
             const isExpanded = prev.includes(taskId);
 
             if (isExpanded) {
+                // หากกำลังยุบ ทำได้ทันที
                 return prev.filter(id => id !== taskId);
             } else {
-                // ถ้ากำลังจะเปิด ให้ดึงข้อมูลและคำนวณความคืบหน้าใหม่
-                if (!subtasks[taskId] || subtasks[taskId]?.length === 0) {
-                    fetchSubtasks(taskId);
+                // ถ้ากำลังจะเปิด ให้ดึงข้อมูล subtasks และคำนวณความคืบหน้าใหม่
+                
+                // ป้องกันการเรียกหลายครั้งติดกัน
+                if (!expandInProgress.current.has(taskId)) {
+                    expandInProgress.current.add(taskId);
+                    
+                    // ตรวจสอบว่ามีข้อมูล subtasks แล้วหรือยัง
+                    if (!subtasks[taskId] || subtasks[taskId]?.length === 0) {
+                        // ดึงข้อมูล subtasks ในรูปแบบ non-blocking 
+                        // เพื่อให้ UI ตอบสนองได้เร็วขึ้น
+                        setTimeout(() => {
+                            fetchSubtasks(taskId).finally(() => {
+                                expandInProgress.current.delete(taskId);
+                            });
+                        }, 10);
+                    } else {
+                        expandInProgress.current.delete(taskId);
+                    }
                 }
+                
+                // ส่งค่าการขยายทันทีเพื่อให้ UI ตอบสนองเร็ว
                 return [...prev, taskId];
             }
         });
@@ -560,6 +838,14 @@ export default function TasklistPage() {
             Object.values(taskProgress).reduce((acc, val) => acc + val, 0) / Object.values(taskProgress).length : 0
     });
 
+    const calculateDuration = (startDate: string | undefined, endDate: string | undefined): string => {
+        if (!startDate || !endDate) return "-";
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)); // คำนวณจำนวนวัน
+        return `${duration} days`;
+    };
+
     return (
         <div className="container mx-auto px-4 py-6">
             {/* Project Header */}
@@ -607,11 +893,13 @@ export default function TasklistPage() {
                                     <Table.ColumnHeaderCell>Budget</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell>Start Date</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell>End Date</Table.ColumnHeaderCell>
+                                    <Table.ColumnHeaderCell>Duration</Table.ColumnHeaderCell> {/* เพิ่มคอลัมน์ Duration */}
                                     <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell>Progress</Table.ColumnHeaderCell>
                                     <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
                                 </Table.Row>
                             </Table.Header>
+
                             <Table.Body>
                                 {tasks.length > 0 ? (
                                     tasks.map((task: TypeTaskAll) => (
@@ -634,6 +922,7 @@ export default function TasklistPage() {
                                                 <Table.Cell>{formatBudget(task.budget)}</Table.Cell>
                                                 <Table.Cell>{formatDate(task.start_date)}</Table.Cell>
                                                 <Table.Cell>{formatDate(task.end_date)}</Table.Cell>
+                                                <Table.Cell>{calculateDuration(task.start_date, task.end_date)}</Table.Cell> {/* แสดง Duration */}
                                                 <Table.Cell>{task.status}</Table.Cell>
                                                 <Table.Cell>
                                                     <Tooltip content={`${(taskProgress[task.task_id] || 0).toFixed(2)}%`}>
@@ -687,6 +976,7 @@ export default function TasklistPage() {
                                                     <Table.Cell>{formatBudget(subtask.budget)}</Table.Cell>
                                                     <Table.Cell>{formatDate(subtask.start_date)}</Table.Cell>
                                                     <Table.Cell>{formatDate(subtask.end_date)}</Table.Cell>
+                                                    <Table.Cell>{calculateDuration(subtask.start_date, subtask.end_date)}</Table.Cell> {/* แสดง Duration */}
                                                     <Table.Cell>
                                                         <Text size="2">{subtask.status}</Text>
                                                     </Table.Cell>

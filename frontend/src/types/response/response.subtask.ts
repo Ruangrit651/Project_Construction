@@ -7,10 +7,7 @@ export type TypeSubTaskAll = {
     start_date?: string;
     end_date?: string;
     status: string;
-    // created_at?: string;
-    // created_by?: string;
-    // updated_at?: string;
-    // updated_by?: string;
+    created_at?: string; // Add created_at property
 }
 
 export type TypeSubTask = {

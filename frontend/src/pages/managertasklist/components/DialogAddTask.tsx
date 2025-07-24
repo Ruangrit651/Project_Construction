@@ -243,7 +243,7 @@ const DialogAddTask: React.FC<DialogAddTaskProps> = ({ getTaskData, projectId })
                                 <Select.Item value="pending">Pending</Select.Item>
                                 <Select.Item value="in progress">In Progress</Select.Item>
                                 <Select.Item value="completed">Completed</Select.Item>
-                                <Select.Item value="cancelled">Cancelled</Select.Item>
+                                <Select.Item value="suspended">Suspended</Select.Item>
                             </Select.Content>
                         </Select.Root>
                     </label>
