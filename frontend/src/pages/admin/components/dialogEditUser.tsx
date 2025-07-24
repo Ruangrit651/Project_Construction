@@ -9,15 +9,17 @@ type DialogUserProps = {
   getUserData: Function;
   user_id: string;
   username: string;
+  fullname?: string | null; // เพิ่มบรรทัดนี้
   role: string;
   project: string;
   showToast?: (message: string, type: 'success' | 'error') => void;
 };
 
-const DialogEdit = ({ getUserData, user_id, username, role, project, showToast }: DialogUserProps) => {
+const DialogEdit = ({ getUserData, user_id, username,fullname ,role, project, showToast }: DialogUserProps) => {
   const [open, setOpen] = useState(false);
   const [patchUserName, setPatchUserName] = useState(username);
   const [patchPassword, setPatchPassword] = useState("");
+  const [patchFullName, setPatchFullName] = useState(fullname || "");
   const [patchRole, setPatchRole] = useState(role);
   const [patchProject, setPatchProject] = useState(project);
   const [originalProject, setOriginalProject] = useState(project);
@@ -105,6 +107,7 @@ const DialogEdit = ({ getUserData, user_id, username, role, project, showToast }
         user_id,
         username: patchUserName,
         password: patchPassword || undefined,
+        fullname: patchFullName || null, // เพิ่มบรรทัดนี้
         role: patchRole || undefined,
       });
 
@@ -197,6 +200,16 @@ const DialogEdit = ({ getUserData, user_id, username, role, project, showToast }
               onChange={(event) => setPatchUserName(event.target.value)}
             />
           </label>
+          <label>
+            <Text as="div" size="2" mb="1" weight="bold">
+              Full Name
+            </Text>
+            <TextField.Root
+              value={patchFullName}
+              placeholder="Enter full name (optional)"
+              onChange={(event) => setPatchFullName(event.target.value)}
+            />
+          </label>
           {/* Password */}
           <label>
             <Text as="div" size="2" mb="1" weight="bold">
@@ -209,6 +222,7 @@ const DialogEdit = ({ getUserData, user_id, username, role, project, showToast }
               onChange={(event) => setPatchPassword(event.target.value)}
             />
           </label>
+
           {/* Role */}
           <label>
             <Text as="div" size="2" mb="1" weight="bold">

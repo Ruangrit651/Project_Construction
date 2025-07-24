@@ -72,6 +72,7 @@ export default function UserDetailPage({ userId }: UserDetailProps) {
             <Card variant="surface">
                 <Heading size="6" mb="2">{user.username}</Heading>
                 <Flex direction="column" gap="2">
+                    <Text>Full Name: {user.fullname || 'Not specified'}</Text>
                     <Text>Role: {user.role}</Text>
                     <Flex align="center" gap="2">
                         <Text>Status:</Text> 

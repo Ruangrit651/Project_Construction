@@ -8,6 +8,7 @@ export const UserKeys = [
     "role",
     "username",
     "password",
+    "fullname",
     "is_active",
     "created_at",
     "created_by",
@@ -40,6 +41,7 @@ export const UserRepository = { //Object
                 user_id: true,
                 project_id: true,
                 username: true,
+                fullname: true,
                 role: true,
                 created_at: true,
                 created_by: true,
@@ -58,6 +60,7 @@ export const UserRepository = { //Object
             username: username,
             password: payload.password,
             role: payload.role,
+            fullname: payload.fullname,
             is_active: payload.is_active !== undefined ? payload.is_active : true, // เพิ่มฟิลด์นี้
             created_by: payload.created_by,
             updated_by: payload.updated_by
@@ -78,6 +81,7 @@ export const UserRepository = { //Object
             data: {
                 username: payload.username,
                 password: payload.password,
+                fullname: payload.fullname, // ต้องมีบรรทัดนี้
                 role: payload.role || "",
                 project_id: payload.project_id,
                 is_active: payload.is_active, // เพิ่มฟิลด์นี้
